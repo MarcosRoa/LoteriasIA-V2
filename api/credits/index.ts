@@ -1,16 +1,8 @@
 // api/credits/index.ts
 // api/credits/index.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-        auth: { autoRefreshToken: false, persistSession: false },
-        realtime: { enabled: false }  // ✅ Desativa WebSocket
-    }
-);
+import { supabase } from '../../core/database/supabase';
+import { env } from '../../core/config/env';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -36,7 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 .from('usuarios')
                 .insert({
                     uid, nome, email,
-                    creditos: 5,
+                    creditos: env.defaultCredits,
                     is_pro: false,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
@@ -50,25 +42,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             throw error;
         }
         
-        const PRO_FIXED_EMAIL = 'mresquadriasaluminio@gmail.com';
         let credits = user.creditos;
         let isPro = user.is_pro;
         
-        if (user.email === PRO_FIXED_EMAIL) {
+        if (user.email === env.proFixedEmail) {
             isPro = true;
-            if (credits !== 100) {
+            if (credits !== env.proCredits) {
                 await supabase
                     .from('usuarios')
-                    .update({ creditos: 100, is_pro: true })
+                    .update({ creditos: env.proCredits, is_pro: true })
                     .eq('uid', uid);
-                credits = 100;
+                credits = env.proCredits;
             }
         }
         
         return res.status(200).json({ success: true, credits, isPro });
         
     } catch (error: any) {
-        console.error('Erro:', error);
+        console.error('Erro em /api/credits:', error);
         return res.status(500).json({ error: error.message });
     }
 }
