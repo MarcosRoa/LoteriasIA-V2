@@ -5,12 +5,15 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
     process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+        auth: { autoRefreshToken: false, persistSession: false },
+        realtime: { enabled: false }  // ✅ Desativa WebSocket
+    }
 );
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
@@ -19,14 +22,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!uid) return res.status(400).json({ error: 'UID é obrigatório' });
     
     try {
-        // ✅ Usando maybeSingle() em vez de single()
         let { data: user, error } = await supabase
             .from('usuarios')
             .select('creditos, is_pro, email')
             .eq('uid', uid)
             .maybeSingle();
         
-        // ✅ Se não existir, criar
         if (!user && !error) {
             const email = (req.headers['x-user-email'] as string) || `${uid}@temp.com`;
             const nome = (req.headers['x-user-name'] as string) || email.split('@')[0];
@@ -34,9 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const { data: newUser, error: insertError } = await supabase
                 .from('usuarios')
                 .insert({
-                    uid,
-                    nome,
-                    email,
+                    uid, nome, email,
                     creditos: 5,
                     is_pro: false,
                     created_at: new Date().toISOString(),
@@ -51,7 +50,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             throw error;
         }
         
-        // ✅ Verificar email PRO fixo
         const PRO_FIXED_EMAIL = 'mresquadriasaluminio@gmail.com';
         let credits = user.creditos;
         let isPro = user.is_pro;
@@ -61,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (credits !== 100) {
                 await supabase
                     .from('usuarios')
-                    .update({ creditos: 100, is_pro: true, updated_at: new Date().toISOString() })
+                    .update({ creditos: 100, is_pro: true })
                     .eq('uid', uid);
                 credits = 100;
             }
@@ -70,7 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true, credits, isPro });
         
     } catch (error: any) {
-        console.error('Erro em /api/credits:', error);
+        console.error('Erro:', error);
         return res.status(500).json({ error: error.message });
     }
 }
