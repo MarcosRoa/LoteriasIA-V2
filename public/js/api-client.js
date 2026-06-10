@@ -1,6 +1,7 @@
 // js/api-client.js - VERSÃO 2.0 (Núcleo do Frontend)
 // ============================================
 // api-client.js - V2.0
+// api-client.js - V2.0
 const API_BASE = '/api';
 
 class ApiClient {
