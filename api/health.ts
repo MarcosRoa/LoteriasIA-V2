@@ -9,7 +9,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     try {
         const start = Date.now();
-        const { error } = await supabase.from('usuarios').select('count', { count: 'exact', head: true });
+        const { error } = await supabase
+            .from('usuarios')
+            .select('count', { count: 'exact', head: true });
+        
         latency = Date.now() - start;
         if (!error) dbStatus = 'up';
     } catch (err) {
