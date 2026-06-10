@@ -1,15 +1,7 @@
 // api/pro/status.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-        auth: { autoRefreshToken: false, persistSession: false },
-        realtime: { enabled: false }  // ✅ Desativa WebSocket
-    }
-);
+import { supabase } from '../../core/database/supabase';
+import { env } from '../../core/config/env';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -31,9 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ success: true, isPro: false, daysLeft: 0 });
         }
         
-        const PRO_FIXED_EMAIL = 'mresquadriasaluminio@gmail.com';
-        
-        if (user.email === PRO_FIXED_EMAIL) {
+        if (user.email === env.proFixedEmail) {
             return res.status(200).json({ success: true, isPro: true, daysLeft: 365 });
         }
         
@@ -47,7 +37,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true, isPro: user.is_pro || false, daysLeft });
         
     } catch (error: any) {
-        console.error('Erro:', error);
+        console.error('Erro em /api/pro/status:', error);
         return res.status(500).json({ error: error.message });
     }
 }
