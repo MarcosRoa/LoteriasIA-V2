@@ -16,4 +16,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     try {
         const newBalance = await creditsService.addCredits(userId, amount, `webhook_${data.id}`);
-        console.log(`✅ Créditos ad
+        console.log(`✅ Créditos adicionados: ${amount} para usuário ${userId}`);
+        return res.status(200).json({ success: true, newBalance });
+    } catch (error) {
+        console.error('Webhook error:', error);
+        return res.status(500).json({ error: 'Internal error' });
+    }
+}
