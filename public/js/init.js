@@ -1,4 +1,5 @@
 // js/init.js - Inicialização do sistema (V2.0)
+// js/init.js - Inicialização do sistema (V2.0)
 async function init() {
     if (window.initExecuted) {
         console.log('⚠️ init já executado, ignorando');
@@ -15,21 +16,22 @@ async function init() {
         console.error('❌ carregarGridLoterias não disponível');
     }
     
-    const unsubscribe = window.onAuthStateChanged(async (user) => {
-        if (user) {
-            console.log('✅ Usuário autenticado:', user.email);
-            await window.processarLogin(user);
-        } else {
-            console.log('👤 Nenhum usuário autenticado');
-            window.usuarioAtual = null;
-            window.creditosUsuario = 0;
-            window.isUserPro = false;
-            if (typeof window.atualizarInterfaceUsuario === 'function') {
-                window.atualizarInterfaceUsuario();
+    if (typeof window.onAuthStateChanged === 'function') {
+        window.onAuthStateChanged(async (user) => {
+            if (user) {
+                console.log('✅ Usuário autenticado:', user.email);
+                await window.processarLogin(user);
+            } else {
+                console.log('👤 Nenhum usuário autenticado');
+                window.usuarioAtual = null;
+                window.creditosUsuario = 0;
+                window.isUserPro = false;
+                if (typeof window.atualizarInterfaceUsuario === 'function') {
+                    window.atualizarInterfaceUsuario();
+                }
             }
-        }
-        unsubscribe();
-    });
+        });
+    }
     
     setTimeout(async () => {
         const loteriaAtual = window.loteriaAtual ? window.loteriaAtual() : 'megasena';
