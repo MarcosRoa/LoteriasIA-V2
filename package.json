@@ -2,6 +2,9 @@
     "name": "loterias-ia-v2",
     "version": "2.0.0",
     "description": "Sistema Profissional de Loterias com IA Real",
+    "scripts": {
+        "build": "echo 'Build completed'"
+    },
     "dependencies": {
         "@supabase/supabase-js": "^2.57.4",
         "@vercel/node": "^3.2.23",
@@ -13,6 +16,6 @@
         "typescript": "^5.4.5"
     },
     "engines": {
-        "node": "20.x"
+        "node": "22.x"
     }
 }
