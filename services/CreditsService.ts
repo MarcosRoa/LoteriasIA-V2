@@ -14,15 +14,10 @@ export class CreditsService {
 
     async getBalance(uid: string): Promise<{ credits: number; isPro: boolean }> {
         let user = await this.userRepo.findByUid(uid);
-        
         if (!user) {
-            // Criação automática para garantir que sempre existe
-            const email = `${uid}@temp.com`;
-            const nome = 'Usuário';
-            user = await this.userRepo.create(uid, email, nome);
+            user = await this.userRepo.create(uid, `${uid}@temp.com`, 'Usuário');
         }
         
-        // Verificar se é PRO fixo
         const isProFixed = user.email === env.proFixedEmail;
         let isPro = user.is_pro || isProFixed;
         let credits = user.creditos;
@@ -39,40 +34,31 @@ export class CreditsService {
     async addCredits(uid: string, amount: number, referenceId?: string): Promise<number> {
         const { credits } = await this.getBalance(uid);
         const newBalance = credits + amount;
-        
         await this.userRepo.updateCredits(uid, newBalance);
-        
         await this.transactionRepo.create({
             usuario_uid: uid,
             tipo: 'compra',
             quantidade: amount,
             saldo_apos: newBalance,
-            reference_id: referenceId,
+            reference_id: referenceId || null,
             metadata: { source: 'api' }
         });
-        
         return newBalance;
     }
 
     async deductCredits(uid: string, amount: number, referenceId?: string): Promise<number> {
         const { credits } = await this.getBalance(uid);
-        
-        if (credits < amount) {
-            throw new Error('Saldo insuficiente');
-        }
-        
+        if (credits < amount) throw new Error('Saldo insuficiente');
         const newBalance = credits - amount;
         await this.userRepo.updateCredits(uid, newBalance);
-        
         await this.transactionRepo.create({
             usuario_uid: uid,
             tipo: 'uso',
             quantidade: amount,
             saldo_apos: newBalance,
-            reference_id: referenceId,
+            reference_id: referenceId || null,
             metadata: { source: 'api' }
         });
-        
         return newBalance;
     }
 }
