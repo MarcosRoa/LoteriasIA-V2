@@ -1,4 +1,5 @@
 // js/globals.js - Variáveis globais (V2.0)
+// js/globals.js - Variáveis globais (V2.0)
 let isUserPro = false;
 let proExpiresAt = null;
 let proDiasRestantes = 0;
