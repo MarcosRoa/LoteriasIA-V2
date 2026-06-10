@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loterias V.7.0 - Sistema Profissional de Loterias com IA Real</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- ============================================ -->
+    <!-- 1. FIREBASE (somente autenticação)           -->
+    <!-- ============================================ -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    
+    <!-- ============================================ -->
+    <!-- 2. BIBLIOTECAS                                -->
+    <!-- ============================================ -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.18.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    
+    <!-- ============================================ -->
+    <!-- 3. MÓDULOS DO SISTEMA (V2 - SEM CHAVES)      -->
+    <!-- ============================================ -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/ia.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/globals.js"></script>
+    <script src="js/auth-handler.js"></script>
+    <script src="js/loterias.js"></script>
+    <script src="js/jogos.js"></script>
+    <script src="js/ia-training.js"></script>
+    <script src="js/user-interface.js"></script>
+    <script src="js/estatisticas.js"></script>
+    <script src="js/api-client.js"></script>
+    <script src="js/init.js"></script>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="header-logo"><img src="img/logo.png" onerror="this.style.display='none'" alt="Logo"></div>
+            <div class="header-text">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
+                    <h1 style="margin: 0; background: linear-gradient(135deg, #8b5cf6, #06b6d4, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 22px;">
+                        🧠 Sistema Profissional de Loterias com IA Real
+                    </h1>
+                    <span class="version-badge">V.7.0 PRO</span>
+                </div>
+                <p class="header-subtitle" style="color: #ffffff; opacity: 1; font-weight: 500; margin-top: 8px;">
+                    10 loterias • IA que Aprende Padrões • Login Social • Sistema de Créditos • PIX
+                </p>
+            </div>
+            <div class="header-logo"><img src="img/logo.png" onerror="this.style.display='none'" alt="Logo"></div>
+        </div>
+    </div>
+
+    <div id="userPanel" class="user-panel">
+        <div id="loginArea">
+            <div class="login-buttons">
+                <button class="btn-google" onclick="window.loginGoogle()">🔐 Entrar com Google</button>
+                <button class="btn-facebook" onclick="window.loginFacebook()">🔐 Entrar com Facebook</button>
+            </div>
+            <p style="font-size: 11px; margin-top: 8px; color: var(--text-secondary);">Faça login para gerar jogos e salvar seu histórico</p>
+        </div>
+        <div id="userInfoArea" style="display: none;"></div>
+    </div>
+
+    <div class="container">
+        <div class="lottery-grid" id="lotteryGrid"></div>
+        <div id="conteudoLoteria"></div>
+    </div>
+</body>
+</html>
