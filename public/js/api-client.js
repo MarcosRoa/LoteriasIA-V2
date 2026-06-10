@@ -1,12 +1,9 @@
 // js/api-client.js - VERSÃO 2.0 (Núcleo do Frontend)
 // ============================================
+// api-client.js - V2.0
 const API_BASE = '/api';
 
 class ApiClient {
-    constructor() {
-        this.token = null;
-    }
-
     async getFirebaseToken() {
         if (typeof firebase !== 'undefined' && firebase.auth) {
             try {
@@ -99,27 +96,6 @@ class ApiClient {
             throw error;
         }
     }
-
-    async getHistory(limit = 50) {
-        const user = firebase.auth().currentUser;
-        if (!user) return [];
-        try {
-            const data = await this.request(`/user/history?uid=${user.uid}&limit=${limit}`);
-            return data.history || [];
-        } catch (error) {
-            console.error('Erro ao buscar histórico:', error);
-            return [];
-        }
-    }
-
-    async getHealth() {
-        try {
-            return await this.request('/health');
-        } catch (error) {
-            console.error('Health check failed:', error);
-            return { status: 'unhealthy' };
-        }
-    }
 }
 
 const apiClient = new ApiClient();
@@ -127,7 +103,6 @@ const apiClient = new ApiClient();
 window.apiClient = apiClient;
 window.getCredits = () => apiClient.getCredits();
 window.getProStatus = () => apiClient.getProStatus();
-window.getHistory = () => apiClient.getHistory();
 window.generateGames = (request) => apiClient.generateGames(request);
 window.createPayment = (amount) => apiClient.createPayment(amount);
 
