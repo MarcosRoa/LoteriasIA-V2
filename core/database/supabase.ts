@@ -1,3 +1,4 @@
+// core/database/supabase.ts
 import { createClient } from '@supabase/supabase-js';
 import { env } from '../config/env';
 
@@ -27,6 +28,7 @@ export type Transacao = {
     quantidade: number;
     saldo_apos: number;
     reference_id: string | null;
+    metadata?: any;  // ✅ ADICIONAR ESTA LINHA
     created_at: string;
 };
 
