@@ -7,13 +7,15 @@
     },
     "dependencies": {
         "@supabase/supabase-js": "^2.57.4",
-        "@vercel/node": "^3.2.23"
+        "@vercel/node": "^3.2.23",
+        "ws": "^8.18.0"
     },
     "devDependencies": {
         "@types/node": "^20.14.0",
+        "@types/ws": "^8.5.10",
         "typescript": "^5.4.5"
     },
     "engines": {
-        "node": "20.x"
+        "node": "22.x"
     }
 }
