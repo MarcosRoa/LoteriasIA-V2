@@ -1,13 +1,28 @@
 // js/auth.js - Autenticação Firebase (V2.0)
+// As chaves agora vêm de variáveis de ambiente (configuradas na Vercel)
 const firebaseConfig = {
-    apiKey: "AIzaSyCA_FoID7Ch8LkcwK5TbQSK23lU7BxQMuE",
-    authDomain: "loteriasia.firebaseapp.com",
-    projectId: "loteriasia",
-    storageBucket: "loteriasia.firebasestorage.app",
-    messagingSenderId: "124650527048",
-    appId: "1:124650527048:web:bc335922cb9e1586c3fb7d",
-    measurementId: "G-PQ8XZ46SSD"
+    apiKey: process.env.FIREBASE_API_KEY,
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.FIREBASE_APP_ID,
+    measurementId: process.env.FIREBASE_MEASUREMENT_ID
 };
+
+// Fallback para desenvolvimento (se as variáveis não estiverem configuradas)
+if (!firebaseConfig.apiKey) {
+    console.warn('⚠️ Firebase config não encontrada. Usando fallback local.');
+    // Fallback apenas para desenvolvimento
+    if (window.location.hostname === 'localhost') {
+        firebaseConfig.apiKey = "AIzaSyCA_FoID7Ch8LkcwK5TbQSK23lU7BxQMuE";
+        firebaseConfig.authDomain = "loteriasia.firebaseapp.com";
+        firebaseConfig.projectId = "loteriasia";
+        firebaseConfig.storageBucket = "loteriasia.firebasestorage.app";
+        firebaseConfig.messagingSenderId = "124650527048";
+        firebaseConfig.appId = "1:124650527048:web:bc335922cb9e1586c3fb7d";
+    }
+}
 
 if (typeof firebase !== 'undefined' && (!firebase.apps || firebase.apps.length === 0)) {
     firebase.initializeApp(firebaseConfig);
