@@ -1,19 +1,12 @@
-// core/database/supabase.ts
 import { createClient } from '@supabase/supabase-js';
 import { env } from '../config/env';
 
 export const supabase = createClient(
-    env.supabaseUrl!,
-    env.supabaseServiceKey!,
-    {
-        auth: {
-            autoRefreshToken: false,
-            persistSession: false
-        }
-    }
+    env.supabaseUrl,
+    env.supabaseServiceKey,
+    { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-// Tipos das tabelas
 export type Usuario = {
     id: string;
     uid: string;
@@ -34,7 +27,6 @@ export type Transacao = {
     quantidade: number;
     saldo_apos: number;
     reference_id: string | null;
-    metadata: any;
     created_at: string;
 };
 
