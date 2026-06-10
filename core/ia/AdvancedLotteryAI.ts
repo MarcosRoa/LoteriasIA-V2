@@ -1,4 +1,3 @@
-// core/ia/AdvancedLotteryAI.ts
 export interface LotteryConfig {
     nome: string;
     maxNumero: number;
@@ -27,21 +26,15 @@ export class AdvancedLotteryAI {
         this.frequencias = new Array(limite).fill(0);
         this.atrasos = new Array(limite).fill(this.dados.length);
         
-        // Calcular frequências
         for (const jogo of this.dados) {
             for (const num of jogo) {
-                if (num >= 0 && num < limite) {
-                    this.frequencias[num]++;
-                }
+                if (num >= 0 && num < limite) this.frequencias[num]++;
             }
         }
         
-        // Calcular atrasos
         for (let i = 0; i < this.dados.length; i++) {
             for (const num of this.dados[i]) {
-                if (num >= 0 && num < limite) {
-                    this.atrasos[num] = 0;
-                }
+                if (num >= 0 && num < limite) this.atrasos[num] = 0;
             }
             for (let n = 0; n < limite; n++) {
                 if (this.atrasos[n] !== undefined) this.atrasos[n]++;
@@ -54,14 +47,11 @@ export class AdvancedLotteryAI {
     }
 
     predizerIAEspecialista(quantidade: number, usarDispersao: boolean = true, windowDispersao: number = 15, seed: number = 0): number[] {
-        if (!this.treinado) {
-            return this.gerarAleatorio(quantidade);
-        }
+        if (!this.treinado) return this.gerarAleatorio(quantidade);
         
         const min = this.config.incluirZero ? 0 : 1;
         const limite = this.config.maxNumero + (this.config.incluirZero ? 1 : 0);
         
-        // Calcular scores (combinação de baixa frequência + alto atraso)
         const scores: { numero: number; score: number }[] = [];
         const maxFreq = Math.max(...this.frequencias.slice(min));
         const maxAtraso = Math.max(...this.atrasos.slice(min));
@@ -71,31 +61,23 @@ export class AdvancedLotteryAI {
             const atrasoScore = maxAtraso > 0 ? (this.atrasos[i] / maxAtraso) * 50 : 50;
             let score = freqScore + atrasoScore;
             
-            // Dispersão: penalizar números que saíram recentemente
             if (usarDispersao && this.dados.length >= windowDispersao) {
                 const recentes = new Set<number>();
                 for (let j = this.dados.length - windowDispersao; j < this.dados.length; j++) {
-                    for (const num of this.dados[j]) {
-                        recentes.add(num);
-                    }
+                    for (const num of this.dados[j]) recentes.add(num);
                 }
-                if (recentes.has(i)) {
-                    score *= 0.3;
-                }
+                if (recentes.has(i)) score *= 0.3;
             }
-            
             scores.push({ numero: i, score });
         }
         
         scores.sort((a, b) => b.score - a.score);
-        
         const result = new Set<number>();
         for (const item of scores) {
             if (result.size >= quantidade) break;
             result.add(item.numero);
         }
         
-        // Completar se necessário
         while (result.size < quantidade) {
             const num = Math.floor(Math.random() * (limite - min)) + min;
             result.add(num);
@@ -108,10 +90,8 @@ export class AdvancedLotteryAI {
         const result = new Set<number>();
         const min = this.config.incluirZero ? 0 : 1;
         const max = this.config.maxNumero;
-        
         while (result.size < quantidade) {
-            const num = Math.floor(Math.random() * (max - min + 1)) + min;
-            result.add(num);
+            result.add(Math.floor(Math.random() * (max - min + 1)) + min);
         }
         return Array.from(result).sort((a, b) => a - b);
     }
