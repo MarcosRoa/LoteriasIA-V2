@@ -5,7 +5,7 @@
             "headers": [
                 {
                     "key": "Access-Control-Allow-Origin",
-                    "value": "https://loterias-ia.vercel.app"
+                    "value": "https://loterias-ia-v2.vercel.app"
                 },
                 {
                     "key": "Access-Control-Allow-Credentials",
@@ -21,10 +21,5 @@
                 }
             ]
         }
-    ],
-    "functions": {
-        "api/**/*.ts": {
-            "runtime": "nodejs20.x"
-        }
-    }
+    ]
 }
