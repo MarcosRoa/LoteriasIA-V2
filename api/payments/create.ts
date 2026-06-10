@@ -1,27 +1,25 @@
 // api/payments/create.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { CreditsService } from '../../services/CreditsService';
+import { PaymentService } from '../../services/PaymentService';
+import { validateAuth } from '../../middleware/auth';
 
-const creditsService = new CreditsService();
+const paymentService = new PaymentService();
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ALLOWED_ORIGIN || '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     
     if (req.method === 'OPTIONS') return res.status(200).end();
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
     
-    const { userId, amount } = req.body;
+    const { isValid, uid, error } = validateAuth(req);
+    if (!isValid) return res.status(401).json({ error: error || 'Unauthorized' });
     
-    if (!userId || !amount) {
-        return res.status(400).json({ error: 'Missing required fields' });
-    }
+    const { amount } = req.body;
+    if (!amount) return res.status(400).json({ error: 'Missing amount' });
     
     try {
-        const newBalance = await creditsService.addCredits(userId, amount, `simulation_${Date.now()}`);
-        
+        const newBalance = await paymentService.simulatePayment(uid, amount);
         return res.status(200).json({
             success: true,
             mode: 'simulation',
