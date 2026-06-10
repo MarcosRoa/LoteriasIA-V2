@@ -1,0 +1,30 @@
+{
+    "headers": [
+        {
+            "source": "/api/(.*)",
+            "headers": [
+                {
+                    "key": "Access-Control-Allow-Origin",
+                    "value": "https://loterias-ia.vercel.app"
+                },
+                {
+                    "key": "Access-Control-Allow-Credentials",
+                    "value": "true"
+                },
+                {
+                    "key": "Access-Control-Allow-Methods",
+                    "value": "GET, POST, OPTIONS"
+                },
+                {
+                    "key": "Access-Control-Allow-Headers",
+                    "value": "Content-Type, Authorization, X-User-Id, X-User-Email, X-User-Name"
+                }
+            ]
+        }
+    ],
+    "functions": {
+        "api/**/*.ts": {
+            "runtime": "nodejs20.x"
+        }
+    }
+}
