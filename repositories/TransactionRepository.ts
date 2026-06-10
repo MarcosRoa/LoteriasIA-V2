@@ -11,12 +11,11 @@ export class TransactionRepository {
                 quantidade: transaction.quantidade,
                 saldo_apos: transaction.saldo_apos,
                 reference_id: transaction.reference_id,
-                metadata: transaction.metadata,
+                metadata: transaction.metadata || null,
                 created_at: new Date().toISOString()
             })
             .select('*')
             .single();
-        
         if (error) throw error;
         return data;
     }
@@ -27,7 +26,6 @@ export class TransactionRepository {
             .select('*')
             .eq('reference_id', referenceId)
             .maybeSingle();
-        
         if (error) throw error;
         return data;
     }
