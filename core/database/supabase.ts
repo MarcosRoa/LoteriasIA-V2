@@ -1,12 +1,21 @@
 // core/database/supabase.ts
 // core/database/supabase.ts
 import { createClient } from '@supabase/supabase-js';
+import ws from 'ws';
 import { env } from '../config/env';
 
 export const supabase = createClient(
     env.supabaseUrl,
     env.supabaseServiceKey,
-    { auth: { autoRefreshToken: false, persistSession: false } }
+    {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false
+        },
+        realtime: {
+            transport: ws
+        }
+    }
 );
 
 export type Usuario = {
