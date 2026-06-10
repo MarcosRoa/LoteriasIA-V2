@@ -10,7 +10,3 @@ export const env = {
     costPerGame: 3,
     proCostPerGame: 2
 };
-
-if (!env.supabaseUrl || !env.supabaseServiceKey) {
-    throw new Error('Missing Supabase environment variables');
-}
