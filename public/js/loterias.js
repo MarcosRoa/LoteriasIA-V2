@@ -411,7 +411,7 @@ async function selecionarLoteria(loteria) {
     // Carregar sob demanda
     dadosAtuais = [];
     try { 
-        const r = await fetch(`csv/${loteria}.csv`); 
+        const r = await fetch(`/csv/${loteria}.csv`);
         if (r.ok) processarCSV(loteria, await r.text(), `csv/${loteria}.csv`); 
         else console.log(`Arquivo csv/${loteria}.csv não encontrado`);
     } catch(e) { console.log(`Erro ao carregar csv/${loteria}.csv:`, e); }
