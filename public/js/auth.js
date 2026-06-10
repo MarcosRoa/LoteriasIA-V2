@@ -1,28 +1,15 @@
 // js/auth.js - Autenticação Firebase (V2.0)
 // As chaves agora vêm de variáveis de ambiente (configuradas na Vercel)
+// js/auth.js - Autenticação Firebase (V2.0)
 const firebaseConfig = {
-    apiKey: process.env.FIREBASE_API_KEY,
-    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.FIREBASE_APP_ID,
-    measurementId: process.env.FIREBASE_MEASUREMENT_ID
+    apiKey: "AIzaSyCA_FoID7Ch8LkcwK5TbQSK23lU7BxQMuE",
+    authDomain: "loteriasia.firebaseapp.com",
+    projectId: "loteriasia",
+    storageBucket: "loteriasia.firebasestorage.app",
+    messagingSenderId: "124650527048",
+    appId: "1:124650527048:web:bc335922cb9e1586c3fb7d",
+    measurementId: "G-PQ8XZ46SSD"
 };
-
-// Fallback para desenvolvimento (se as variáveis não estiverem configuradas)
-if (!firebaseConfig.apiKey) {
-    console.warn('⚠️ Firebase config não encontrada. Usando fallback local.');
-    // Fallback apenas para desenvolvimento
-    if (window.location.hostname === 'localhost') {
-        firebaseConfig.apiKey = "AIzaSyCA_FoID7Ch8LkcwK5TbQSK23lU7BxQMuE";
-        firebaseConfig.authDomain = "loteriasia.firebaseapp.com";
-        firebaseConfig.projectId = "loteriasia";
-        firebaseConfig.storageBucket = "loteriasia.firebasestorage.app";
-        firebaseConfig.messagingSenderId = "124650527048";
-        firebaseConfig.appId = "1:124650527048:web:bc335922cb9e1586c3fb7d";
-    }
-}
 
 if (typeof firebase !== 'undefined' && (!firebase.apps || firebase.apps.length === 0)) {
     firebase.initializeApp(firebaseConfig);
@@ -47,6 +34,7 @@ async function loginGoogle() {
         const result = await auth.signInWithPopup(provider);
         console.log('✅ Login Google:', result.user?.email);
         if (typeof window.processarLogin === 'function') await window.processarLogin(result.user);
+        if (typeof window.fecharModalLogin === 'function') window.fecharModalLogin();
     } catch (e) {
         if (e.code !== 'auth/popup-closed-by-user') console.error('Erro login Google:', e);
     } finally { loginInProgress = false; }
@@ -64,6 +52,7 @@ async function loginFacebook() {
         const result = await auth.signInWithPopup(provider);
         console.log('✅ Login Facebook:', result.user?.email);
         if (typeof window.processarLogin === 'function') await window.processarLogin(result.user);
+        if (typeof window.fecharModalLogin === 'function') window.fecharModalLogin();
     } catch (e) {
         if (e.code !== 'auth/popup-closed-by-user') console.error('Erro login Facebook:', e);
     } finally { loginInProgress = false; }
@@ -75,6 +64,8 @@ async function logout() {
         window.usuarioAtual = null;
         window.creditosUsuario = 0;
         window.isUserPro = false;
+        window.proExpiresAt = null;
+        window.proDiasRestantes = 0;
         if (typeof window.atualizarInterfaceUsuario === 'function') window.atualizarInterfaceUsuario();
         if (typeof window.mostrarToast === 'function') window.mostrarToast('Logout realizado!', 'success');
         setTimeout(() => window.location.reload(), 500);
