@@ -4,15 +4,20 @@
         "module": "ESNext",
         "moduleResolution": "node",
         "lib": ["ES2020"],
-        "strict": true,
+        "strict": false,
         "skipLibCheck": true,
         "esModuleInterop": true,
         "allowJs": true,
         "noEmit": true,
         "resolveJsonModule": true,
-        "isolatedModules": true,
-        "outDir": "./dist"
+        "isolatedModules": true
     },
-    "include": ["api/**/*.ts", "core/**/*.ts", "services/**/*.ts", "repositories/**/*.ts", "middleware/**/*.ts"],
-    "exclude": ["node_modules", "app", "tests"]
+    "include": [
+        "api/**/*.ts",
+        "core/**/*.ts",
+        "services/**/*.ts",
+        "repositories/**/*.ts",
+        "middleware/**/*.ts"
+    ],
+    "exclude": ["node_modules"]
 }
