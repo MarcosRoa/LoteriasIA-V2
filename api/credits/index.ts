@@ -18,14 +18,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!uid) return res.status(400).json({ error: 'UID é obrigatório' });
     
     try {
-        // Buscar usuário
         let { data: user, error } = await supabase
             .from('usuarios')
             .select('creditos, is_pro, email')
             .eq('uid', uid)
             .maybeSingle();
         
-        // Se não existir, criar
         if (!user && !error) {
             const email = (req.headers['x-user-email'] as string) || `${uid}@temp.com`;
             const nome = (req.headers['x-user-name'] as string) || email.split('@')[0];
@@ -48,7 +46,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             throw error;
         }
         
-        // Verificar PRO fixo
         const PRO_FIXED_EMAIL = 'mresquadriasaluminio@gmail.com';
         let credits = user.creditos;
         let isPro = user.is_pro;
