@@ -1,10 +1,14 @@
 // api/pro/status.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import ws from 'ws';
 
 const supabase = createClient(
     process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+        realtime: { transport: ws }
+    }
 );
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -43,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true, isPro: user.is_pro || false, daysLeft });
         
     } catch (error: any) {
-        console.error('Erro em /api/pro/status:', error);
+        console.error('Erro:', error);
         return res.status(500).json({ error: error.message });
     }
 }
