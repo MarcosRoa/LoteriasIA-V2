@@ -1,33 +1,49 @@
 // api/payments/create.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { PaymentService } from '../../services/PaymentService';
-import { validateAuth } from '../../middleware/auth';
+import { createClient } from '@supabase/supabase-js';
 
-const paymentService = new PaymentService();
+const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ALLOWED_ORIGIN || '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Origin', '*');
     
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
     
-    const { isValid, uid, error } = validateAuth(req);
-    if (!isValid) return res.status(401).json({ error: error || 'Unauthorized' });
+    const { userId, amount } = req.body;
     
-    const { amount } = req.body;
-    if (!amount) return res.status(400).json({ error: 'Missing amount' });
+    if (!userId || !amount) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
     
     try {
-        const newBalance = await paymentService.simulatePayment(uid, amount);
+        const { data: user, error: userError } = await supabase
+            .from('usuarios')
+            .select('creditos')
+            .eq('uid', userId)
+            .single();
+        
+        if (userError) throw userError;
+        
+        const novoSaldo = (user.creditos || 0) + amount;
+        
+        await supabase
+            .from('usuarios')
+            .update({ creditos: novoSaldo })
+            .eq('uid', userId);
+        
         return res.status(200).json({
             success: true,
             mode: 'simulation',
-            newBalance,
+            newBalance: novoSaldo,
             message: `R$ ${amount} adicionados com sucesso!`
         });
-    } catch (error) {
-        console.error('Erro em /api/payments/create:', error);
-        return res.status(500).json({ error: 'Internal server error' });
+        
+    } catch (error: any) {
+        console.error('Erro:', error);
+        return res.status(500).json({ error: error.message });
     }
 }
