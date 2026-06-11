@@ -2,7 +2,7 @@
 // api/credits/index.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import ws from 'ws';
+//import ws from 'ws';
 
 const supabase = createClient(
     process.env.SUPABASE_URL!,
