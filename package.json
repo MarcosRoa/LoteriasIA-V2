@@ -1,6 +1,7 @@
 {
     "name": "loterias-ia-v2",
     "version": "2.0.0",
+    "type": "module",
     "scripts": {
         "build": "echo 'Build completed'"
     },
