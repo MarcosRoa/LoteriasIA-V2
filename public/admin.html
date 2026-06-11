@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Loterias IA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .login-box {
+            max-width: 400px;
+            margin: 100px auto;
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: 20px;
+            border: 2px solid var(--border);
+            text-align: center;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+        .login-box button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+            border: none;
+            border-radius: 30px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .data-section {
+            margin-top: 30px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid var(--border);
+            overflow-x: auto;
+        }
+        .data-section h3 {
+            color: #f59e0b;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background: rgba(56, 189, 248, 0.2);
+            color: #38bdf8;
+            font-weight: 600;
+        }
+        tr:hover {
+            background: rgba(56, 189, 248, 0.05);
+        }
+        .btn-copiar {
+            background: #22c55e;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .btn-exportar {
+            background: #8b5cf6;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .status-login {
+            text-align: center;
+            padding: 20px;
+            color: #22c55e;
+        }
+        .logout-btn {
+            background: #ef4444;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .header-admin {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .error-msg {
+            color: #ef4444;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="header-logo"><img src="BrasãoRoa Imagem.png" onerror="this.style.display='none'" alt="Logo"></div>
+            <div class="header-text">
+                <h1>🧠 Loterias V.6.1 <span class="version-badge">ADMIN</span></h1>
+                <p class="header-subtitle">Painel administrativo - Dados do sistema</p>
+            </div>
+            <div class="header-logo"><img src="BrasãoRoa Imagem.png" onerror="this.style.display='none'" alt="Logo"></div>
+        </div>
+    </div>
+
+    <div class="admin-container" id="adminContainer">
+        <div id="loginArea">
+            <div class="login-box">
+                <h2>🔐 Acesso Administrativo</h2>
+                <input type="email" id="adminEmail" placeholder="E-mail">
+                <input type="password" id="adminSenha1" placeholder="Senha">
+                <input type="password" id="adminSenha2" placeholder="Confirmar Senha">
+                <button onclick="fazerLoginAdmin()">ENTRAR</button>
+                <div id="loginError" class="error-msg"></div>
+            </div>
+        </div>
+        
+        <div id="dataArea" style="display: none;">
+            <div class="header-admin">
+                <h2>📊 Dados do Sistema</h2>
+                <button class="logout-btn" onclick="fazerLogoutAdmin()">🚪 Sair</button>
+            </div>
+            <div id="dadosContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CREDENCIAIS ADMIN
+        // ============================================
+        const ADMIN_EMAIL = 'piamarcos@yahoo.com.br';
+        const ADMIN_SENHA = 'M@rcosroa123';
+        const ADMIN_CONFIRMACAO = 'Elois@Roa123';
+        
+        // ============================================
+        // SUPABASE
+        // ============================================
+        const SUPABASE_URL = 'https://fuiaikymhsjdgdhojjhq.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1aWFpa3ltaHNqZGdkaG9qamhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwODI1NTEsImV4cCI6MjA5MzY1ODU1MX0.X9Qa1eJ6ut-QdKEZdjX2Ttm2STgJqOkEdNyohDpH3bk';
+        const supabaseAdmin = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let adminLogado = false;
+        
+        // ============================================
+        // LOGIN LOCAL
+        // ============================================
+        function fazerLoginAdmin() {
+            const email = document.getElementById('adminEmail').value;
+            const senha1 = document.getElementById('adminSenha1').value;
+            const senha2 = document.getElementById('adminSenha2').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            errorDiv.innerHTML = '';
+            
+            if (email !== ADMIN_EMAIL) {
+                errorDiv.innerHTML = '❌ E-mail incorreto!';
+                return;
+            }
+            if (senha1 !== ADMIN_SENHA) {
+                errorDiv.innerHTML = '❌ Senha incorreta!';
+                return;
+            }
+            if (senha2 !== ADMIN_CONFIRMACAO) {
+                errorDiv.innerHTML = '❌ Senha de confirmação incorreta!';
+                return;
+            }
+            
+            adminLogado = true;
+            document.getElementById('loginArea').style.display = 'none';
+            document.getElementById('dataArea').style.display = 'block';
+            carregarDadosAdmin();
+        }
+        
+        function fazerLogoutAdmin() {
+            adminLogado = false;
+            document.getElementById('adminEmail').value = '';
+            document.getElementById('adminSenha1').value = '';
+            document.getElementById('adminSenha2').value = '';
+            document.getElementById('loginError').innerHTML = '';
+            document.getElementById('loginArea').style.display = 'block';
+            document.getElementById('dataArea').style.display = 'none';
+        }
+        
+        // ============================================
+        // CARREGAR DADOS
+        // ============================================
+        async function carregarDadosAdmin() {
+            const container = document.getElementById('dadosContainer');
+            container.innerHTML = '<div class="status-login">📊 Carregando dados...</div>';
+            
+            try {
+                const { data: usuarios, error: err1 } = await supabaseAdmin
+                    .from('usuarios')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                if (err1) throw err1;
+                
+                const { data: historico, error: err2 } = await supabaseAdmin
+                    .from('historico_palpites')
+                    .select('*')
+                    .order('data', { ascending: false })
+                    .limit(100);
+                if (err2) throw err2;
+                
+                const { data: transacoes, error: err3 } = await supabaseAdmin
+                    .from('transacoes')
+                    .select('*')
+                    .order('data', { ascending: false })
+                    .limit(100);
+                if (err3) throw err3;
+                
+                renderizarDadosAdmin(usuarios || [], historico || [], transacoes || []);
+                
+            } catch (error) {
+                console.error('Erro:', error);
+                container.innerHTML = `<div class="status-login" style="color: #ef4444;">❌ Erro: ${error.message}</div>`;
+            }
+        }
+        
+        // ============================================
+        // RENDERIZAR (CORRIGIDO - COLUNAS ALINHADAS)
+        // ============================================
+        function renderizarDadosAdmin(usuarios, historico, transacoes) {
+            const container = document.getElementById('dadosContainer');
+            
+            const copyTable = (tableId) => {
+                const table = document.getElementById(tableId);
+                if (!table) return;
+                const range = document.createRange();
+                range.selectNode(table);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                document.execCommand('copy');
+                window.getSelection().removeAllRanges();
+                alert('✅ Tabela copiada!');
+            };
+            
+            const exportCSV = (data, filename) => {
+                if (!data || data.length === 0) {
+                    alert('Nenhum dado para exportar');
+                    return;
+                }
+                const headers = Object.keys(data[0]);
+                const csvRows = [headers.join(',')];
+                for (const row of data) {
+                    const values = headers.map(header => {
+                        let val = row[header];
+                        if (val === null) val = '';
+                        if (typeof val === 'object') val = JSON.stringify(val);
+                        return `"${String(val).replace(/"/g, '""')}"`;
+                    });
+                    csvRows.push(values.join(','));
+                }
+                const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${filename}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+            
+            // CORREÇÃO: colunas na ordem correta
+            const html = `
+                <!-- USUÁRIOS -->
+                <div class="data-section">
+                    <h3>👥 USUÁRIOS (${usuarios.length} registros)
+                        <div>
+                            <button class="btn-copiar" onclick="window.copyTableAdmin('tabelaUsuarios')">📋 Copiar</button>
+                            <button class="btn-exportar" onclick="window.exportCSVAdmin(${JSON.stringify(usuarios).replace(/"/g, '&quot;')}, 'usuarios')">📎 Exportar CSV</button>
+                        </div>
+                    </h3>
+                    <div style="overflow-x: auto;">
+                        <table id="tabelaUsuarios">
+                            <thead><tr><th>ID</th><th>UID</th><th>NOME</th><th>EMAIL</th><th>CRÉDITOS</th><th>PRO</th><th>CRIADO EM</th><th>ATUALIZADO EM</th></tr></thead>
+                            <tbody>
+                                ${usuarios.map(u => `<tr>
+                                    <td>${u.id?.substring(0,8)||'-'}</td>
+                                    <td>${u.uid?.substring(0,15)||'-'}...</td>
+                                    <td><strong>${u.nome||'-'}</strong></td>
+                                    <td>${u.email||'-'}</td>
+                                    <td style="color:#f59e0b;font-weight:bold;">R$ ${u.creditos||0}</td>
+                                    <td style="color:${u.is_pro?'#22c55e':'#ef4444'};font-weight:bold;">${u.is_pro?'✅ SIM':'❌ NÃO'}</td>
+                                    <td>${u.created_at?new Date(u.created_at).toLocaleString():'-'}</td>
+                                    <td>${u.updated_at?new Date(u.updated_at).toLocaleString():'-'}</td>
+                                </tr>`).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- HISTÓRICO -->
+                <div class="data-section">
+                    <h3>📜 HISTÓRICO (${historico.length} registros)
+                        <div>
+                            <button class="btn-copiar" onclick="window.copyTableAdmin('tabelaHistorico')">📋 Copiar</button>
+                            <button class="btn-exportar" onclick="window.exportCSVAdmin(${JSON.stringify(historico).replace(/"/g, '&quot;')}, 'historico')">📎 Exportar CSV</button>
+                        </div>
+                    </h3>
+                    <div style="overflow-x: auto;">
+                        <table id="tabelaHistorico">
+                            <thead><tr><th>ID</th><th>USUÁRIO</th><th>LOTERIA</th><th>NÚMEROS</th><th>DATA</th><th>QTD NÚMEROS</th><th>TIMES</th></tr></thead>
+                            <tbody>
+                                ${historico.map(h => `<tr>
+                                    <td>${h.id?.substring(0,8)||'-'}</td>
+                                    <td>${h.usuario_uid?.substring(0,15)||'-'}...</td>
+                                    <td>${h.loteria||'-'}</td>
+                                    <td>${JSON.stringify(h.jogos)?.substring(0,50)||'-'}...</td>
+                                    <td>${h.data?new Date(h.data).toLocaleString():'-'}</td>
+                                    <td>${h.quantidade_numeros||'-'}</td>
+                                    <td>${h.times?JSON.stringify(h.times):'-'}</td>
+                                </tr>`).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- TRANSAÇÕES -->
+                <div class="data-section">
+                    <h3>💰 TRANSAÇÕES (${transacoes.length} registros)
+                        <div>
+                            <button class="btn-copiar" onclick="window.copyTableAdmin('tabelaTransacoes')">📋 Copiar</button>
+                            <button class="btn-exportar" onclick="window.exportCSVAdmin(${JSON.stringify(transacoes).replace(/"/g, '&quot;')}, 'transacoes')">📎 Exportar CSV</button>
+                        </div>
+                    </h3>
+                    <div style="overflow-x: auto;">
+                        <table id="tabelaTransacoes">
+                            <thead><tr><th>ID</th><th>USUÁRIO</th><th>TIPO</th><th>QUANTIDADE</th><th>SALDO APÓS</th><th>DATA</th></tr></thead>
+                            <tbody>
+                                ${transacoes.map(t => `<tr>
+                                    <td>${t.id?.substring(0,8)||'-'}</td>
+                                    <td>${t.usuario_uid?.substring(0,15)||'-'}...</td>
+                                    <td style="color:${t.tipo==='compra'?'#22c55e':t.tipo==='uso'?'#ef4444':'#f59e0b'}">${t.tipo||'-'}</td>
+                                    <td>R$ ${t.quantidade||0}</td>
+                                    <td>R$ ${t.saldo_apos||0}</td>
+                                    <td>${t.data?new Date(t.data).toLocaleString():'-'}</td>
+                                </tr>`).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+            window.copyTableAdmin = copyTable;
+            window.exportCSVAdmin = exportCSV;
+        }
+    </script>
+</body>
+</html>

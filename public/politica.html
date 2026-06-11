@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sobre Nós - Loterias IA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .about-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .about-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 30px;
+            border: 2px solid var(--border);
+        }
+        .about-card h1 {
+            background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            font-size: 32px;
+        }
+        .about-card h2 {
+            color: #f59e0b;
+            margin: 25px 0 15px 0;
+            font-size: 20px;
+        }
+        .about-card p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .about-card ul {
+            color: var(--text-secondary);
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        .about-card li {
+            margin-bottom: 8px;
+        }
+        .version-info {
+            background: linear-gradient(135deg, #8b5cf620, #06b6d420);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .version-info strong {
+            color: #8b5cf6;
+            font-size: 24px;
+        }
+        .btn-voltar {
+            background: #64748b;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 30px;
+            transition: all 0.2s;
+        }
+        .btn-voltar:hover {
+            transform: scale(1.02);
+            background: #475569;
+        }
+        .footer-buttons {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .feature-item {
+            background: var(--bg-primary);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .feature-item span {
+            font-size: 28px;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .feature-item h4 {
+            color: #38bdf8;
+            margin-bottom: 5px;
+        }
+        .feature-item p {
+            font-size: 12px;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="header-logo"><img src="BrasãoRoa Imagem.png" onerror="this.style.display='none'" alt="Logo"></div>
+            <div class="header-text">
+                <h1>🧠 Loterias V.6.1 <span class="version-badge">SOBRE NÓS</span></h1>
+                <p class="header-subtitle">Conheça nossa história e tecnologia</p>
+            </div>
+            <div class="header-logo"><img src="BrasãoRoa Imagem.png" onerror="this.style.display='none'" alt="Logo"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="about-container">
+            <div class="about-card">
+                <h1>🧠 Sobre o Loterias IA</h1>
+                
+                <div class="version-info">
+                    <strong>Versão 6.1 PRO</strong>
+                    <p style="margin-top: 10px;">Sistema Profissional de Loterias com Inteligência Artificial</p>
+                </div>
+
+                <h2>📜 Nossa História</h2>
+                <p>O Loterias IA nasceu da paixão por tecnologia e da necessidade de criar uma ferramenta inteligente para auxiliar entusiastas de loterias. Desenvolvido com as mais modernas tecnologias de IA, nosso sistema aprende padrões históricos e oferece palpites baseados em análise de dados reais.</p>
+
+                <h2>🚀 O que Oferecemos</h2>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <span>🎯</span>
+                        <h4>10 Loterias</h4>
+                        <p>Mega-Sena, Quina, Lotofácil, Lotomania, Dupla Sena, Timemania, +Milionária, Loteca, Dia de Sorte e Super Sete</p>
+                    </div>
+                    <div class="feature-item">
+                        <span>🧠</span>
+                        <h4>IA Real</h4>
+                        <p>Algoritmos que aprendem padrões e evoluem com novos concursos</p>
+                    </div>
+                    <div class="feature-item">
+                        <span>📊</span>
+                        <h4>Backtesting</h4>
+                        <p>Avalie a precisão da IA comparada com números aleatórios</p>
+                    </div>
+                    <div class="feature-item">
+                        <span>⭐</span>
+                        <h4>Plano PRO</h4>
+                        <p>Recursos exclusivos como exportação de PDF e configurações avançadas</p>
+                    </div>
+                </div>
+
+                <h2>🔧 Tecnologias Utilizadas</h2>
+                <ul>
+                    <li><strong>Frontend:</strong> HTML5, CSS3, JavaScript (ES6+)</li>
+                    <li><strong>IA:</strong> Algoritmos proprietários de análise estatística e predição</li>
+                    <li><strong>Backend:</strong> Supabase (banco de dados) e Firebase (autenticação)</li>
+                    <li><strong>Bibliotecas:</strong> TensorFlow.js, Chart.js, jsPDF</li>
+                </ul>
+
+                <h2>💡 Missão</h2>
+                <p>Democratizar o acesso à análise inteligente de loterias, oferecendo uma ferramenta profissional e acessível para todos os entusiastas.</p>
+
+                <h2>👥 Equipe</h2>
+                <p>Desenvolvido por uma equipe apaixonada por tecnologia e inovação, comprometida em entregar a melhor experiência em análise de loterias.</p>
+            </div>
+            <div class="footer-buttons">
+                <button class="btn-voltar" onclick="window.location.href='index.html'">← Voltar ao Sistema</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
