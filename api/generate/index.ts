@@ -1,35 +1,106 @@
 // api/generate/index.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GenerateService } from '../../services/GenerateService';
-import { validateAuth } from '../../middleware/auth';
-import { rateLimit } from '../../middleware/rateLimit';
+import { createClient } from '@supabase/supabase-js';
 
-const generateService = new GenerateService();
+const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+const LOTTERY_CONFIGS: Record<string, { maxNumero: number; numerosPadrao: number }> = {
+    megasena: { maxNumero: 60, numerosPadrao: 6 },
+    quina: { maxNumero: 80, numerosPadrao: 5 },
+    lotofacil: { maxNumero: 25, numerosPadrao: 15 },
+    lotomania: { maxNumero: 99, numerosPadrao: 50 },
+    duplasena: { maxNumero: 50, numerosPadrao: 6 },
+    timemania: { maxNumero: 80, numerosPadrao: 10 },
+    milionaria: { maxNumero: 50, numerosPadrao: 6 },
+    loteca: { maxNumero: 3, numerosPadrao: 14 },
+    diadesorte: { maxNumero: 31, numerosPadrao: 7 },
+    supersete: { maxNumero: 9, numerosPadrao: 7 }
+};
+
+function gerarJogo(config: { maxNumero: number }, quantidade: number): number[] {
+    const numeros = new Set<number>();
+    const min = 1;
+    const max = config.maxNumero;
+    
+    while (numeros.size < quantidade) {
+        const num = Math.floor(Math.random() * (max - min + 1)) + min;
+        numeros.add(num);
+    }
+    return Array.from(numeros).sort((a, b) => a - b);
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ALLOWED_ORIGIN || '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Origin', '*');
     
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
     
-    const { isValid, uid, error } = validateAuth(req);
-    if (!isValid) return res.status(401).json({ error: error || 'Unauthorized' });
+    const { uid, lottery, quantity, extraNumbers } = req.body;
     
-    if (!rateLimit(`generate_${uid}`, 10)) {
-        return res.status(429).json({ error: 'Too many requests. Maximum 10 per minute.' });
+    if (!uid || !lottery || !quantity) {
+        return res.status(400).json({ error: 'Missing required fields' });
     }
     
-    const { lottery, quantity, extraNumbers, mode } = req.body;
-    if (!lottery || !quantity) return res.status(400).json({ error: 'Missing required fields' });
-    if (quantity < 1 || quantity > 20) return res.status(400).json({ error: 'Quantity must be between 1 and 20' });
+    const config = LOTTERY_CONFIGS[lottery];
+    if (!config) {
+        return res.status(400).json({ error: 'Invalid lottery' });
+    }
     
     try {
-        const result = await generateService.generateGames(uid, lottery, quantity, extraNumbers, mode);
-        return res.status(200).json({ success: true, ...result });
-    } catch (error) {
-        console.error('Erro em /api/generate:', error);
-        if (error.message === 'Saldo insuficiente') return res.status(402).json({ error: error.message });
-        return res.status(500).json({ error: 'Internal server error' });
+        const { data: user, error: userError } = await supabase
+            .from('usuarios')
+            .select('creditos, is_pro, email')
+            .eq('uid', uid)
+            .single();
+        
+        if (userError) throw userError;
+        
+        const numerosPorJogo = extraNumbers || config.numerosPadrao;
+        const isProFixed = user.email === 'mresquadriasaluminio@gmail.com';
+        const custoPorJogo = isProFixed ? 0 : (user.is_pro ? 2 : 3);
+        const custoTotal = quantity * custoPorJogo;
+        
+        if (custoTotal > 0 && user.creditos < custoTotal) {
+            return res.status(402).json({ error: 'Saldo insuficiente' });
+        }
+        
+        const jogos = [];
+        for (let i = 0; i < quantity; i++) {
+            jogos.push(gerarJogo(config, numerosPorJogo));
+        }
+        
+        let novoSaldo = user.creditos;
+        if (custoTotal > 0) {
+            novoSaldo = user.creditos - custoTotal;
+            await supabase
+                .from('usuarios')
+                .update({ creditos: novoSaldo })
+                .eq('uid', uid);
+        }
+        
+        // Salvar no histórico
+        await supabase
+            .from('historico_palpites')
+            .insert({
+                usuario_uid: uid,
+                loteria: lottery,
+                jogos: jogos,
+                quantidade_numeros: numerosPorJogo,
+                data: new Date().toISOString()
+            });
+        
+        return res.status(200).json({
+            success: true,
+            games: jogos,
+            creditsSpent: custoTotal,
+            creditsRemaining: novoSaldo
+        });
+        
+    } catch (error: any) {
+        console.error('Erro:', error);
+        return res.status(500).json({ error: error.message });
     }
 }
