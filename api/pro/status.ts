@@ -1,7 +1,15 @@
 // api/pro/status.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { supabase } from '../../core/database/supabase';
-import { env } from '../../core/config/env';
+import { createClient } from '@supabase/supabase-js';
+import ws from 'ws';
+
+const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+        realtime: { transport: ws }
+    }
+);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -23,7 +31,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ success: true, isPro: false, daysLeft: 0 });
         }
         
-        if (user.email === env.proFixedEmail) {
+        const PRO_FIXED_EMAIL = 'mresquadriasaluminio@gmail.com';
+        
+        if (user.email === PRO_FIXED_EMAIL) {
             return res.status(200).json({ success: true, isPro: true, daysLeft: 365 });
         }
         
@@ -37,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ success: true, isPro: user.is_pro || false, daysLeft });
         
     } catch (error: any) {
-        console.error('Erro em /api/pro/status:', error);
+        console.error('Erro:', error);
         return res.status(500).json({ error: error.message });
     }
 }
