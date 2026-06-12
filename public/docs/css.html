@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS - Loterias IA v7.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .docs-container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        .docs-card { background: var(--bg-card); border-radius: 20px; padding: 30px; border: 2px solid var(--border); margin-bottom: 30px; }
+        .docs-card h1 { background: linear-gradient(135deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .docs-card h2 { color: #f59e0b; margin: 25px 0 15px 0; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        .css-section { background: var(--bg-primary); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+        .css-section h4 { color: #38bdf8; margin-bottom: 10px; }
+        .btn-voltar { background: #64748b; color: white; border: none; padding: 10px 25px; border-radius: 30px; cursor: pointer; font-weight: 600; margin-top: 20px; }
+        .grid-css { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .color-demo { width: 30px; height: 30px; border-radius: 8px; display: inline-block; margin-right: 10px; vertical-align: middle; }
+        .header-logo img { width: 60px; height: auto; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="header-logo">
+                <img src="/img/brasao.png" onerror="this.style.display='none'" alt="Logo" style="width: 60px; height: auto;">
+            </div>
+            <div class="header-text">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
+                    <h1 style="margin: 0; background: linear-gradient(135deg, #8b5cf6, #06b6d4, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 22px;">
+                        🧠 Sistema Profissional de Loterias com IA Real
+                    </h1>
+                    <span class="version-badge">V.7.0 PRO</span>
+                </div>
+                <p class="header-subtitle">10 loterias • IA que Aprende Padrões • Login Social • Sistema de Créditos • PIX</p>
+            </div>
+            <div class="header-logo">
+                <img src="/img/brasao.png" onerror="this.style.display='none'" alt="Logo" style="width: 60px; height: auto;">
+            </div>
+        </div>
+    </div>
+
+    <div class="docs-container">
+        <div class="docs-card">
+            <h1>🎨 CSS - Estilos Globais</h1>
+            <p>Arquivo: <code>css/style.css</code> (versão v7.0)</p>
+
+            <h2>📦 Blocos do CSS</h2>
+            <div class="grid-css">
+                <div class="css-section"><h4>🌓 VARIÁVEIS GLOBAIS</h4><p>Cores principais (tema escuro/claro)</p><code>--bg-primary, --bg-card, --text-primary, --border, --success, --warning, --error</code></div>
+                <div class="css-section"><h4>✨ ANIMAÇÕES</h4><p>pulse, popIn, slideInRight, fadeIn, gradientShift</p></div>
+                <div class="css-section"><h4>🧠 TREINAMENTO IA</h4><p>.ia-training-animation - Gradiente animado</p></div>
+                <div class="css-section"><h4>🏷️ BADGES</h4><p>.version-badge, .pro-badge - Versão e PRO</p></div>
+                <div class="css-section"><h4>📱 RESPONSIVIDADE</h4><p>@media (max-width: 768px) - Mobile</p></div>
+                <div class="css-section"><h4>🎲 BOLAS DOS NÚMEROS</h4><p>.bola - Círculos coloridos com animação popIn</p></div>
+                <div class="css-section"><h4>📊 CONFIGURAÇÕES</h4><p>.config-grid, .quantidade-container, .modo-select</p></div>
+                <div class="css-section"><h4>🔘 BOTÕES</h4><p>.btn-primary, .btn-treinar, .btn-backtest, .btn-google, .btn-facebook</p></div>
+                <div class="css-section"><h4>📋 FILTROS</h4><p>.filtros, .filtro-btn, .filtro-btn.ativo</p></div>
+                <div class="css-section"><h4>💬 TOAST</h4><p>.toast-custom - Notificações flutuantes</p></div>
+            </div>
+
+            <h2>🎨 Cores das Loterias</h2>
+            <table style="width:100%"><thead><tr><th>Loteria</th><th>Cor</th><th>Exemplo</th></tr></thead><tbody>
+                <tr><td>Mega-Sena</td><td>#8b5cf6</td><td><div class="color-demo" style="background:#8b5cf6;"></div> Roxo</td></tr>
+                <tr><td>Quina</td><td>#f59e0b</td><td><div class="color-demo" style="background:#f59e0b;"></div> Laranja</td></tr>
+                <tr><td>Lotofácil</td><td>#10b981</td><td><div class="color-demo" style="background:#10b981;"></div> Verde</td></tr>
+                <tr><td>Lotomania</td><td>#ef4444</td><td><div class="color-demo" style="background:#ef4444;"></div> Vermelho</td></tr>
+                <tr><td>Dupla Sena</td><td>#06b6d4</td><td><div class="color-demo" style="background:#06b6d4;"></div> Ciano</td></tr>
+                <tr><td>Timemania</td><td>#ec4899</td><td><div class="color-demo" style="background:#ec4899;"></div> Rosa</td></tr>
+                <tr><td>+Milionária</td><td>#a855f7</td><td><div class="color-demo" style="background:#a855f7;"></div> Roxo claro</td></tr>
+                <tr><td>Loteca</td><td>#84cc16</td><td><div class="color-demo" style="background:#84cc16;"></div> Verde limão</td></tr>
+                <tr><td>Dia de Sorte</td><td>#f97316</td><td><div class="color-demo" style="background:#f97316;"></div> Laranja escuro</td></tr>
+                <tr><td>Super Sete</td><td>#fbbf24</td><td><div class="color-demo" style="background:#fbbf24;"></div> Amarelo</td></tr>
+            </tbody></table>
+        </div>
+
+        <div style="text-align: center;">
+            <button class="btn-voltar" onclick="window.location.href='index.html'">← Voltar à Documentação</button>
+            <button class="btn-voltar" onclick="window.location.href='/'">← Voltar ao Sistema</button>
+        </div>
+    </div>
+</body>
+</html>
