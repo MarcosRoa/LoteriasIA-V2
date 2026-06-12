@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Mobile - Loterias IA v7.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .docs-container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        .docs-card { background: var(--bg-card); border-radius: 20px; padding: 30px; border: 2px solid var(--border); margin-bottom: 30px; }
+        .docs-card h1 { background: linear-gradient(135deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .docs-card h2 { color: #f59e0b; margin: 25px 0 15px 0; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        .module-box { background: var(--bg-primary); border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 4px solid #8b5cf6; }
+        .module-name { font-size: 18px; font-weight: 600; color: #8b5cf6; margin-bottom: 8px; }
+        .btn-voltar { background: #64748b; color: white; border: none; padding: 10px 25px; border-radius: 30px; cursor: pointer; font-weight: 600; margin-top: 20px; }
+        .header-logo img { width: 60px; height: auto; }
+        pre { background: var(--bg-primary); padding: 15px; border-radius: 12px; overflow-x: auto; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="header-logo">
+                <img src="/img/brasao.png" onerror="this.style.display='none'" alt="Logo">
+            </div>
+            <div class="header-text">
+                <h1>🧠 Loterias V.7.0 <span class="version-badge">APP MOBILE</span></h1>
+                <p class="header-subtitle">Documentação do aplicativo React Native</p>
+            </div>
+            <div class="header-logo">
+                <img src="/img/brasao.png" onerror="this.style.display='none'" alt="Logo">
+            </div>
+        </div>
+    </div>
+
+    <div class="docs-container">
+        <div class="docs-card">
+            <h1>📱 Aplicativo Mobile</h1>
+            <p>React Native com Expo Router e Zustand</p>
+
+            <h2>🏗️ Estrutura do App</h2>
+            <pre>
+mobile/
+├── app/                        # Expo Router
+│   ├── _layout.tsx
+│   ├── index.tsx
+│   ├── (auth)/
+│   │   ├── _layout.tsx
+│   │   ├── login.tsx
+│   │   └── register.tsx
+│   └── (tabs)/
+│       ├── _layout.tsx
+│       ├── index.tsx          # Home
+│       ├── generate.tsx
+│       ├── history.tsx
+│       └── profile.tsx
+├── src/
+│   ├── components/
+│   ├── config/
+│   ├── constants/
+│   ├── services/
+│   ├── stores/
+│   └── utils/
+└── assets/
+            </pre>
+
+            <h2>📱 Telas do App</h2>
+            <div class="module-box">
+                <div class="module-name">🏠 Home (index.tsx)</div>
+                <p>Tela inicial com grid de loterias, exibe créditos e status PRO</p>
+            </div>
+            <div class="module-box">
+                <div class="module-name">🎲 Generate (generate.tsx)</div>
+                <p>Geração de palpites com IA, seleção de quantidade e modos</p>
+            </div>
+            <div class="module-box">
+                <div class="module-name">📜 History (history.tsx)</div>
+                <p>Histórico de palpites gerados pelo usuário</p>
+            </div>
+            <div class="module-box">
+                <div class="module-name">👤 Profile (profile.tsx)</div>
+                <p>Perfil do usuário, saldo, compra de créditos e logout</p>
+            </div>
+            <div class="module-box">
+                <div class="module-name">🔐 Login (login.tsx)</div>
+                <p>Autenticação com email/senha, Google e modo convidado</p>
+            </div>
+
+            <h2>⚙️ Tecnologias</h2>
+            <ul>
+                <li><strong>React Native</strong> - Framework mobile</li>
+                <li><strong>Expo</strong> - Desenvolvimento e build</li>
+                <li><strong>Expo Router</strong> - Navegação</li>
+                <li><strong>Zustand</strong> - Gerenciamento de estado</li>
+                <li><strong>Firebase Auth</strong> - Autenticação</li>
+                <li><strong>Axios</strong> - Requisições HTTP</li>
+            </ul>
+
+            <h2>📦 Scripts</h2>
+            <pre>
+npm start      # Inicia o Expo
+npm run android # Roda no Android
+npm run ios     # Roda no iOS
+npm run web     # Roda no navegador
+            </pre>
+        </div>
+
+        <div style="text-align: center;">
+            <button class="btn-voltar" onclick="window.location.href='index.html'">← Voltar à Documentação</button>
+            <button class="btn-voltar" onclick="window.location.href='/'">← Voltar ao Sistema</button>
+        </div>
+    </div>
+</body>
+</html>
