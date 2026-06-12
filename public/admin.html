@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Loterias IA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .admin-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .login-box { max-width: 400px; margin: 100px auto; background: var(--bg-card); padding: 30px; border-radius: 20px; border: 2px solid var(--border); text-align: center; }
+        .login-box input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 2px solid var(--border); background: var(--bg-primary); color: var(--text-primary); }
+        .login-box button { width: 100%; padding: 12px; margin-top: 15px; background: linear-gradient(135deg, #8b5cf6, #06b6d4); border: none; border-radius: 30px; color: white; font-weight: 600; cursor: pointer; }
+        .data-section { margin-top: 30px; background: var(--bg-card); border-radius: 12px; padding: 20px; border: 2px solid var(--border); overflow-x: auto; }
+        .data-section h3 { color: #f59e0b; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: rgba(56, 189, 248, 0.2); color: #38bdf8; }
+        .btn-copiar { background: #22c55e; border: none; padding: 6px 12px; border-radius: 20px; color: white; cursor: pointer; font-size: 11px; }
+        .btn-exportar { background: #8b5cf6; border: none; padding: 8px 16px; border-radius: 20px; color: white; cursor: pointer; font-size: 12px; }
+        .logout-btn { background: #ef4444; border: none; padding: 6px 12px; border-radius: 20px; color: white; cursor: pointer; font-size: 12px; }
+        .header-admin { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; }
+        .error-msg { color: #ef4444; font-size: 12px; margin-top: 10px; }
+        .status-login { text-align: center; padding: 20px; color: #22c55e; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="header-logo"><img src="img/logo.png" onerror="this.style.display='none'" alt="Logo"></div>
+            <div class="header-text">
+                <h1>🧠 Loterias V.7.0 <span class="version-badge">ADMIN</span></h1>
+                <p class="header-subtitle">Painel administrativo</p>
+            </div>
+            <div class="header-logo"><img src="img/logo.png" onerror="this.style.display='none'" alt="Logo"></div>
+        </div>
+    </div>
+
+    <div class="admin-container" id="adminContainer">
+        <div id="loginArea">
+            <div class="login-box">
+                <h2>🔐 Acesso Administrativo</h2>
+                <input type="email" id="adminEmail" placeholder="E-mail">
+                <input type="password" id="adminSenha" placeholder="Senha">
+                <button onclick="fazerLoginAdmin()">ENTRAR</button>
+                <div id="loginError" class="error-msg"></div>
+            </div>
+        </div>
+        
+        <div id="dataArea" style="display: none;">
+            <div class="header-admin">
+                <h2>📊 Dados do Sistema</h2>
+                <button class="logout-btn" onclick="fazerLogoutAdmin()">🚪 Sair</button>
+            </div>
+            <div id="dadosContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        let adminToken = null;
+        
+        async function fazerLoginAdmin() {
+            const email = document.getElementById('adminEmail').value;
+            const senha = document.getElementById('adminSenha').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            errorDiv.innerHTML = '';
+            
+            if (!email || !senha) {
+                errorDiv.innerHTML = '❌ Preencha e-mail e senha!';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/admin/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password: senha })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    errorDiv.innerHTML = `❌ ${data.error || 'Credenciais inválidas'}`;
+                    return;
+                }
+                
+                adminToken = data.token;
+                document.getElementById('loginArea').style.display = 'none';
+                document.getElementById('dataArea').style.display = 'block';
+                carregarDadosAdmin();
+                
+            } catch (error) {
+                errorDiv.innerHTML = '❌ Erro ao conectar com o servidor';
+                console.error(error);
+            }
+        }
+        
+        function fazerLogoutAdmin() {
+            adminToken = null;
+            document.getElementById('adminEmail').value = '';
+            document.getElementById('adminSenha').value = '';
+            document.getElementById('loginError').innerHTML = '';
+            document.getElementById('loginArea').style.display = 'block';
+            document.getElementById('dataArea').style.display = 'none';
+        }
+        
+        async function carregarDadosAdmin() {
+            const container = document.getElementById('dadosContainer');
+            container.innerHTML = '<div class="status-login">📊 Carregando dados...</div>';
+            
+            try {
+                const response = await fetch('/api/admin/data', {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Erro ao carregar');
+                }
+                
+                renderizarDadosAdmin(data.usuarios, data.historico, data.transacoes);
+                
+            } catch (error) {
+                console.error('Erro:', error);
+                container.innerHTML = `<div class="status-login" style="color: #ef4444;">❌ Erro: ${error.message}</div>`;
+            }
+        }
+        
+        function renderizarDadosAdmin(usuarios, historico, transacoes) {
+            const container = document.getElementById('dadosContainer');
+            
+            const copyTable = (tableId) => {
+                const table = document.getElementById(tableId);
+                if (!table) return;
+                const range = document.createRange();
+                range.selectNode(table);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                document.execCommand('copy');
+                window.getSelection().removeAllRanges();
+                alert('✅ Tabela copiada!');
+            };
+            
+            const exportCSV = (data, filename) => {
+                if (!data || data.length === 0) {
+                    alert('Nenhum dado para exportar');
+                    return;
+                }
+                const headers = Object.keys(data[0]);
+                const csvRows = [headers.join(',')];
+                for (const row of data) {
+                    const values = headers.map(header => {
+                        let val = row[header];
+                        if (val === null) val = '';
+                        if (typeof val === 'object') val = JSON.stringify(val);
+                        return `"${String(val).replace(/"/g, '""')}"`;
+                    });
+                    csvRows.push(values.join(','));
+                }
+                const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${filename}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+            
+            const html = `
+                <div class="data-section">
+                    <h3>👥 USUÁRIOS (${usuarios.length} registros)
+                        <div>
+                            <button class="btn-copiar" onclick="window.copyTableAdmin('tabelaUsuarios')">📋 Copiar</button>
+                            <button class="btn-exportar" onclick="window.exportCSVAdmin(${JSON.stringify(usuarios).replace(/"/g, '&quot;')}, 'usuarios')">📎 Exportar CSV</button>
+                        </div>
+                    </h3>
+                    <div style="overflow-x: auto;">
+                        <table id="tabelaUsuarios">
+                            <thead><tr><th>UID</th><th>NOME</th><th>EMAIL</th><th>CRÉDITOS</th><th>PRO</th><th>CRIADO EM</th></tr></thead>
+                            <tbody>
+                                ${usuarios.map(u => `<tr>
+                                    <td>${u.uid?.substring(0,15)||'-'}...</td>
+                                    <td><strong>${u.nome||'-'}</strong></td>
+                                    <td>${u.email||'-'}</td>
+                                    <td style="color:#f59e0b;font-weight:bold;">R$ ${u.creditos||0}</td>
+                                    <td style="color:${u.is_pro?'#22c55e':'#ef4444'}">${u.is_pro?'✅ SIM':'❌ NÃO'}</td>
+                                    <td>${u.created_at?new Date(u.created_at).toLocaleString():'-'}</td>
+                                </tr>`).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+            window.copyTableAdmin = copyTable;
+            window.exportCSVAdmin = exportCSV;
+        }
+    </script>
+</body>
+</html>
