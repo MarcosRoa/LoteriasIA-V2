@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Segurança - Documentação Loterias IA v7.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .docs-container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        .docs-card { background: var(--bg-card); border-radius: 20px; padding: 30px; border: 2px solid var(--border); margin-bottom: 30px; }
+        .docs-card h1 { background: linear-gradient(135deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .docs-card h2 { color: #f59e0b; margin: 25px 0 15px 0; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        .security-item { background: var(--bg-primary); border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 4px solid #22c55e; }
+        .btn-voltar { background: #64748b; color: white; border: none; padding: 10px 25px; border-radius: 30px; cursor: pointer; font-weight: 600; margin-top: 20px; }
+        .badge-security { background: #22c55e; color: #1e293b; font-size: 10px; padding: 2px 8px; border-radius: 12px; margin-left: 8px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="header-logo"><img src="../img/logo.png" onerror="this.style.display='none'" alt="Logo"></div>
+            <div class="header-text">
+                <h1>🧠 Loterias V.7.0 <span class="version-badge">SEGURANÇA</span></h1>
+                <p class="header-subtitle">Medidas de segurança do sistema</p>
+            </div>
+            <div class="header-logo"><img src="../img/logo.png" onerror="this.style.display='none'" alt="Logo"></div>
+        </div>
+    </div>
+
+    <div class="docs-container">
+        <div class="docs-card">
+            <h1>🔒 Segurança do Sistema v7.0</h1>
+
+            <h2>🛡️ Camadas de Segurança</h2>
+
+            <div class="security-item">
+                <strong>🔐 Autenticação Firebase</strong> <span class="badge-security">Implementado</span><br>
+                Login via Google, Facebook e E-mail/Senha.<br>
+                Tokens JWT gerenciados pelo Firebase.
+            </div>
+
+            <div class="security-item">
+                <strong>🔑 PRO fixo por e-mail</strong> <span class="badge-security">Implementado</span><br>
+                E-mail específico (<code>mresquadriasaluminio@gmail.com</code>) sempre tem plano PRO ativo.<br>
+                Créditos resetados para 100 automaticamente.
+            </div>
+
+            <div class="security-item">
+                <strong>⚡ API com validação</strong> <span class="badge-security">Implementado</span><br>
+                Todas as requisições validam UID e existência do usuário.<br>
+                Criação automática de usuários no primeiro acesso.
+            </div>
+
+            <div class="security-item">
+                <strong>🛡️ CORS Configurado</strong> <span class="badge-security">Implementado</span><br>
+                Acesso restrito aos domínios autorizados.
+            </div>
+
+            <div class="security-item">
+                <strong>🔐 Variáveis de Ambiente</strong> <span class="badge-security">Implementado</span><br>
+                Chaves do Supabase armazenadas no ambiente (Vercel).
+            </div>
+
+            <h2>📋 Checklist de Segurança</h2>
+            <table style="width:100%; margin-top:15px;">
+                <thead><tr><th>Item</th><th>Status</th></tr></thead>
+                <tbody>
+                    <tr><td>Autenticação Firebase</td><td style="color:#22c55e;">✅ OK</td></tr>
+                    <tr><td>Chaves em variáveis de ambiente</td><td style="color:#22c55e;">✅ OK</td></tr>
+                    <tr><td>PRO fixo por e-mail</td><td style="color:#22c55e;">✅ OK</td></tr>
+                    <tr><td>CORS restrito</td><td style="color:#22c55e;">✅ OK</td></tr>
+                    <tr><td>Validação de UID nas APIs</td><td style="color:#22c55e;">✅ OK</td></tr>
+                </tbody>
+            </table>
+
+            <h2>🔐 Variáveis de Ambiente Necessárias</h2>
+            <pre style="background: var(--bg-primary); padding: 15px; border-radius: 12px;">
+# Supabase
+SUPABASE_URL=https://fuiaikymhsjdgdhojjhq.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIs...
+
+# Firebase
+FIREBASE_API_KEY=...
+FIREBASE_AUTH_DOMAIN=...
+FIREBASE_PROJECT_ID=...
+            </pre>
+
+            <h2>📝 Recomendações Futuras</h2>
+            <ul>
+                <li>Rate limiting nas APIs (proteção contra abusos)</li>
+                <li>Webhook real do Mercado Pago com assinatura</li>
+                <li>RLS (Row Level Security) no Supabase</li>
+                <li>Logs de auditoria para ações críticas</li>
+            </ul>
+        </div>
+
+        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+            <button class="btn-voltar" onclick="window.location.href='index.html'">← Voltar à Documentação</button>
+            <button class="btn-voltar" onclick="window.location.href='../index.html'">← Voltar ao Sistema</button>
+        </div>
+    </div>
+</body>
+</html>
