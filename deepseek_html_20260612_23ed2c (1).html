@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Mobile - Documentação Loterias IA v7.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .docs-container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        .docs-card { background: var(--bg-card); border-radius: 20px; padding: 30px; border: 2px solid var(--border); margin-bottom: 30px; }
+        .docs-card h1 { background: linear-gradient(135deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .docs-card h2 { color: #f59e0b; margin: 25px 0 15px 0; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        .module-box { background: var(--bg-primary); border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 4px solid #8b5cf6; }
+        .btn-voltar { background: #64748b; color: white; border: none; padding: 10px 25px; border-radius: 30px; cursor: pointer; font-weight: 600; margin-top: 20px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="header-logo"><img src="../img/logo.png" onerror="this.style.display='none'" alt="Logo"></div>
+            <div class="header-text">
+                <h1>🧠 Loterias V.7.0 <span class="version-badge">APP MOBILE</span></h1>
+                <p class="header-subtitle">Documentação do aplicativo React Native</p>
+            </div>
+            <div class="header-logo"><img src="../img/logo.png" onerror="this.style.display='none'" alt="Logo"></div>
+        </div>
+    </div>
+
+    <div class="docs-container">
+        <div class="docs-card">
+            <h1>📱 Aplicativo Mobile</h1>
+            <p>React Native com Expo Router e Zustand</p>
+
+            <h2>🏗️ Estrutura do App</h2>
+            <pre style="background: var(--bg-primary); padding: 15px; border-radius: 12px; font-size: 12px;">
+mobile/
+├── app/                        # Expo Router
+│   ├── _layout.tsx            # Layout raiz (autenticação)
+│   ├── index.tsx              # Redirect para tabs
+│   ├── (auth)/                # Autenticação
+│   │   ├── _layout.tsx
+│   │   ├── login.tsx
+│   │   └── register.tsx
+│   └── (tabs)/                # Telas principais
+│       ├── _layout.tsx
+│       ├── index.tsx          # Home (loterias)
+│       ├── generate.tsx       # Gerar jogos
+│       ├── history.tsx        # Histórico
+│       └── profile.tsx        # Perfil
+├── src/
+│   ├── components/            # Componentes reutilizáveis
+│   │   ├── LoginModal.tsx
+│   │   ├── LotteryCard.tsx
+│   │   ├── NumberBall.tsx
+│   │   └── TransformerSplash.tsx
+│   ├── config/                # Configurações
+│   │   └── googleAuth.ts
+│   ├── constants/             # Constantes
+│   │   └── lotteries.ts
+│   ├── services/              # Serviços
+│   │   ├── api.ts
+│   │   └── auth.service.ts
+│   ├── stores/                # Zustand stores
+│   │   ├── authStore.ts
+│   │   └── sessionStore.ts
+│   └── utils/                 # Utilitários
+│       └── formatters.ts
+└── assets/                    # Imagens, sons, animações
+            </pre>
+
+            <h2>📱 Telas do App</h2>
+            <div class="grid-2">
+                <div class="module-box">
+                    <div class="module-name">🏠 Home (index.tsx)</div>
+                    <div class="module-desc">Tela inicial com grid de loterias</div>
+                    <div class="module-functions">
+                        • Exibe créditos e status PRO<br>
+                        • Lista todas as 10 loterias<br>
+                        • Navega para tela de geração
+                    </div>
+                </div>
+
+                <div class="module-box">
+                    <div class="module-name">🎲 Generate (generate.tsx)</div>
+                    <div class="module-desc">Geração de palpites</div>
+                    <div class="module-functions">
+                        • Seleção de quantidade (1-20)<br>
+                        • Modos de IA (Especialista/Aleatório)<br>
+                        • Exibe jogos gerados
+                    </div>
+                </div>
+
+                <div class="module-box">
+                    <div class="module-name">📜 History (history.tsx)</div>
+                    <div class="module-desc">Histórico de palpites</div>
+                    <div class="module-functions">
+                        • Lista jogos gerados anteriormente<br>
+                        • Exibe data, loteria e números
+                    </div>
+                </div>
+
+                <div class="module-box">
+                    <div class="module-name">👤 Profile (profile.tsx)</div>
+                    <div class="module-desc">Perfil do usuário</div>
+                    <div class="module-functions">
+                        • Exibe nome, email, saldo<br>
+                        • Compra de créditos<br>
+                        • Logout
+                    </div>
+                </div>
+
+                <div class="module-box">
+                    <div class="module-name">🔐 Login (login.tsx)</div>
+                    <div class="module-desc">Autenticação</div>
+                    <div class="module-functions">
+                        • Login com email/senha<br>
+                        • Login com Google<br>
+                        • Modo convidado
+                    </div>
+                </div>
+
+                <div class="module-box">
+                    <div class="module-name">📝 Register (register.tsx)</div>
+                    <div class="module-desc">Registro de usuário</div>
+                    <div class="module-functions">
+                        • Criação de conta com email/senha<br>
+                        • Validação de senha
+                    </div>
+                </div>
+            </div>
+
+            <h2>⚙️ Tecnologias Utilizadas</h2>
+            <table style="width:100%; margin-top:15px;">
+                <thead><tr><th>Tecnologia</th><th>Uso</th></tr></thead>
+                <tbody>
+                    <tr><td>React Native</td><td>Framework mobile</td></tr>
+                    <tr><td>Expo</td><td>Desenvolvimento e build</td></tr>
+                    <tr><td>Expo Router</td><td>Navegação</td></tr>
+                    <tr><td>Zustand</td><td>Gerenciamento de estado</td></tr>
+                    <tr><td>Firebase Auth</td><td>Autenticação</td></tr>
+                    <tr><td>Axios</td><td>Requisições HTTP</td></tr>
+                    <tr><td>React Native Reanimated</td><td>Animações</td></tr>
+                    <tr><td>Lottie</td><td>Animações JSON</td></tr>
+                </tbody>
+            </table>
+
+            <h2>📦 Scripts Disponíveis</h2>
+            <pre style="background: var(--bg-primary); padding: 15px; border-radius: 12px;">
+npm start      # Inicia o Expo
+npm run android # Roda no Android
+npm run ios     # Roda no iOS
+npm run web     # Roda no navegador
+            </pre>
+        </div>
+
+        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+            <button class="btn-voltar" onclick="window.location.href='index.html'">← Voltar à Documentação</button>
+            <button class="btn-voltar" onclick="window.location.href='../index.html'">← Voltar ao Sistema</button>
+        </div>
+    </div>
+</body>
+</html>
