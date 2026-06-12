@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV - Loterias IA v7.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .docs-container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        .docs-card { background: var(--bg-card); border-radius: 20px; padding: 30px; border: 2px solid var(--border); margin-bottom: 30px; }
+        .docs-card h1 { background: linear-gradient(135deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .docs-card h2 { color: #f59e0b; margin: 25px 0 15px 0; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        .csv-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .csv-table th, .csv-table td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); }
+        .csv-table th { background: rgba(56, 189, 248, 0.2); color: #38bdf8; }
+        .btn-voltar { background: #64748b; color: white; border: none; padding: 10px 25px; border-radius: 30px; cursor: pointer; font-weight: 600; margin-top: 20px; }
+        .example-csv { background: var(--bg-primary); padding: 15px; border-radius: 12px; font-family: monospace; font-size: 12px; overflow-x: auto; }
+        .warning-box { background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 15px; margin: 15px 0; border-radius: 8px; }
+        .header-logo img { width: 60px; height: auto; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="header-logo">
+                <img src="/img/brasao.png" onerror="this.style.display='none'" alt="Logo" style="width: 60px; height: auto;">
+            </div>
+            <div class="header-text">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
+                    <h1 style="margin: 0; background: linear-gradient(135deg, #8b5cf6, #06b6d4, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 22px;">
+                        🧠 Sistema Profissional de Loterias com IA Real
+                    </h1>
+                    <span class="version-badge">V.7.0 PRO</span>
+                </div>
+                <p class="header-subtitle">10 loterias • IA que Aprende Padrões • Login Social • Sistema de Créditos • PIX</p>
+            </div>
+            <div class="header-logo">
+                <img src="/img/brasao.png" onerror="this.style.display='none'" alt="Logo" style="width: 60px; height: auto;">
+            </div>
+        </div>
+    </div>
+
+    <div class="docs-container">
+        <div class="docs-card">
+            <h1>📊 Arquivos CSV</h1>
+            <div class="warning-box"><strong>⚠️ Importante:</strong> Os CSVs são a base de treinamento da IA.</div>
+
+            <h2>📋 Lista de Arquivos</h2>
+            <table class="csv-table">
+                <thead><tr><th>Arquivo</th><th>Loterias</th><th>Números por concurso</th><th>Range</th></tr></thead>
+                <tbody>
+                    <tr><td>megasena.csv</td><td>Mega-Sena</td><td>6 números</td><td>01-60</td></tr>
+                    <tr><td>quina.csv</td><td>Quina</td><td>5 números</td><td>01-80</td></tr>
+                    <tr><td>lotofacil.csv</td><td>Lotofácil</td><td>15 números</td><td>01-25</td></tr>
+                    <tr><td>lotomania.csv</td><td>Lotomania</td><td>20 números</td><td>00-99</td></tr>
+                    <tr><td>duplasena.csv</td><td>Dupla Sena</td><td>6 números</td><td>01-50</td></tr>
+                    <tr><td>timemania.csv</td><td>Timemania</td><td>7 números + Time</td><td>01-80</td></tr>
+                    <tr><td>milionaria.csv</td><td>+Milionária</td><td>6 números + 2 Trevos</td><td>01-50 / 1-6</td></tr>
+                    <tr><td>loteca.csv</td><td>Loteca</td><td>14 palpites</td><td>0,1,2</td></tr>
+                    <tr><td>diadesorte.csv</td><td>Dia de Sorte</td><td>7 números + Mês</td><td>01-31 / 1-12</td></tr>
+                    <tr><td>supersete.csv</td><td>Super Sete</td><td>7 colunas</td><td>0-9</td></tr>
+                </tbody>
+            </table>
+
+            <h2>📄 Formato Esperado</h2>
+            <div class="example-csv">
+                Data;N1;N2;N3;N4;N5;N6<br>
+                01/01/2023;01;15;23;34;45;56<br>
+                08/01/2023;03;12;28;37;49;58
+            </div>
+
+            <h2>📂 Localização</h2>
+            <div class="example-csv">/csv/megasena.csv<br>/csv/quina.csv<br>/csv/lotofacil.csv</div>
+        </div>
+
+        <div style="text-align: center;">
+            <button class="btn-voltar" onclick="window.location.href='index.html'">← Voltar à Documentação</button>
+            <button class="btn-voltar" onclick="window.location.href='/'">← Voltar ao Sistema</button>
+        </div>
+    </div>
+</body>
+</html>
