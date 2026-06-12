@@ -1,7 +1,7 @@
-// api/admin/verify.ts - VERSÃO SIMPLIFICADA
+// api/admin/verify.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Credenciais fixas (mas ainda no código - melhor que variável que não carrega)
+// Credenciais fixas (temporário - para testar)
 const ADMIN_EMAIL = 'piamarcos@yahoo.com.br';
 const ADMIN_PASSWORD = 'M@rcosroa123';
 
