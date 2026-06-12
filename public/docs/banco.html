@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banco de Dados - Loterias IA v7.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .docs-container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        .docs-card { background: var(--bg-card); border-radius: 20px; padding: 30px; border: 2px solid var(--border); margin-bottom: 30px; }
+        .docs-card h1 { background: linear-gradient(135deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .docs-card h2 { color: #f59e0b; margin: 25px 0 15px 0; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        .db-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .db-table th, .db-table td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border); }
+        .db-table th { background: rgba(56, 189, 248, 0.2); color: #38bdf8; }
+        .btn-voltar { background: #64748b; color: white; border: none; padding: 10px 25px; border-radius: 30px; cursor: pointer; font-weight: 600; margin-top: 20px; }
+        .col-name { font-family: monospace; color: #38bdf8; }
+        .rpc-box { background: var(--bg-primary); border-radius: 12px; padding: 15px; margin: 15px 0; font-family: monospace; font-size: 12px; overflow-x: auto; }
+        .header-logo img { width: 60px; height: auto; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="header-logo">
+                <img src="/img/brasao.png" onerror="this.style.display='none'" alt="Logo" style="width: 60px; height: auto;">
+            </div>
+            <div class="header-text">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
+                    <h1 style="margin: 0; background: linear-gradient(135deg, #8b5cf6, #06b6d4, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 22px;">
+                        🧠 Sistema Profissional de Loterias com IA Real
+                    </h1>
+                    <span class="version-badge">V.7.0 PRO</span>
+                </div>
+                <p class="header-subtitle">10 loterias • IA que Aprende Padrões • Login Social • Sistema de Créditos • PIX</p>
+            </div>
+            <div class="header-logo">
+                <img src="/img/brasao.png" onerror="this.style.display='none'" alt="Logo" style="width: 60px; height: auto;">
+            </div>
+        </div>
+    </div>
+
+    <div class="docs-container">
+        <div class="docs-card">
+            <h1>💾 Banco de Dados (Supabase)</h1>
+            <p>PostgreSQL com autenticação via Firebase</p>
+
+            <h2>📊 Tabela: usuarios</h2>
+            <table class="db-table">
+                <thead><tr><th>Coluna</th><th>Tipo</th><th>Descrição</th></tr></thead>
+                <tbody>
+                    <tr><td class="col-name">id</td><td>UUID</td><td>Identificador único (PK)</td></tr>
+                    <tr><td class="col-name">uid</td><td>TEXT</td><td>UID do Firebase Auth</td></tr>
+                    <tr><td class="col-name">nome</td><td>TEXT</td><td>Nome do usuário</td></tr>
+                    <tr><td class="col-name">email</td><td>TEXT</td><td>E-mail (único)</td></tr>
+                    <tr><td class="col-name">foto_url</td><td>TEXT</td><td>URL da foto do perfil</td></tr>
+                    <tr><td class="col-name">creditos</td><td>INTEGER</td><td>Saldo em reais (R$)</td></tr>
+                    <tr><td class="col-name">is_pro</td><td>BOOLEAN</td><td>Se é usuário PRO</td></tr>
+                    <tr><td class="col-name">pro_expires_at</td><td>TIMESTAMP</td><td>Expiração do PRO</td></tr>
+                    <tr><td class="col-name">created_at</td><td>TIMESTAMP</td><td>Data de criação</td></tr>
+                    <tr><td class="col-name">updated_at</td><td>TIMESTAMP</td><td>Última atualização</td></tr>
+                </tbody>
+            </table>
+
+            <h2>📊 Tabela: historico_palpites</h2>
+            <table class="db-table">
+                <thead><tr><th>Coluna</th><th>Tipo</th><th>Descrição</th></tr></thead>
+                <tbody>
+                    <tr><td class="col-name">id</td><td>UUID</td><td>Identificador único (PK)</td></tr>
+                    <tr><td class="col-name">usuario_uid</td><td>TEXT</td><td>UID do usuário (FK)</td></tr>
+                    <tr><td class="col-name">loteria</td><td>TEXT</td><td>Nome da loteria</td></tr>
+                    <tr><td class="col-name">jogos</td><td>JSONB</td><td>Array de números sorteados</td></tr>
+                    <tr><td class="col-name">filtros</td><td>TEXT</td><td>Configurações usadas</td></tr>
+                    <tr><td class="col-name">extras</td><td>TEXT</td><td>Informações extras</td></tr>
+                    <tr><td class="col-name">meses</td><td>JSONB</td><td>Meses da sorte (Dia de Sorte)</td></tr>
+                    <tr><td class="col-name">quantidade_numeros</td><td>INTEGER</td><td>Números por jogo (bolão)</td></tr>
+                    <tr><td class="col-name">times</td><td>JSONB</td><td>Times da Timemania</td></tr>
+                    <tr><td class="col-name">data</td><td>TIMESTAMP</td><td>Data de criação</td></tr>
+                </tbody>
+            </table>
+
+            <h2>📊 Tabela: transacoes</h2>
+            <table class="db-table">
+                <thead><tr><th>Coluna</th><th>Tipo</th><th>Descrição</th></tr></thead>
+                <tbody>
+                    <tr><td class="col-name">id</td><td>UUID</td><td>Identificador único (PK)</td></tr>
+                    <tr><td class="col-name">usuario_uid</td><td>TEXT</td><td>UID do usuário (FK)</td></tr>
+                    <tr><td class="col-name">tipo</td><td>TEXT</td><td>compra / uso / pro_ativacao</td></tr>
+                    <tr><td class="col-name">quantidade</td><td>INTEGER</td><td>Valor da transação</td></tr>
+                    <tr><td class="col-name">saldo_apos</td><td>INTEGER</td><td>Saldo após transação</td></tr>
+                    <tr><td class="col-name">reference_id</td><td>TEXT</td><td>ID do pagamento (PIX)</td></tr>
+                    <tr><td class="col-name">idempotency_key</td><td>TEXT</td><td>Chave para evitar duplicação</td></tr>
+                    <tr><td class="col-name">metadata</td><td>JSONB</td><td>Dados adicionais</td></tr>
+                    <tr><td class="col-name">data</td><td>TIMESTAMP</td><td>Data da transação</td></tr>
+                </tbody>
+            </table>
+
+            <h2>⚡ Funções RPC</h2>
+            <div class="rpc-box">
+                CREATE OR REPLACE FUNCTION generate_game(p_user_uid TEXT, p_lottery TEXT, p_games JSONB, p_cost INTEGER, p_mode TEXT, p_extra_numbers INTEGER DEFAULT NULL, p_idempotency_key TEXT DEFAULT NULL) RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER;
+            </div>
+            <div class="rpc-box">
+                CREATE OR REPLACE FUNCTION add_credits(p_user_uid TEXT, p_amount INTEGER, p_payment_id TEXT, p_idempotency_key TEXT DEFAULT NULL) RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER;
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <button class="btn-voltar" onclick="window.location.href='index.html'">← Voltar à Documentação</button>
+            <button class="btn-voltar" onclick="window.location.href='/'">← Voltar ao Sistema</button>
+        </div>
+    </div>
+</body>
+</html>
