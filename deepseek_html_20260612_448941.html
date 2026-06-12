@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JS - Documentação Loterias IA v7.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .docs-container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        .docs-card { background: var(--bg-card); border-radius: 20px; padding: 30px; border: 2px solid var(--border); margin-bottom: 30px; }
+        .docs-card h1 { background: linear-gradient(135deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .docs-card h2 { color: #f59e0b; margin: 25px 0 15px 0; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        .module-box { background: var(--bg-primary); border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 4px solid #8b5cf6; }
+        .module-name { font-size: 18px; font-weight: 600; color: #8b5cf6; margin-bottom: 8px; }
+        .module-desc { color: var(--text-secondary); font-size: 13px; margin-bottom: 10px; }
+        .module-functions { background: rgba(139, 92, 246, 0.1); border-radius: 8px; padding: 10px; font-size: 12px; font-family: monospace; }
+        .btn-voltar { background: #64748b; color: white; border: none; padding: 10px 25px; border-radius: 30px; cursor: pointer; font-weight: 600; margin-top: 20px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="header-logo"><img src="../img/logo.png" onerror="this.style.display='none'" alt="Logo"></div>
+            <div class="header-text">
+                <h1>🧠 Loterias V.7.0 <span class="version-badge">JS</span></h1>
+                <p class="header-subtitle">Documentação dos módulos JavaScript</p>
+            </div>
+            <div class="header-logo"><img src="../img/logo.png" onerror="this.style.display='none'" alt="Logo"></div>
+        </div>
+    </div>
+
+    <div class="docs-container">
+        <div class="docs-card">
+            <h1>📘 Módulos do Sistema (v7.0)</h1>
+            <p>Frontend JavaScript (arquivos em <code>public/js/</code>)</p>
+
+            <div class="grid-2">
+                <div class="module-box">
+                    <div class="module-name">🔌 api-client.js</div>
+                    <div class="module-desc">Cliente HTTP para comunicação com a API</div>
+                    <div class="module-functions">
+                        <strong>Funções:</strong><br>
+                        • getCredits() - Busca saldo do usuário<br>
+                        • getProStatus() - Busca status PRO<br>
+                        • generateGames() - Gera jogos via API<br>
+                        • createPayment() - Compra créditos
+                    </div>
+                </div>
+
+                <div class="module-box">
+                    <div class="module-name">🔐 auth.js</div>
+                    <div class="module-desc">Autenticação Firebase (Google/Facebook/Email)</div>
+                    <div class="module-functions">
+                        <strong>Funções:</strong><br>
+                        • loginGoogle() - Login com Google<br>
+                        • loginFacebook() - Login com Facebook<br>
+                        • logout() - Logout do usuário
+                    </div>
+                </div>
+
+                <div class="module-box">
+                    <div class="module-name">🔄 auth-handler.js</div>
+                    <div class="module-desc">Processamento pós-login</div>
+                    <div class="module-functions">
+                        <strong>Funções:</strong><br>
+                        • processarLogin() - Carrega dados do usuário<br>
+                        • Atualiza créditos e status PRO
+                    </div>
+                </div>
+
+                <div class="module-box">
+                    <div class="module-name">🎲 jogos.js</div>
+                    <div class="module-desc">Geração de palpites</div>
+                    <div class="module-functions">
+                        <strong>Funções:</strong><br>
+                        • gerarJogos() - Gera jogos via IA ou aleatório<br>
+                        • validarSaldoEAcesso() - Valida créditos
+                    </div>
+                </div>
+
+                <div class="module-box">
+                    <div class="module-name">🎨 user-interface.js</div>
+                    <div class="module-desc">Interface do usuário</div>
+                    <div class="module-functions">
+                        <strong>Funções:</strong><br>
+                        • atualizarInterfaceUsuario() - Renderiza UI<br>
+                        • comprarCreditos() - Compra créditos<br>
+                        • abrirPerfil() - Abre perfil
+                    </div>
+                </div>
+
+                <div class="module-box">
+                    <div class="module-name">📊 loterias.js</div>
+                    <div class="module-desc">Gerenciamento de loterias</div>
+                    <div class="module-functions">
+                        <strong>Funções:</strong><br>
+                        • selecionarLoteria() - Troca loteria<br>
+                        • carregarCSV() - Carrega dados históricos<br>
+                        • filtrarDados() - Filtra por período
+                    </div>
+                </div>
+
+                <div class="module-box">
+                    <div class="module-name">🧠 ia.js</div>
+                    <div class="module-desc">Inteligência Artificial (frontend)</div>
+                    <div class="module-functions">
+                        <strong>Funções:</strong><br>
+                        • AdvancedLotteryAI - Classe de IA<br>
+                        • predizerIAEspecialista() - Gera palpites
+                    </div>
+                </div>
+
+                <div class="module-box">
+                    <div class="module-name">📈 ia-training.js</div>
+                    <div class="module-desc">Treinamento da IA</div>
+                    <div class="module-functions">
+                        <strong>Funções:</strong><br>
+                        • treinarIAComFiltrosAtuais() - Treina modelo<br>
+                        • executarBacktesting() - Testa precisão
+                    </div>
+                </div>
+
+                <div class="module-box">
+                    <div class="module-name">🛠️ utils.js</div>
+                    <div class="module-desc">Utilitários gerais</div>
+                    <div class="module-functions">
+                        <strong>Funções:</strong><br>
+                        • mostrarToast() - Notificações<br>
+                        • toggleTema() - Alterna tema claro/escuro<br>
+                        • getModoTexto() - Traduz modos de IA
+                    </div>
+                </div>
+
+                <div class="module-box">
+                    <div class="module-name">🌍 globals.js</div>
+                    <div class="module-desc">Variáveis globais</div>
+                    <div class="module-functions">
+                        <strong>Variáveis:</strong><br>
+                        • isUserPro, creditosUsuario, usuarioAtual
+                    </div>
+                </div>
+
+                <div class="module-box">
+                    <div class="module-name">🚀 init.js</div>
+                    <div class="module-desc">Inicialização do sistema</div>
+                    <div class="module-functions">
+                        <strong>Funções:</strong><br>
+                        • init() - Carrega grid e autenticação
+                    </div>
+                </div>
+
+                <div class="module-box">
+                    <div class="module-name">📋 estatisticas.js</div>
+                    <div class="module-desc">Cálculos estatísticos</div>
+                    <div class="module-functions">
+                        <strong>Funções:</strong><br>
+                        • calcularFrequenciaNumeros()<br>
+                        • calcularDuplasMaisSorteadas()<br>
+                        • calcularTriplasMaisSorteadas()
+                    </div>
+                </div>
+            </div>
+
+            <h2>📦 Dependências</h2>
+            <pre style="background: var(--bg-primary); padding: 15px; border-radius: 12px;">
+- Firebase Auth (Google/Facebook/Email)
+- Supabase (via API, não direto)
+- TensorFlow.js (IA)
+- jsPDF (exportação PDF)
+            </pre>
+        </div>
+
+        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+            <button class="btn-voltar" onclick="window.location.href='index.html'">← Voltar à Documentação</button>
+            <button class="btn-voltar" onclick="window.location.href='../index.html'">← Voltar ao Sistema</button>
+        </div>
+    </div>
+</body>
+</html>
