@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluxos - Documentação Loterias IA v7.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .docs-container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        .docs-card { background: var(--bg-card); border-radius: 20px; padding: 30px; border: 2px solid var(--border); margin-bottom: 30px; }
+        .docs-card h1 { background: linear-gradient(135deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .docs-card h2 { color: #f59e0b; margin: 25px 0 15px 0; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        .diagram { background: var(--bg-primary); padding: 20px; border-radius: 12px; font-family: monospace; font-size: 12px; overflow-x: auto; white-space: pre; margin: 15px 0; }
+        .btn-voltar { background: #64748b; color: white; border: none; padding: 10px 25px; border-radius: 30px; cursor: pointer; font-weight: 600; margin-top: 20px; }
+        .flow-step { background: var(--bg-card); border-left: 4px solid #8b5cf6; padding: 12px; margin: 10px 0; border-radius: 8px; }
+        .flow-number { display: inline-block; width: 24px; height: 24px; background: #8b5cf6; border-radius: 50%; text-align: center; line-height: 24px; font-size: 12px; margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="header-logo"><img src="../img/logo.png" onerror="this.style.display='none'" alt="Logo"></div>
+            <div class="header-text">
+                <h1>🧠 Loterias V.7.0 <span class="version-badge">FLUXOS</span></h1>
+                <p class="header-subtitle">Fluxos do sistema</p>
+            </div>
+            <div class="header-logo"><img src="../img/logo.png" onerror="this.style.display='none'" alt="Logo"></div>
+        </div>
+    </div>
+
+    <div class="docs-container">
+        <div class="docs-card">
+            <h1>🔄 Fluxos do Sistema v7.0</h1>
+
+            <h2>1. Fluxo de Login</h2>
+            <div class="flow-step"><span class="flow-number">1</span> Usuário clica em "Entrar com Google/Facebook/Email"</div>
+            <div class="flow-step"><span class="flow-number">2</span> Firebase Auth retorna usuário autenticado com UID</div>
+            <div class="flow-step"><span class="flow-number">3</span> Frontend chama <code>GET /api/credits</code> com header X-User-Id</div>
+            <div class="flow-step"><span class="flow-number">4</span> API consulta/cria usuário no Supabase</div>
+            <div class="flow-step"><span class="flow-number">5</span> API retorna saldo e status PRO</div>
+            <div class="flow-step"><span class="flow-number">6</span> Frontend atualiza interface com os dados</div>
+
+            <h2>2. Fluxo de Geração de Palpites</h2>
+            <div class="flow-step"><span class="flow-number">1</span> Usuário configura parâmetros (quantidade, modo, bolão)</div>
+            <div class="flow-step"><span class="flow-number">2</span> Frontend chama <code>POST /api/generate</code> com os parâmetros</div>
+            <div class="flow-step"><span class="flow-number">3</span> API valida saldo do usuário no Supabase</div>
+            <div class="flow-step"><span class="flow-number">4</span> API gera números (IA ou aleatório)</div>
+            <div class="flow-step"><span class="flow-number">5</span> API debita créditos e salva no histórico</div>
+            <div class="flow-step"><span class="flow-number">6</span> Frontend exibe jogos e atualiza saldo</div>
+
+            <div class="diagram">
+┌──────────┐    ┌──────────┐    ┌──────────┐
+│ Frontend │───▶│   API    │───▶│ Supabase │
+│ /generate│    │/generate │    │ usuarios │
+└──────────┘    └──────────┘    └──────────┘
+                    │                  │
+                    │    ┌─────────────┘
+                    │    ▼
+                    │ ┌──────────┐
+                    │ │ histórico│
+                    │ └──────────┘
+                    ▼
+            ┌──────────────┐
+            │ Retorno com  │
+            │ jogos + saldo│
+            └──────────────┘
+            </div>
+
+            <h2>3. Fluxo de Compra de Créditos</h2>
+            <div class="flow-step"><span class="flow-number">1</span> Usuário escolhe valor e clica em comprar</div>
+            <div class="flow-step"><span class="flow-number">2</span> Frontend chama <code>POST /api/payments/create</code></div>
+            <div class="flow-step"><span class="flow-number">3</span> API adiciona créditos (modo simulação)</div>
+            <div class="flow-step"><span class="flow-number">4</span> Frontend atualiza saldo exibido</div>
+
+            <h2>4. Fluxo de Treinamento da IA</h2>
+            <div class="flow-step"><span class="flow-number">1</span> Usuário clica em "Treinar IA"</div>
+            <div class="flow-step"><span class="flow-number">2</span> Frontend carrega CSV da loteria atual</div>
+            <div class="flow-step"><span class="flow-number">3</span> Calcula frequência e atraso dos números</div>
+            <div class="flow-step"><span class="flow-number">4</span> Gera score e treina o modelo</div>
+            <div class="flow-step"><span class="flow-number">5</span> IA fica pronta para gerar palpites</div>
+
+            <h2>5. Fluxo de Dados (Arquitetura Real)</h2>
+            <div class="diagram">
+┌─────────────────────────────────────────────────────────────────┐
+│                        FRONTEND (Web/Mobile)                    │
+│                                                                 │
+│  Web: index.html + js/ (api-client, auth, jogos)               │
+│  Mobile: React Native + Expo Router                            │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    API (Vercel Functions)                       │
+│                                                                 │
+│  /api/credits    → busca/salva créditos                        │
+│  /api/generate   → gera jogos e debita                         │
+│  /api/pro/status → retorna status PRO                          │
+│  /api/payments/create → simula compra                          │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    SUPABASE (PostgreSQL)                        │
+│                                                                 │
+│  usuarios (creditos, is_pro, email, uid)                       │
+│  historico_palpites (jogos, loteria, data)                     │
+│  transacoes (compras, usos)                                    │
+└─────────────────────────────────────────────────────────────────┘
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+            <button class="btn-voltar" onclick="window.location.href='index.html'">← Voltar à Documentação</button>
+            <button class="btn-voltar" onclick="window.location.href='../index.html'">← Voltar ao Sistema</button>
+        </div>
+    </div>
+</body>
+</html>
