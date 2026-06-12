@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Documentação - Loterias IA v7.0</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         .docs-container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
         .docs-card { background: var(--bg-card); border-radius: 20px; padding: 30px; border: 2px solid var(--border); margin-bottom: 30px; }
@@ -22,18 +22,22 @@
         .feature-item h4 { color: #38bdf8; margin-bottom: 5px; }
         .btn-voltar { background: #64748b; color: white; border: none; padding: 10px 25px; border-radius: 30px; cursor: pointer; font-weight: 600; margin-top: 20px; }
         .btn-voltar:hover { transform: scale(1.02); background: #475569; }
-        .pro-badge-doc { background: linear-gradient(135deg, #f59e0b, #eab308); color: #1e293b; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-left: 10px; }
+        .header-logo img { width: 60px; height: auto; }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="header-content">
-            <div class="header-logo"><img src="../BrasãoRoa Imagem.png" onerror="this.style.display='none'" alt="Logo"></div>
+            <div class="header-logo">
+                <img src="/img/brasao.png" onerror="this.style.display='none'" alt="Logo">
+            </div>
             <div class="header-text">
                 <h1>🧠 Loterias V.7.0 <span class="version-badge">DOCUMENTAÇÃO</span></h1>
-                <p class="header-subtitle">Documentação completa do sistema refatorado</p>
+                <p class="header-subtitle">Documentação completa do sistema</p>
             </div>
-            <div class="header-logo"><img src="../BrasãoRoa Imagem.png" onerror="this.style.display='none'" alt="Logo"></div>
+            <div class="header-logo">
+                <img src="/img/brasao.png" onerror="this.style.display='none'" alt="Logo">
+            </div>
         </div>
     </div>
 
@@ -43,82 +47,78 @@
             
             <div class="version-info">
                 <strong>Versão 7.0 PRO</strong>
-                <p style="margin-top: 10px;">Arquitetura refatorada com TypeScript, DDD, e API centralizada</p>
+                <p style="margin-top: 10px;">Sistema completo com web, API e aplicativo mobile</p>
             </div>
 
             <h2>📚 Navegue pela documentação</h2>
             <div class="docs-grid">
-                <a href="js.html" class="docs-button">📘 JavaScript/TypeScript</a>
-                <a href="csv.html" class="docs-button">📊 CSV / Dados</a>
-                <a href="css.html" class="docs-button">🎨 CSS / Estilos</a>
-                <a href="api.html" class="docs-button">🗄️ API REST</a>
-                <a href="fluxos.html" class="docs-button">🔄 Fluxos do Sistema</a>
-                <a href="seguranca.html" class="docs-button">🔒 Segurança</a>
-                <a href="banco.html" class="docs-button">💾 Banco de Dados</a>
+                <a href="/docs/js.html" class="docs-button">📘 JavaScript</a>
+                <a href="/docs/csv.html" class="docs-button">📊 CSV / Dados</a>
+                <a href="/docs/css.html" class="docs-button">🎨 CSS / Estilos</a>
+                <a href="/docs/api.html" class="docs-button">🗄️ API REST</a>
+                <a href="/docs/fluxos.html" class="docs-button">🔄 Fluxos do Sistema</a>
+                <a href="/docs/seguranca.html" class="docs-button">🔒 Segurança</a>
+                <a href="/docs/banco.html" class="docs-button">💾 Banco de Dados</a>
+                <a href="/docs/app.html" class="docs-button">📱 Aplicativo Mobile</a>
             </div>
 
-            <h2>🏗️ Arquitetura da Nova Versão</h2>
+            <h2>🏗️ Arquitetura do Sistema</h2>
             <pre style="background: var(--bg-primary); padding: 15px; border-radius: 12px; overflow-x: auto; font-size: 12px;">
-loterias-ia/
-├── api/                    # Endpoints da API (Vercel Functions)
-│   ├── _lib/              # Utilitários
-│   ├── generate/          # Geração de jogos
-│   ├── user/              # Usuários e créditos
-│   ├── pro/               # Plano PRO
-│   └── payments/          # Pagamentos PIX
-├── core/                   # DDD - Entidades e IA
-│   ├── entities/          # User, Game, Transaction
-│   ├── value-objects/     # Credits
-│   └── ia/                # AdvancedLotteryAI
-├── services/               # Camada de serviços
-├── repositories/           # Acesso a dados (Supabase)
-├── security/               # RBAC, Rate Limit, Audit
-├── cache/                  # Redis + fallback
-├── shared/                 # Utilitários compartilhados
-├── web/                    # Frontend adaptado
-│   ├── js/                # Scripts refatorados
-│   ├── css/               # Estilos
-│   └── services/          # API Client
-└── tests/                  # Testes unitários
+LoteriasIA-V2/
+├── api/                    # Vercel Functions (Backend)
+│   ├── credits/index.ts
+│   ├── pro/status.ts
+│   ├── generate/index.ts
+│   └── payments/create.ts
+├── public/                 # Frontend estático
+│   ├── index.html
+│   ├── css/style.css
+│   ├── js/
+│   └── csv/
+├── mobile/                 # App React Native (Expo)
+│   ├── app/
+│   ├── src/
+│   └── assets/
+└── docs/                   # Documentação (esta pasta)
             </pre>
 
-            <h2>📊 Novidades da Versão 7.0</h2>
+            <h2>📊 Funcionalidades do Sistema</h2>
             <div class="feature-list">
                 <div class="feature-item">
                     <span>🔐</span>
-                    <h4>API Centralizada</h4>
-                    <p>Frontend não acessa Supabase diretamente</p>
+                    <h4>Autenticação</h4>
+                    <p>Firebase (Google, Facebook, Email)</p>
                 </div>
                 <div class="feature-item">
-                    <span>⚡</span>
-                    <h4>Transações Atômicas</h4>
-                    <p>RPC com TUDO ou NADA</p>
+                    <span>💰</span>
+                    <h4>Sistema de Créditos</h4>
+                    <p>Compra via PIX (simulação)</p>
                 </div>
                 <div class="feature-item">
-                    <span>🛡️</span>
-                    <h4>Rate Limiting</h4>
-                    <p>Proteção contra abusos</p>
+                    <span>🧠</span>
+                    <h4>IA Especialista</h4>
+                    <p>Geração de palpites inteligentes</p>
                 </div>
                 <div class="feature-item">
-                    <span>📦</span>
-                    <h4>Cache com Redis</h4>
-                    <p>Fallback em memória</p>
-                </div>
-                <div class="feature-item">
-                    <span>🧪</span>
-                    <h4>Testes Unitários</h4>
-                    <p>Jest + TypeScript</p>
+                    <span>⭐</span>
+                    <h4>Plano PRO</h4>
+                    <p>Benefícios exclusivos</p>
                 </div>
                 <div class="feature-item">
                     <span>📱</span>
-                    <h4>Mobile Ready</h4>
-                    <p>API pronta para React Native</p>
+                    <h4>Aplicativo Mobile</h4>
+                    <p>React Native + Expo</p>
+                </div>
+                <div class="feature-item">
+                    <span>📊</span>
+                    <h4>Estatísticas</h4>
+                    <p>Análise de frequência</p>
                 </div>
             </div>
         </div>
 
         <div style="text-align: center;">
-            <button class="btn-voltar" onclick="window.location.href='../index.html'">← Voltar ao Sistema</button>
+            <button class="btn-voltar" onclick="window.location.href='/'">← Voltar ao Sistema</button>
         </div>
     </div>
 </body>
