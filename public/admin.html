@@ -22,26 +22,26 @@
         .header-admin { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; }
         .error-msg { color: #ef4444; font-size: 12px; margin-top: 10px; }
         .status-login { text-align: center; padding: 20px; color: #22c55e; }
+        .loading { text-align: center; padding: 40px; }
     </style>
 </head>
 <body>
-    <!-- HEADER CORRETO (APENAS UM) -->
     <div class="header">
         <div class="header-content">
             <div class="header-logo">
-                <img src="/img/BrasãoRoa Imagem.png" onerror="this.style.display='none'" alt="Logo" style="width: 200px; height: auto;">
+                <img src="/img/brasao.png" onerror="this.style.display='none'" alt="Logo" style="width: 60px; height: auto;">
             </div>
             <div class="header-text">
                 <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
                     <h1 style="margin: 0; background: linear-gradient(135deg, #8b5cf6, #06b6d4, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 22px;">
-                        🧠 Sistema Profissional de Loterias com IA Real 🧠 
+                        🧠 Sistema Profissional de Loterias com IA Real
                     </h1>
                     <span class="version-badge">V.7.0 PRO</span>
                 </div>
                 <p class="header-subtitle">10 loterias • IA que Aprende Padrões • Login Social • Sistema de Créditos • PIX</p>
             </div>
             <div class="header-logo">
-                <img src="/img/BrasãoRoa Imagem.png" onerror="this.style.display='none'" alt="Logo" style="width: 200px; height: auto;">
+                <img src="/img/brasao.png" onerror="this.style.display='none'" alt="Logo" style="width: 60px; height: auto;">
             </div>
         </div>
     </div>
@@ -95,10 +95,14 @@
                     return;
                 }
                 
-                adminToken = data.token;
-                document.getElementById('loginArea').style.display = 'none';
-                document.getElementById('dataArea').style.display = 'block';
-                carregarDadosAdmin();
+                if (data.success) {
+                    adminToken = data.token;
+                    document.getElementById('loginArea').style.display = 'none';
+                    document.getElementById('dataArea').style.display = 'block';
+                    carregarDadosAdmin();
+                } else {
+                    errorDiv.innerHTML = '❌ Credenciais inválidas';
+                }
                 
             } catch (error) {
                 errorDiv.innerHTML = '❌ Erro ao conectar com o servidor';
@@ -117,7 +121,7 @@
         
         async function carregarDadosAdmin() {
             const container = document.getElementById('dadosContainer');
-            container.innerHTML = '<div class="status-login">📊 Carregando dados...</div>';
+            container.innerHTML = '<div class="loading">📊 Carregando dados...</div>';
             
             try {
                 const response = await fetch('/api/admin/data', {
@@ -130,7 +134,7 @@
                     throw new Error(data.error || 'Erro ao carregar');
                 }
                 
-                renderizarDadosAdmin(data.usuarios, data.historico, data.transacoes);
+                renderizarDadosAdmin(data.usuarios || [], data.historico || [], data.transacoes || []);
                 
             } catch (error) {
                 console.error('Erro:', error);
@@ -188,7 +192,9 @@
                     </h3>
                     <div style="overflow-x: auto;">
                         <table id="tabelaUsuarios">
-                            <thead><tr><th>UID</th><th>NOME</th><th>EMAIL</th><th>CRÉDITOS</th><th>PRO</th><th>CRIADO EM</th></tr></thead>
+                            <thead>
+                                <tr><th>UID</th><th>NOME</th><th>EMAIL</th><th>CRÉDITOS</th><th>PRO</th><th>CRIADO EM</th></tr>
+                            </thead>
                             <tbody>
                                 ${usuarios.map(u => `<tr>
                                     <td>${u.uid?.substring(0,15)||'-'}...</td>
