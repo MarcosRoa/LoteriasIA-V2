@@ -138,79 +138,188 @@
                 container.innerHTML = `<div class="status-login" style="color: #ef4444;">❌ Erro: ${error.message}</div>`;
             }
         }
-        
         function renderizarDadosAdmin(usuarios, historico, transacoes) {
-            const container = document.getElementById('dadosContainer');
-            
-            const copyTable = (tableId) => {
-                const table = document.getElementById(tableId);
-                if (!table) return;
-                const range = document.createRange();
-                range.selectNode(table);
-                window.getSelection().removeAllRanges();
-                window.getSelection().addRange(range);
-                document.execCommand('copy');
-                window.getSelection().removeAllRanges();
-                alert('✅ Tabela copiada!');
-            };
-            
-            const exportCSV = (data, filename) => {
-                if (!data || data.length === 0) {
-                    alert('Nenhum dado para exportar');
-                    return;
-                }
-                const headers = Object.keys(data[0]);
-                const csvRows = [headers.join(',')];
-                for (const row of data) {
-                    const values = headers.map(header => {
-                        let val = row[header];
-                        if (val === null) val = '';
-                        if (typeof val === 'object') val = JSON.stringify(val);
-                        return `"${String(val).replace(/"/g, '""')}"`;
-                    });
-                    csvRows.push(values.join(','));
-                }
-                const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${filename}.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
-            };
-            
-            const html = `
-                <div class="data-section">
-                    <h3>👥 USUÁRIOS (${usuarios.length} registros)
-                        <div>
-                            <button class="btn-copiar" onclick="window.copyTableAdmin('tabelaUsuarios')">📋 Copiar</button>
-                            <button class="btn-exportar" onclick="window.exportCSVAdmin(${JSON.stringify(usuarios).replace(/"/g, '&quot;')}, 'usuarios')">📎 Exportar CSV</button>
-                        </div>
-                    </h3>
-                    <div style="overflow-x: auto;">
-                        <table id="tabelaUsuarios">
-                            <thead>
-                                <tr><th>UID</th><th>NOME</th><th>EMAIL</th><th>CRÉDITOS</th><th>PRO</th><th>CRIADO EM</th></tr>
-                            </thead>
-                            <tbody>
-                                ${usuarios.map(u => `<tr>
-                                    <td>${u.uid?.substring(0,15)||'-'}...</td>
-                                    <td><strong>${u.nome||'-'}</strong></td>
-                                    <td>${u.email||'-'}</td>
-                                    <td style="color:#f59e0b;font-weight:bold;">R$ ${u.creditos||0}</td>
-                                    <td style="color:${u.is_pro?'#22c55e':'#ef4444'}">${u.is_pro?'✅ SIM':'❌ NÃO'}</td>
-                                    <td>${u.created_at?new Date(u.created_at).toLocaleString():'-'}</td>
-                                </tr>`).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-            
-            container.innerHTML = html;
-            window.copyTableAdmin = copyTable;
-            window.exportCSVAdmin = exportCSV;
+    const container = document.getElementById('dadosContainer');
+    
+    const copyTable = (tableId) => {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+        const range = document.createRange();
+        range.selectNode(table);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        document.execCommand('copy');
+        window.getSelection().removeAllRanges();
+        alert('✅ Tabela copiada!');
+    };
+    
+    const exportCSV = (data, filename) => {
+        if (!data || data.length === 0) {
+            alert('Nenhum dado para exportar');
+            return;
         }
+        const headers = Object.keys(data[0]);
+        const csvRows = [headers.join(',')];
+        for (const row of data) {
+            const values = headers.map(header => {
+                let val = row[header];
+                if (val === null) val = '';
+                if (typeof val === 'object') val = JSON.stringify(val);
+                return `"${String(val).replace(/"/g, '""')}"`;
+            });
+            csvRows.push(values.join(','));
+        }
+        const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${filename}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+    
+    // TABELA USUÁRIOS - COMPLETA
+    const usuariosHtml = `
+        <div class="data-section">
+            <h3>👥 USUÁRIOS (${usuarios.length} registros)
+                <div>
+                    <button class="btn-copiar" onclick="window.copyTableAdmin('tabelaUsuarios')">📋 Copiar</button>
+                    <button class="btn-exportar" onclick="window.exportCSVAdmin(${JSON.stringify(usuarios).replace(/"/g, '&quot;')}, 'usuarios')">📎 Exportar CSV</button>
+                </div>
+            </h3>
+            <div style="overflow-x: auto; max-height: 500px; overflow-y: auto;">
+                <table id="tabelaUsuarios" style="min-width: 800px;">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>UID</th>
+                            <th>NOME</th>
+                            <th>EMAIL</th>
+                            <th>FOTO</th>
+                            <th>CRÉDITOS</th>
+                            <th>PRO</th>
+                            <th>EXPIRA PRO</th>
+                            <th>CRIADO EM</th>
+                            <th>ATUALIZADO EM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${usuarios.map(u => `
+                            <tr>
+                                <td>${u.id?.substring(0,8)||'-'}...</td>
+                                <td>${u.uid||'-'}</td>
+                                <td><strong>${u.nome||'-'}</strong></td>
+                                <td>${u.email||'-'}</td>
+                                <td>${u.foto_url ? '✅' : '❌'}</td>
+                                <td style="color:#f59e0b;font-weight:bold;">R$ ${u.creditos||0}</td>
+                                <td style="color:${u.is_pro?'#22c55e':'#ef4444'};font-weight:bold;">${u.is_pro?'✅ SIM':'❌ NÃO'}</td>
+                                <td>${u.pro_expires_at ? new Date(u.pro_expires_at).toLocaleDateString() : '-'}</td>
+                                <td>${u.created_at ? new Date(u.created_at).toLocaleString() : '-'}</td>
+                                <td>${u.updated_at ? new Date(u.updated_at).toLocaleString() : '-'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    
+    // TABELA HISTÓRICO - COMPLETA
+    const historicoHtml = `
+        <div class="data-section">
+            <h3>📜 HISTÓRICO DE PALPITES (${historico.length} registros)
+                <div>
+                    <button class="btn-copiar" onclick="window.copyTableAdmin('tabelaHistorico')">📋 Copiar</button>
+                    <button class="btn-exportar" onclick="window.exportCSVAdmin(${JSON.stringify(historico).replace(/"/g, '&quot;')}, 'historico')">📎 Exportar CSV</button>
+                </div>
+            </h3>
+            <div style="overflow-x: auto; max-height: 500px; overflow-y: auto;">
+                <table id="tabelaHistorico" style="min-width: 800px;">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>USUÁRIO (UID)</th>
+                            <th>LOTERIA</th>
+                            <th>JOGOS (NÚMEROS)</th>
+                            <th>FILTROS</th>
+                            <th>EXTRAS</th>
+                            <th>MESES</th>
+                            <th>QTD NÚMEROS</th>
+                            <th>TIMES</th>
+                            <th>DATA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${historico.map(h => `
+                            <tr>
+                                <td>${h.id?.substring(0,8)||'-'}...</td>
+                                <td>${h.usuario_uid?.substring(0,20)||'-'}...</td>
+                                <td>${h.loteria||'-'}</td>
+                                <td style="font-size: 10px;">${JSON.stringify(h.jogos)?.substring(0,100)||'-'}${JSON.stringify(h.jogos)?.length > 100 ? '...' : ''}</td>
+                                <td>${h.filtros?.substring(0,50)||'-'}${h.filtros?.length > 50 ? '...' : ''}</td>
+                                <td>${h.extras||'-'}</td>
+                                <td>${h.meses ? JSON.stringify(h.meses) : '-'}</td>
+                                <td>${h.quantidade_numeros||'-'}</td>
+                                <td>${h.times ? JSON.stringify(h.times) : '-'}</td>
+                                <td>${h.data ? new Date(h.data).toLocaleString() : '-'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    
+    // TABELA TRANSAÇÕES - COMPLETA
+    const transacoesHtml = `
+        <div class="data-section">
+            <h3>💰 TRANSAÇÕES (${transacoes.length} registros)
+                <div>
+                    <button class="btn-copiar" onclick="window.copyTableAdmin('tabelaTransacoes')">📋 Copiar</button>
+                    <button class="btn-exportar" onclick="window.exportCSVAdmin(${JSON.stringify(transacoes).replace(/"/g, '&quot;')}, 'transacoes')">📎 Exportar CSV</button>
+                </div>
+            </h3>
+            <div style="overflow-x: auto; max-height: 500px; overflow-y: auto;">
+                <table id="tabelaTransacoes" style="min-width: 800px;">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>USUÁRIO (UID)</th>
+                            <th>TIPO</th>
+                            <th>QUANTIDADE (R$)</th>
+                            <th>SALDO APÓS (R$)</th>
+                            <th>REFERENCE_ID</th>
+                            <th>IDEMPOTENCY_KEY</th>
+                            <th>METADATA</th>
+                            <th>DATA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${transacoes.map(t => `
+                            <tr>
+                                <td>${t.id?.substring(0,8)||'-'}...</td>
+                                <td>${t.usuario_uid?.substring(0,20)||'-'}...</td>
+                                <td style="color:${t.tipo==='compra'?'#22c55e':t.tipo==='uso'?'#ef4444':'#f59e0b'};font-weight:bold;">${t.tipo||'-'}</td>
+                                <td style="color:#f59e0b;">R$ ${t.quantidade||0}</td>
+                                <td>R$ ${t.saldo_apos||0}</td>
+                                <td>${t.reference_id?.substring(0,20)||'-'}...</td>
+                                <td>${t.idempotency_key?.substring(0,20)||'-'}...</td>
+                                <td>${t.metadata ? JSON.stringify(t.metadata) : '-'}</td>
+                                <td>${t.data ? new Date(t.data).toLocaleString() : '-'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = usuariosHtml + historicoHtml + transacoesHtml;
+    
+    window.copyTableAdmin = copyTable;
+    window.exportCSVAdmin = exportCSV;
+}
+        
     </script>
 </body>
 </html>
