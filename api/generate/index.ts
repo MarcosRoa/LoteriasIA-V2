@@ -1,4 +1,5 @@
 // api/generate/index.ts - VERSÃO CORRIGIDA COM 4 MODOS DE IA
+// api/generate/index.ts - VERSÃO CORRIGIDA (SEM predizerAleatorio)
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { AdvancedLotteryAI } from '../../core/ia/AdvancedLotteryAI';
@@ -21,7 +22,49 @@ const LOTTERY_CONFIGS: Record<string, { nome: string; maxNumero: number; numeros
     supersete: { nome: 'Super Sete', maxNumero: 9, numerosPadrao: 7, incluirZero: true, temDispersao: true }
 };
 
-// Função para processar CSV e extrair números (para treinamento)
+// Função para gerar jogo aleatório (alternativa ao predizerAleatorio)
+function gerarJogoAleatorio(config: any, quantidade: number): number[] {
+    const numeros = new Set<number>();
+    const min = config.incluirZero ? 0 : 1;
+    const max = config.maxNumero;
+    
+    while (numeros.size < quantidade) {
+        const num = Math.floor(Math.random() * (max - min + 1)) + min;
+        numeros.add(num);
+    }
+    return Array.from(numeros).sort((a, b) => a - b);
+}
+
+// Função para gerar jogo com IA
+function gerarJogoComIA(dadosHistoricos: number[][], config: any, modo: string, quantidade: number, seed: number, dispersao: number = 15): number[] {
+    const aiConfig = {
+        nome: config.nome,
+        maxNumero: config.maxNumero,
+        numerosPorJogo: quantidade,
+        incluirZero: config.incluirZero,
+        temDispersao: config.temDispersao
+    };
+    
+    const ai = new AdvancedLotteryAI(dadosHistoricos, aiConfig);
+    ai.treinar();
+    
+    // Usar apenas os métodos que existem na classe AdvancedLotteryAI
+    switch (modo) {
+        case 'ia_especialista':
+            return ai.predizerIAEspecialista(quantidade, config.temDispersao, dispersao, seed);
+        case 'aleatorio_inteligente':
+            // Aleatório inteligente = IA especialista com menos peso
+            return ai.predizerIAEspecialista(quantidade, false, 0, seed);
+        case 'probabilistico':
+            // Probabilístico = baseado apenas em frequência (sem dispersão)
+            return ai.predizerIAEspecialista(quantidade, false, 0, seed);
+        case 'aleatorio_puro':
+        default:
+            return gerarJogoAleatorio(config, quantidade);
+    }
+}
+
+// Função para processar CSV
 function processarCSV(texto: string, config: any): number[][] {
     const linhas = texto.split('\n').filter(l => l.trim() && !l.startsWith('Data'));
     const dados: number[][] = [];
@@ -74,46 +117,6 @@ function processarCSV(texto: string, config: any): number[][] {
     return dados;
 }
 
-// Função para gerar jogo baseado no modo
-function gerarJogoComIA(dadosHistoricos: number[][], config: any, modo: string, quantidade: number, seed: number, dispersao: number = 15): number[] {
-    const aiConfig = {
-        nome: config.nome,
-        maxNumero: config.maxNumero,
-        numerosPorJogo: quantidade,
-        incluirZero: config.incluirZero,
-        temDispersao: config.temDispersao
-    };
-    
-    const ai = new AdvancedLotteryAI(dadosHistoricos, aiConfig);
-    ai.treinar();
-    
-    switch (modo) {
-        case 'ia_especialista':
-            return ai.predizerIAEspecialista(quantidade, config.temDispersao, dispersao, seed);
-        case 'aleatorio_inteligente':
-            // Aleatório inteligente = IA especialista com menos peso
-            return ai.predizerIAEspecialista(quantidade, false, 0, seed);
-        case 'probabilistico':
-            // Probabilístico = baseado apenas em frequência (sem dispersão)
-            return ai.predizerIAEspecialista(quantidade, false, 0, seed);
-        case 'aleatorio_puro':
-        default:
-            return ai.predizerAleatorio(quantidade, seed);
-    }
-}
-
-function gerarJogoAleatorio(config: any, quantidade: number): number[] {
-    const numeros = new Set<number>();
-    const min = config.incluirZero ? 0 : 1;
-    const max = config.maxNumero;
-    
-    while (numeros.size < quantidade) {
-        const num = Math.floor(Math.random() * (max - min + 1)) + min;
-        numeros.add(num);
-    }
-    return Array.from(numeros).sort((a, b) => a - b);
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     
@@ -154,7 +157,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Carregar dados históricos para IA
         let dadosHistoricos: number[][] = [];
         try {
-            const csvUrl = `${process.env.VERCEL_URL || 'https://loterias-ia.vercel.app'}/csv/${lottery}.csv`;
+            const baseUrl = process.env.VERCEL_URL || 'loterias-ia.vercel.app';
+            const csvUrl = `https://${baseUrl}/csv/${lottery}.csv`;
             const response = await fetch(csvUrl);
             if (response.ok) {
                 const csvText = await response.text();
