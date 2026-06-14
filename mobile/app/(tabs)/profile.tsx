@@ -1,3 +1,4 @@
+// app/(tabs)/profile.tsx 14/06/2026
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useAuthStore } from '../../src/stores/authStore';
@@ -13,18 +14,18 @@ export default function ProfileScreen() {
     useEffect(() => {
         if (user) {
             loadUserData();
+        } else {
+            setLoading(false);
         }
     }, [user]);
 
     const loadUserData = async () => {
         setLoading(true);
         try {
-            // ✅ CORRIGIDO: não passa uid como parâmetro
             const creditsData = await getCredits();
             setCredits(creditsData.credits || 0);
             setIsPro(creditsData.isPro || false);
             
-            // ✅ CORRIGIDO: não passa uid como parâmetro
             const proData = await getProStatus();
             setProDaysLeft(proData.daysLeft || 0);
         } catch (error: any) {
