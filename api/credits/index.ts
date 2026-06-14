@@ -17,6 +17,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const uid = (req.query.uid || req.headers['x-user-id']) as string;
     const email = (req.headers['x-user-email'] as string);
     const nome = (req.headers['x-user-name'] as string);
+    // LOG DE DEBUG - mostra todos os headers recebidos
+    console.log('📝 ALL HEADERS:', JSON.stringify(req.headers));
+    console.log('📝 X-User-Name:', req.headers['x-user-name']);
+    console.log('📝 X-User-Email:', req.headers['x-user-email']);
+    console.log('📝 X-User-Id:', req.headers['x-user-id']);
     
     console.log('📝 HEADERS RECEBIDOS:', { uid, email, nome });
     
