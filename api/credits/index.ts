@@ -13,89 +13,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
     
-    // Pega UID do query ou header
+    // PEGAR DOS HEADERS
     const uid = (req.query.uid || req.headers['x-user-id']) as string;
+    const email = (req.headers['x-user-email'] as string);
+    const nome = (req.headers['x-user-name'] as string);
+    
+    console.log('📝 HEADERS RECEBIDOS:', { uid, email, nome });
+    
     if (!uid) return res.status(400).json({ error: 'UID é obrigatório' });
     
-    // Pega dados do header (enviados pelo app)
-    const email = (req.headers['x-user-email'] as string) || `${uid}@temp.com`;
-    const nome = (req.headers['x-user-name'] as string) || email.split('@')[0];
-
-         // No início da função
-    console.error('=== DEBUG CREDITS ===');
-    console.error('Headers:', JSON.stringify(req.headers));
-    console.error('Query:', JSON.stringify(req.query));
-    
-    console.log('📝 Recebido:', { uid, email, nome });
-   
-    
-      
     try {
-        // Buscar usuário existente
         let { data: user, error } = await supabase
             .from('usuarios')
             .select('*')
             .eq('uid', uid)
             .maybeSingle();
         
-        // Se houver erro na consulta, lançar exceção
-        if (error) {
-            console.error('❌ Erro na consulta:', error);
-            throw error;
-        }
+        if (error) throw error;
         
-        // Se não existe, criar
         if (!user) {
-            console.log('📝 Criando novo usuário:', { uid, nome, email });
-            
+            // CRIAR com os dados dos headers
             const { data: newUser, error: insertError } = await supabase
                 .from('usuarios')
                 .insert({
                     uid,
-                    nome: nome,
-                    email: email,
+                    nome: nome || email?.split('@')[0] || 'Usuário',
+                    email: email || `${uid}@temp.com`,
                     creditos: 5,
-                    is_pro: false,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
+                    is_pro: false
                 })
-                .select('creditos, is_pro, email, nome')
+                .select('creditos, is_pro')
                 .single();
             
-            if (insertError) {
-                console.error('❌ Erro ao inserir:', insertError);
-                throw insertError;
-            }
+            if (insertError) throw insertError;
             user = newUser;
-            console.log('✅ Usuário criado:', user);
-        } 
-        // Se existe mas não tem nome ou está vazio, atualizar
-        else if (!user.nome || user.nome === '' || user.nome === '-') {
-            console.log('📝 Atualizando usuário existente:', { uid, nome, email });
-            
-            const { error: updateError } = await supabase
-                .from('usuarios')
-                .update({ 
-                    nome: nome,
-                    email: email,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('uid', uid);
-            
-            if (updateError) {
-                console.error('❌ Erro ao atualizar:', updateError);
-                throw updateError;
+            console.log('✅ Usuário criado:', { uid, nome, email });
+        } else {
+            // ATUALIZAR se veio nome/email válido
+            if (nome && nome !== '-' && (!user.nome || user.nome === '-')) {
+                await supabase
+                    .from('usuarios')
+                    .update({ nome, email, updated_at: new Date().toISOString() })
+                    .eq('uid', uid);
+                console.log('✅ Usuário atualizado:', { uid, nome, email });
             }
-            
-            user.nome = nome;
-            user.email = email;
-            console.log('✅ Usuário atualizado:', user);
         }
         
-        // Verificar email PRO fixo
+        // PRO fixo
         const PRO_FIXED_EMAIL = 'mresquadriasaluminio@gmail.com';
-        let credits = user?.creditos || 5;
-        let isPro = user?.is_pro || false;
+        let credits = user.creditos;
+        let isPro = user.is_pro;
         
         if (email === PRO_FIXED_EMAIL) {
             isPro = true;
@@ -108,16 +75,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
         }
         
-        return res.status(200).json({ 
-            success: true, 
-            credits, 
-            isPro,
-            nome: user?.nome,
-            email: user?.email
-        });
+        return res.status(200).json({ success: true, credits, isPro });
         
     } catch (error: any) {
-        console.error('❌ Erro em /api/credits:', error);
+        console.error('❌ Erro:', error);
         return res.status(500).json({ error: error.message });
     }
 }
