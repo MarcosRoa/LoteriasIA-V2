@@ -20,9 +20,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Pega dados do header (enviados pelo app)
     const email = (req.headers['x-user-email'] as string) || `${uid}@temp.com`;
     const nome = (req.headers['x-user-name'] as string) || email.split('@')[0];
+
+         // No início da função
+    console.error('=== DEBUG CREDITS ===');
+    console.error('Headers:', JSON.stringify(req.headers));
+    console.error('Query:', JSON.stringify(req.query));
     
     console.log('📝 Recebido:', { uid, email, nome });
+   
     
+      
     try {
         // Buscar usuário existente
         let { data: user, error } = await supabase
