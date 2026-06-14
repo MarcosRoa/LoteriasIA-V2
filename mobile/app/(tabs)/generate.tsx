@@ -1,4 +1,5 @@
 // app/(tabs)/generate.tsx - VERSÃO COMPLETA COM TREINAMENTO
+// mobile/app/(tabs)/generate.tsx
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -8,12 +9,20 @@ import { useAuthStore } from '../../src/stores/authStore';
 import { NumberBall } from '../../src/components/NumberBall';
 import IATraining from '../../src/components/IATraining';
 
-// Modos de IA compatíveis com o backend
+const PERIODS = [
+    { value: 'all', label: 'Todos' },
+    { value: 1, label: '1 Ano' },
+    { value: 3, label: '3 Anos' },
+    { value: 5, label: '5 Anos' },
+    { value: 7, label: '7 Anos' },
+    { value: 9, label: '9 Anos' },
+];
+
 const IA_MODES = [
-    { id: 'ia_especialista', label: '🎓 IA Especialista', description: 'Algoritmo avançado com análise de padrões', icon: 'brain' },
-    { id: 'aleatorio_inteligente', label: '🎲 Aleatório Inteligente', description: 'Aleatório com ponderação estatística', icon: 'dice' },
-    { id: 'probabilistico', label: '📊 Probabilístico', description: 'Baseado em frequência e probabilidades', icon: 'stats-chart' },
-    { id: 'aleatorio_puro', label: '🎯 Aleatório Puro', description: 'RNG total - sorte pura', icon: 'random' },
+    { id: 'ia_especialista', label: '🎓 IA Especialista', description: 'Algoritmo avançado com análise de padrões' },
+    { id: 'aleatorio_inteligente', label: '🎲 Aleatório Inteligente', description: 'Aleatório com ponderação estatística' },
+    { id: 'probabilistico', label: '📊 Probabilístico', description: 'Baseado em frequência e probabilidades' },
+    { id: 'aleatorio_puro', label: '🎯 Aleatório Puro', description: 'RNG total - sorte pura' },
 ];
 
 export default function GenerateScreen() {
@@ -24,6 +33,7 @@ export default function GenerateScreen() {
     const lottery = LOTTERIES.find(l => l.id === lotteryParam) || LOTTERIES[0];
     const [quantity, setQuantity] = useState(1);
     const [mode, setMode] = useState('ia_especialista');
+    const [selectedPeriod, setSelectedPeriod] = useState<string | number>('all');
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedGames, setGeneratedGames] = useState<number[][]>([]);
     const [creditsRemaining, setCreditsRemaining] = useState(0);
@@ -38,12 +48,11 @@ export default function GenerateScreen() {
         
         if (!user) {
             Alert.alert('Erro', 'Faça login para gerar jogos');
-            router.push('/(auth)/login');
             return;
         }
 
         if (creditsRemaining !== undefined && creditsRemaining < totalCost) {
-            Alert.alert('Saldo insuficiente', `Você precisa de ${totalCost} créditos. Faça uma recarga.`);
+            Alert.alert('Saldo insuficiente', `Você precisa de ${totalCost} créditos.`);
             return;
         }
 
@@ -80,10 +89,6 @@ export default function GenerateScreen() {
         if (quantity > 1) setQuantity(quantity - 1);
     };
 
-    const handleTrainingComplete = (confidence: number) => {
-        setIaConfidence(confidence);
-    };
-
     return (
         <ScrollView style={styles.container}>
             {/* Header */}
@@ -93,10 +98,36 @@ export default function GenerateScreen() {
                 <Text style={styles.lotteryRange}>{lottery.numeros} números • 1 a {lottery.maxNumero}</Text>
             </View>
 
-            {/* IA Training Component */}
+            {/* Período Selector */}
+            <View style={styles.card}>
+                <Text style={styles.label}>📅 Período de Análise</Text>
+                <View style={styles.periodContainer}>
+                    {PERIODS.map((period) => (
+                        <TouchableOpacity
+                            key={period.value.toString()}
+                            style={[
+                                styles.periodButton,
+                                selectedPeriod === period.value && styles.periodButtonActive
+                            ]}
+                            onPress={() => setSelectedPeriod(period.value)}
+                        >
+                            <Text style={[
+                                styles.periodButtonText,
+                                selectedPeriod === period.value && styles.periodButtonTextActive
+                            ]}>
+                                {period.label}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            </View>
+
+            {/* Componente de Treinamento da IA */}
             <IATraining 
                 lotteryId={lottery.id}
-                onTrainingComplete={handleTrainingComplete}
+                selectedPeriod={selectedPeriod}
+                selectedMode={mode}
+                onTrainingComplete={setIaConfidence}
             />
 
             {/* Créditos */}
@@ -211,6 +242,42 @@ const styles = StyleSheet.create({
         color: '#94a3b8',
         marginTop: 4,
     },
+    card: {
+        backgroundColor: '#1e293b',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
+    },
+    label: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#94a3b8',
+        marginBottom: 12,
+    },
+    periodContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    periodButton: {
+        backgroundColor: '#334155',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        minWidth: 60,
+        alignItems: 'center',
+    },
+    periodButtonActive: {
+        backgroundColor: '#8b5cf6',
+    },
+    periodButtonText: {
+        color: '#94a3b8',
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    periodButtonTextActive: {
+        color: '#ffffff',
+    },
     creditsCard: {
         backgroundColor: '#f59e0b',
         borderRadius: 16,
@@ -239,18 +306,6 @@ const styles = StyleSheet.create({
         color: '#1e293b',
         marginTop: 8,
         fontWeight: '500',
-    },
-    card: {
-        backgroundColor: '#1e293b',
-        borderRadius: 16,
-        padding: 16,
-        marginBottom: 16,
-    },
-    label: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#94a3b8',
-        marginBottom: 12,
     },
     quantityContainer: {
         flexDirection: 'row',
