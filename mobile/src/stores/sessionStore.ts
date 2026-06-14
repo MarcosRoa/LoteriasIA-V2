@@ -1,3 +1,4 @@
+// src/stores/sessionStore.ts 14/06
 import { create } from 'zustand';
 
 interface SessionState {
@@ -6,21 +7,18 @@ interface SessionState {
 
   enableGuestMode: () => void;
   disableGuestMode: () => void;
-
   openLoginModal: () => void;
   closeLoginModal: () => void;
 }
 
 export const useSessionStore = create<SessionState>((set) => ({
   isGuest: false,
-
-  // Ao iniciar o app, mostramos o modal
-  showLoginModal: true,
+  showLoginModal: true,  // Começa true
 
   enableGuestMode: () =>
     set({
       isGuest: true,
-      showLoginModal: false,
+      showLoginModal: false,  // Fecha modal e entra como convidado
     }),
 
   disableGuestMode: () =>
@@ -35,6 +33,6 @@ export const useSessionStore = create<SessionState>((set) => ({
 
   closeLoginModal: () =>
     set({
-      showLoginModal: false,
+      showLoginModal: false,  // Fecha modal SEM login (problema!)
     }),
 }));
