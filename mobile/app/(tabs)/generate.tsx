@@ -1,5 +1,5 @@
-// app/(tabs)/generate.tsx - VERSÃO COMPLETA COM TREINAMENTO
 // mobile/app/(tabs)/generate.tsx
+// app/(tabs)/generate.tsx 14/06/2024
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -7,7 +7,6 @@ import { LOTTERIES } from '../../src/constants/lotteries';
 import { generateGames } from '../../src/services/api';
 import { useAuthStore } from '../../src/stores/authStore';
 import { NumberBall } from '../../src/components/NumberBall';
-import IATraining from '../../src/components/IATraining';
 
 const PERIODS = [
     { value: 'all', label: 'Todos' },
@@ -38,7 +37,6 @@ export default function GenerateScreen() {
     const [generatedGames, setGeneratedGames] = useState<number[][]>([]);
     const [creditsRemaining, setCreditsRemaining] = useState(0);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const [iaConfidence, setIaConfidence] = useState(0);
 
     const COST_PER_GAME = 3;
     const totalCost = quantity * COST_PER_GAME;
@@ -48,11 +46,6 @@ export default function GenerateScreen() {
         
         if (!user) {
             Alert.alert('Erro', 'Faça login para gerar jogos');
-            return;
-        }
-
-        if (creditsRemaining !== undefined && creditsRemaining < totalCost) {
-            Alert.alert('Saldo insuficiente', `Você precisa de ${totalCost} créditos.`);
             return;
         }
 
@@ -122,22 +115,11 @@ export default function GenerateScreen() {
                 </View>
             </View>
 
-            {/* Componente de Treinamento da IA */}
-            <IATraining 
-                lotteryId={lottery.id}
-                selectedPeriod={selectedPeriod}
-                selectedMode={mode}
-                onTrainingComplete={setIaConfidence}
-            />
-
             {/* Créditos */}
             <View style={styles.creditsCard}>
                 <Text style={styles.creditsLabel}>💰 SEUS CRÉDITOS</Text>
                 <Text style={styles.creditsValue}>{creditsRemaining}</Text>
                 <Text style={styles.costInfo}>Custo: {totalCost} créditos ({quantity} jogo(s) x 3 créditos)</Text>
-                {iaConfidence > 0 && (
-                    <Text style={styles.confidenceInfo}>🎯 Confiança da IA: {iaConfidence}%</Text>
-                )}
             </View>
 
             {/* Quantidade */}
@@ -300,12 +282,6 @@ const styles = StyleSheet.create({
         color: '#1e293b',
         marginTop: 4,
         opacity: 0.8,
-    },
-    confidenceInfo: {
-        fontSize: 11,
-        color: '#1e293b',
-        marginTop: 8,
-        fontWeight: '500',
     },
     quantityContainer: {
         flexDirection: 'row',
