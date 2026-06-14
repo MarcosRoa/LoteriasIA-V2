@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "LoteriasIA",
+    "slug": "loterias-ia-mobile",
+    "scheme": "loteriasia",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "web": {
+      "bundler": "metro"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "cb127715-6e96-450c-ab9b-0ce467d4e0d4"
+      }
+    },
+    "owner": "marcosroa",
+    "android": {
+      "package": "com.marcosroa.loteriasiamobile"
+    }
+  }
+}
