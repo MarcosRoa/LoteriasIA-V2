@@ -80,7 +80,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
         }
         
-        return res.status(200).json({ success: true, credits, isPro });
+        //return res.status(200).json({ success: true, credits, isPro });
+        return res.status(200).json({
+            success: true,
+            credits,
+            isPro,
+            debug: {
+                uid,
+                nome,
+                email,
+                xUserName: req.headers['x-user-name'],
+                xUserEmail: req.headers['x-user-email'],
+                xUserId: req.headers['x-user-id']
+            }
+        });
+
         
     } catch (error: any) {
         console.error('❌ Erro:', error);
