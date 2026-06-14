@@ -1,3 +1,4 @@
+// src/components/LoginModal.tsx - VERIFIQUE ESTAS PARTES 14/06
 import React, { useState } from 'react';
 import {
   Alert,
@@ -24,9 +25,18 @@ export default function LoginModal({ visible }: LoginModalProps) {
   const [password, setPassword] = useState('');
   const [isRegisterMode, setIsRegisterMode] = useState(false);
 
-  const { loginWithEmail, registerWithEmail, error, isLoading } = useAuthStore();
+  const { user, loginWithEmail, registerWithEmail, error, isLoading, clearError } = useAuthStore();
   const { closeLoginModal, enableGuestMode } = useSessionStore();
   const { signInWithGoogle, request } = useGoogleAuth();
+
+  // Fechar modal automaticamente quando usuário logar
+  React.useEffect(() => {
+    if (user) {
+      // Usuário logou, pode fechar o modal
+      clearError();
+      closeLoginModal();
+    }
+  }, [user]);
 
   const handleLogin = async () => {
     if (!email.trim()) {
@@ -46,7 +56,8 @@ export default function LoginModal({ visible }: LoginModalProps) {
       setEmail('');
       setPassword('');
       setIsRegisterMode(false);
-      closeLoginModal();
+      clearError();
+      // O useEffect vai fechar o modal
       Alert.alert('Sucesso', 'Login realizado com sucesso!');
     } else {
       Alert.alert('Erro', error || 'Não foi possível realizar o login.');
@@ -81,7 +92,8 @@ export default function LoginModal({ visible }: LoginModalProps) {
       setEmail('');
       setPassword('');
       setIsRegisterMode(false);
-      closeLoginModal();
+      clearError();
+      // O useEffect vai fechar o modal
       Alert.alert('Sucesso', 'Conta criada com sucesso!');
     } else {
       Alert.alert('Erro', error || 'Não foi possível criar a conta.');
@@ -95,7 +107,7 @@ export default function LoginModal({ visible }: LoginModalProps) {
       setEmail('');
       setPassword('');
       setIsRegisterMode(false);
-      closeLoginModal();
+      clearError();
       Alert.alert('Sucesso', 'Login com Google realizado!');
     } else {
       Alert.alert('Erro', result.error || 'Não foi possível fazer login com Google');
@@ -103,8 +115,8 @@ export default function LoginModal({ visible }: LoginModalProps) {
   };
 
   const handleGuest = () => {
-    enableGuestMode();
-    closeLoginModal();
+    enableGuestMode();  // Isso vai fechar o modal e marcar como convidado
+    Alert.alert('Modo Convidado', 'Você pode navegar, mas para gerar palpites precisa fazer login.');
   };
 
   const toggleMode = () => {
@@ -112,10 +124,22 @@ export default function LoginModal({ visible }: LoginModalProps) {
     setName('');
     setEmail('');
     setPassword('');
+    clearError();
+  };
+
+  // Impedir fechar clicando fora (backdrop)
+  const handleBackdropPress = () => {
+    // Não faz nada - impede fechar
+    // Usuário só sai com login ou modo convidado
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal 
+      visible={visible} 
+      transparent 
+      animationType="fade"
+      onRequestClose={handleBackdropPress}  // Botão voltar do Android não fecha
+    >
       <View style={styles.overlay}>
         <View style={styles.container}>
           <Text style={styles.title}>
@@ -128,7 +152,7 @@ export default function LoginModal({ visible }: LoginModalProps) {
             onPress={handleGoogleLogin}
             disabled={!request}
           >
-            <Text style={styles.googleButtonText}>Continuar com Google Login</Text>
+            <Text style={styles.googleButtonText}>Continuar com Google</Text>
           </TouchableOpacity>
 
           <View style={styles.divider}>
@@ -201,7 +225,7 @@ export default function LoginModal({ visible }: LoginModalProps) {
           </TouchableOpacity>
 
           <TouchableOpacity onPress={handleGuest}>
-            <Text style={styles.guestText}>Entrar sem login</Text>
+            <Text style={styles.guestText}>Entrar como Convidado</Text>
           </TouchableOpacity>
         </View>
       </View>
