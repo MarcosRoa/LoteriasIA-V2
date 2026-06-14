@@ -1,3 +1,5 @@
+// src/services/api.ts
+// src/services/api.ts 14/06/2026
 import axios from 'axios';
 import { getAuth } from 'firebase/auth';
 
@@ -11,7 +13,7 @@ const api = axios.create({
     timeout: 30000,
 });
 
-// Interceptor para adicionar token Firebase e uid
+// Interceptor para adicionar token Firebase e dados do usuário
 api.interceptors.request.use(async (config) => {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -20,9 +22,14 @@ api.interceptors.request.use(async (config) => {
         try {
             const token = await user.getIdToken();
             config.headers.Authorization = `Bearer ${token}`;
-            // ⚠️ Temporário: enviar uid para o backend funcionar
             config.headers['X-User-Id'] = user.uid;
             config.headers['X-User-Email'] = user.email || '';
+            config.headers['X-User-Name'] = user.displayName || user.email?.split('@')[0] || 'Usuário';
+            console.log('🔐 Headers enviados:', { 
+                uid: user.uid, 
+                email: user.email,
+                name: user.displayName 
+            });
         } catch (error) {
             console.error('Erro ao obter token:', error);
         }
@@ -38,7 +45,11 @@ api.interceptors.request.use(async (config) => {
 // ============================================
 export const getCredits = async () => {
     try {
-        const response = await api.get(`/user/credits`);
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) throw new Error('Usuário não logado');
+        
+        const response = await api.get(`/credits?uid=${user.uid}`);
         return response.data;
     } catch (error: any) {
         console.error('Erro ao buscar créditos:', error);
@@ -64,6 +75,7 @@ export const generateGames = async (data: {
     
     try {
         const response = await api.post('/generate', {
+            uid: user.uid,
             lottery: data.lottery,
             quantity: data.quantity,
             mode: data.mode,
@@ -81,7 +93,11 @@ export const generateGames = async (data: {
 // ============================================
 export const getHistory = async (limit: number = 50) => {
     try {
-        const response = await api.get(`/user/history?limit=${limit}`);
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) throw new Error('Usuário não logado');
+        
+        const response = await api.get(`/user/history?uid=${user.uid}&limit=${limit}`);
         return response.data;
     } catch (error: any) {
         console.error('Erro ao buscar histórico:', error);
@@ -94,7 +110,11 @@ export const getHistory = async (limit: number = 50) => {
 // ============================================
 export const getProStatus = async () => {
     try {
-        const response = await api.get(`/pro/status`);
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) throw new Error('Usuário não logado');
+        
+        const response = await api.get(`/pro/status?uid=${user.uid}`);
         return response.data;
     } catch (error: any) {
         console.error('Erro ao buscar status PRO:', error);
@@ -115,6 +135,7 @@ export const createPayment = async (amount: number) => {
     
     try {
         const response = await api.post('/payments/create', {
+            userId: user.uid,
             amount: amount,
         });
         return response.data;
