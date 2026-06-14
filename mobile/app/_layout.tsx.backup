@@ -1,0 +1,99 @@
+import React, { useEffect, useState } from 'react';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+
+import LoginModal from '../src/components/LoginModal';
+
+import { useAuthStore } from '../src/stores/authStore';
+import { useSessionStore } from '../src/stores/sessionStore';
+
+export default function RootLayout() {
+
+  const { user, checkAuth } = useAuthStore();
+
+  const {
+    showLoginModal,
+    closeLoginModal,
+    openLoginModal,
+  } = useSessionStore();
+
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+
+    const initialize = async () => {
+
+      try {
+
+        await checkAuth();
+
+      } catch (error) {
+
+        console.log(error);
+
+      } finally {
+
+        setCheckingAuth(false);
+
+      }
+    };
+
+    initialize();
+
+  }, []);
+
+  useEffect(() => {
+
+    if (user) {
+
+      closeLoginModal();
+
+    } else {
+
+      openLoginModal();
+
+    }
+
+  }, [user]);
+
+  if (checkingAuth) {
+    return null;
+  }
+
+  return (
+    <>
+      <StatusBar style="light" />
+
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen
+          name="index"
+          options={{
+            headerShown: false,
+          }}
+        />
+
+        <Stack.Screen
+          name="(auth)"
+          options={{
+            headerShown: false,
+          }}
+        />
+
+        <Stack.Screen
+          name="(tabs)"
+          options={{
+            headerShown: false,
+          }}
+        />
+      </Stack>
+
+      <LoginModal
+        visible={showLoginModal}
+      />
+    </>
+  );
+}
