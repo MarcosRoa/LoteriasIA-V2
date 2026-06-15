@@ -151,6 +151,7 @@ export default function GenerateScreen() {
                 totalDataPoints={totalDataPoints}
                 selectedPeriod={selectedPeriod.toString()}
                 selectedMode={mode}
+                lotteryId={lottery.id}  // ← ADICIONAR ESTA LINHA
             />
 
             {/* Card de Créditos - Laranja */}
