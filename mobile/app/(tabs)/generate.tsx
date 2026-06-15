@@ -237,6 +237,8 @@ export default function GenerateScreen() {
     );
 }
 
+// Substitua apenas a seção de estilos (styles) no final do arquivo
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -245,7 +247,7 @@ const styles = StyleSheet.create({
     },
     header: {
         alignItems: 'center',
-        marginBottom: 24,
+        marginBottom: 20,
         padding: 16,
         backgroundColor: '#1e293b',
         borderRadius: 16,
@@ -300,20 +302,25 @@ const styles = StyleSheet.create({
     periodButtonTextActive: {
         color: '#ffffff',
     },
+    // CARD DE CRÉDITOS - REFORMULADO
     creditsCard: {
         backgroundColor: '#f59e0b',
         borderRadius: 16,
-        padding: 16,
-        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 20,
         marginBottom: 16,
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        justifyContent: 'center',
+        gap: 8,
     },
     creditsLabel: {
-        fontSize: 12,
-        color: '#1e293b',
+        fontSize: 18,
         fontWeight: '600',
+        color: '#1e293b',
     },
     creditsValue: {
-        fontSize: 36,
+        fontSize: 32,
         fontWeight: 'bold',
         color: '#1e293b',
     },
@@ -322,12 +329,14 @@ const styles = StyleSheet.create({
         color: '#1e293b',
         marginTop: 4,
         opacity: 0.8,
+        textAlign: 'center',
     },
     confidenceInfo: {
         fontSize: 11,
         color: '#1e293b',
         marginTop: 8,
         fontWeight: '500',
+        textAlign: 'center',
     },
     quantityContainer: {
         flexDirection: 'row',
