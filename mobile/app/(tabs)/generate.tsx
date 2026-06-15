@@ -154,8 +154,10 @@ export default function GenerateScreen() {
 
             {/* Créditos */}
             <View style={styles.creditsCard}>
-                <Text style={styles.creditsLabel}>💰 SEUS CRÉDITOS</Text>
+                <Text style={styles.creditsLabel}>💰 Seus Créditos</Text>
                 <Text style={styles.creditsValue}>{creditsRemaining}</Text>
+            </View>
+            <View style={styles.costInfoContainer}>
                 <Text style={styles.costInfo}>Custo: {totalCost} créditos ({quantity} jogo(s) x 3 créditos)</Text>
                 {iaConfidence > 0 && (
                     <Text style={styles.confidenceInfo}>🎯 Confiança da IA: {iaConfidence}%</Text>
@@ -244,6 +246,13 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#0f172a',
         padding: 16,
+    },
+    costInfoContainer: {
+        backgroundColor: '#1e293b',
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 16,
+        alignItems: 'center',
     },
     header: {
         alignItems: 'center',
