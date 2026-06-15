@@ -1,10 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 const LOTTERY_CONFIGS: Record<string, { maxNumero: number; numerosPadrao: number; incluirZero: boolean }> = {
     megasena: { maxNumero: 60, numerosPadrao: 6, incluirZero: false },
@@ -144,41 +138,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     try {
-        const baseUrl = process.env.VERCEL_URL || 'loterias-ia.vercel.app';
-        const csvUrl = `https://${baseUrl}/public/csv/${lottery}.csv`;
+        // CORRIGIDO: caminho para public/csv/
+        const csvUrl = `https://loterias-ia.vercel.app/public/csv/${lottery}.csv`;
         
-        let totalDraws = 0;
-        let filteredDraws = 0;
-        let error = null;
+        console.log('📥 Buscando CSV:', csvUrl);
         
-        try {
-            const response = await fetch(csvUrl);
-            if (response.ok) {
-                const csvText = await response.text();
-                const { dados, datas } = processarCSV(csvText, config);
-                totalDraws = dados.length;
-                
-                const dadosFiltrados = filtrarPorPeriodo(dados, datas, period);
-                filteredDraws = dadosFiltrados.length;
-            } else {
-                error = 'CSV não encontrado';
-            }
-        } catch (e) {
-            error = 'Erro ao carregar CSV';
-            console.error(e);
+        const response = await fetch(csvUrl);
+        
+        if (!response.ok) {
+            console.log('❌ CSV não encontrado:', response.status);
+            return res.status(200).json({
+                success: true,
+                totalDraws: 0,
+                filteredDraws: 0,
+                period,
+                lottery,
+                error: 'CSV não encontrado'
+            });
         }
+        
+        const csvText = await response.text();
+        const { dados, datas } = processarCSV(csvText, config);
+        const totalDraws = dados.length;
+        
+        const dadosFiltrados = filtrarPorPeriodo(dados, datas, period);
+        const filteredDraws = dadosFiltrados.length;
+        
+        console.log('✅ Estatísticas:', { lottery, totalDraws, filteredDraws, period });
         
         return res.status(200).json({
             success: true,
             totalDraws,
             filteredDraws,
             period,
-            lottery: lottery,
-            error
+            lottery
         });
         
     } catch (error: any) {
-        console.error('Erro:', error);
+        console.error('❌ Erro:', error);
         return res.status(500).json({ error: error.message });
     }
 }
