@@ -139,7 +139,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     try {
         // CORRIGIDO: caminho para public/csv/
-        const csvUrl = `https://loterias-ia.vercel.app/public/csv/${lottery}.csv`;
+        const csvUrl = `https://loterias-ia.vercel.app/csv/${lottery}.csv`;
+        //const csvUrl = `https://loterias-ia.vercel.app/public/csv/${lottery}.csv`;
         
         console.log('📥 Buscando CSV:', csvUrl);
         
