@@ -131,82 +131,84 @@ export default function IATraining({
   );
 }
 
+// Substitua os estilos do container principal
+
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#1e293b',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  title: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#94a3b8',
-    marginBottom: 12,
-  },
-  progressBarContainer: {
-    height: 10,
-    backgroundColor: '#334155',
-    borderRadius: 5,
-    overflow: 'hidden',
-    marginBottom: 16,
-  },
-  progressBar: {
-    height: '100%',
-    borderRadius: 5,
-  },
-  trainingContainer: {
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: 'rgba(139, 92, 246, 0.1)',
-    borderRadius: 12,
-    gap: 12,
-  },
-  trainingTitle: {
-    color: '#f59e0b',
-    fontSize: 14,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  trainingSubtext: {
-    color: '#94a3b8',
-    fontSize: 11,
-    textAlign: 'center',
-  },
-  trainedContainer: {
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: 'rgba(34, 197, 94, 0.1)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#22c55e',
-    gap: 8,
-  },
-  trainedEmoji: {
-    fontSize: 32,
-  },
-  trainedTitle: {
-    color: '#22c55e',
-    fontSize: 14,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  trainedSubtext: {
-    color: '#94a3b8',
-    fontSize: 11,
-    textAlign: 'center',
-  },
-  waitingContainer: {
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: 'rgba(100, 116, 139, 0.1)',
-    borderRadius: 12,
-  },
-  waitingText: {
-    color: '#94a3b8',
-    fontSize: 12,
-    textAlign: 'center',
-  },
+    container: {
+        backgroundColor: '#1e293b',
+        borderRadius: 16,
+        padding: 12,  // ← Reduzido de 16 para 12 (20% menor)
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#334155',
+    },
+    title: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#94a3b8',
+        marginBottom: 8,  // ← Reduzido
+    },
+    progressBarContainer: {
+        height: 8,  // ← Barra mais fina
+        backgroundColor: '#334155',
+        borderRadius: 4,
+        overflow: 'hidden',
+        marginBottom: 12,  // ← Reduzido
+    },
+    progressBar: {
+        height: '100%',
+        borderRadius: 4,
+    },
+    trainingContainer: {
+        alignItems: 'center',
+        padding: 12,  // ← Reduzido
+        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+        borderRadius: 12,
+        gap: 8,
+    },
+    trainingTitle: {
+        color: '#f59e0b',
+        fontSize: 13,  // ← Reduzido
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    trainingSubtext: {
+        color: '#94a3b8',
+        fontSize: 10,  // ← Reduzido
+        textAlign: 'center',
+    },
+    trainedContainer: {
+        alignItems: 'center',
+        padding: 12,  // ← Reduzido
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#22c55e',
+        gap: 6,
+    },
+    trainedEmoji: {
+        fontSize: 28,  // ← Reduzido
+    },
+    trainedTitle: {
+        color: '#22c55e',
+        fontSize: 13,  // ← Reduzido
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    trainedSubtext: {
+        color: '#94a3b8',
+        fontSize: 10,  // ← Reduzido
+        textAlign: 'center',
+    },
+    waitingContainer: {
+        alignItems: 'center',
+        padding: 12,  // ← Reduzido
+        backgroundColor: 'rgba(100, 116, 139, 0.1)',
+        borderRadius: 12,
+    },
+    waitingText: {
+        color: '#94a3b8',
+        fontSize: 11,  // ← Reduzido
+        textAlign: 'center',
+    },
 });
