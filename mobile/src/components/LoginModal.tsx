@@ -1,4 +1,5 @@
-// src/components/LoginModal.tsx - VERIFIQUE ESTAS PARTES 14/06
+// src/components/LoginModal.tsx - VERIFIQUE ESTAS PARTES 15/06
+// src/components/LoginModal.tsx
 import React, { useState } from 'react';
 import {
   Alert,
@@ -10,6 +11,7 @@ import {
   View,
   ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { useAuthStore } from '../stores/authStore';
 import { useSessionStore } from '../stores/sessionStore';
@@ -23,6 +25,7 @@ export default function LoginModal({ visible }: LoginModalProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // 👈 NOVO
   const [isRegisterMode, setIsRegisterMode] = useState(false);
 
   const { user, loginWithEmail, registerWithEmail, error, isLoading, clearError } = useAuthStore();
@@ -32,7 +35,6 @@ export default function LoginModal({ visible }: LoginModalProps) {
   // Fechar modal automaticamente quando usuário logar
   React.useEffect(() => {
     if (user) {
-      // Usuário logou, pode fechar o modal
       clearError();
       closeLoginModal();
     }
@@ -57,7 +59,6 @@ export default function LoginModal({ visible }: LoginModalProps) {
       setPassword('');
       setIsRegisterMode(false);
       clearError();
-      // O useEffect vai fechar o modal
       Alert.alert('Sucesso', 'Login realizado com sucesso!');
     } else {
       Alert.alert('Erro', error || 'Não foi possível realizar o login.');
@@ -93,7 +94,6 @@ export default function LoginModal({ visible }: LoginModalProps) {
       setPassword('');
       setIsRegisterMode(false);
       clearError();
-      // O useEffect vai fechar o modal
       Alert.alert('Sucesso', 'Conta criada com sucesso!');
     } else {
       Alert.alert('Erro', error || 'Não foi possível criar a conta.');
@@ -115,7 +115,7 @@ export default function LoginModal({ visible }: LoginModalProps) {
   };
 
   const handleGuest = () => {
-    enableGuestMode();  // Isso vai fechar o modal e marcar como convidado
+    enableGuestMode();
     Alert.alert('Modo Convidado', 'Você pode navegar, mas para gerar palpites precisa fazer login.');
   };
 
@@ -124,22 +124,12 @@ export default function LoginModal({ visible }: LoginModalProps) {
     setName('');
     setEmail('');
     setPassword('');
+    setShowPassword(false);
     clearError();
   };
 
-  // Impedir fechar clicando fora (backdrop)
-  const handleBackdropPress = () => {
-    // Não faz nada - impede fechar
-    // Usuário só sai com login ou modo convidado
-  };
-
   return (
-    <Modal 
-      visible={visible} 
-      transparent 
-      animationType="fade"
-      onRequestClose={handleBackdropPress}  // Botão voltar do Android não fecha
-    >
+    <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
         <View style={styles.container}>
           <Text style={styles.title}>
@@ -181,14 +171,35 @@ export default function LoginModal({ visible }: LoginModalProps) {
             keyboardType="email-address"
           />
 
-          <TextInput
-            placeholder="Senha"
-            placeholderTextColor="#94a3b8"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-            style={styles.input}
-          />
+          {/* Campo de Senha com ícone de olho */}
+          <View style={styles.passwordContainer}>
+            <TextInput
+              placeholder="Senha"
+              placeholderTextColor="#94a3b8"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
+              style={styles.passwordInput}
+            />
+            <TouchableOpacity
+              onPress={() => setShowPassword(!showPassword)}
+              style={styles.eyeButton}
+            >
+              <Ionicons
+                name={showPassword ? 'eye-off' : 'eye'}
+                size={24}
+                color="#94a3b8"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Link Redefinir Senha (desativado por enquanto) */}
+          <TouchableOpacity 
+            onPress={() => Alert.alert('Em breve', 'Recuperação de senha será disponibilizada em breve')}
+            disabled={true}
+          >
+            <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
+          </TouchableOpacity>
 
           {isRegisterMode ? (
             <TouchableOpacity
@@ -286,6 +297,21 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 10,
   },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0f172a',
+    borderRadius: 12,
+    marginTop: 10,
+  },
+  passwordInput: {
+    flex: 1,
+    color: '#fff',
+    padding: 15,
+  },
+  eyeButton: {
+    padding: 15,
+  },
   loginButton: {
     backgroundColor: '#8b5cf6',
     padding: 15,
@@ -317,5 +343,12 @@ const styles = StyleSheet.create({
     color: '#64748b',
     textAlign: 'center',
     marginTop: 15,
+  },
+  forgotPasswordText: {
+    color: '#64748b',
+    textAlign: 'center',
+    marginTop: 10,
+    fontSize: 12,
+    textDecorationLine: 'underline',
   },
 });
