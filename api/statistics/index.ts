@@ -145,7 +145,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     try {
         const baseUrl = process.env.VERCEL_URL || 'loterias-ia.vercel.app';
-        const csvUrl = `https://${baseUrl}/csv/${lottery}.csv`;
+        const csvUrl = `https://${baseUrl}/public/csv/${lottery}.csv`;
         
         let totalDraws = 0;
         let filteredDraws = 0;
