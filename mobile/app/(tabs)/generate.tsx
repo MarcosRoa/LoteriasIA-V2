@@ -1,5 +1,6 @@
 // mobile/app/(tabs)/generate.tsx
-// app/(tabs)/generate.tsx 14/06/2024
+// app/(tabs)/generate.tsx 15/06/2024
+// app/(tabs)/generate.tsx
 // app/(tabs)/generate.tsx
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
@@ -152,16 +153,25 @@ export default function GenerateScreen() {
                 selectedMode={mode}
             />
 
-            {/* Créditos */}
+            {/* Card de Créditos - Laranja */}
             <View style={styles.creditsCard}>
-                <Text style={styles.creditsLabel}>💰 Seus Créditos</Text>
-                <Text style={styles.creditsValue}>{creditsRemaining}</Text>
+                <View style={styles.creditsRow}>
+                    <Text style={styles.creditsLabel}>💰 Seus Créditos</Text>
+                    <Text style={styles.creditsValue}>{creditsRemaining}</Text>
+                </View>
             </View>
-            <View style={styles.costInfoContainer}>
-                <Text style={styles.costInfo}>Custo: {totalCost} créditos ({quantity} jogo(s) x 3 créditos)</Text>
-                {iaConfidence > 0 && (
-                    <Text style={styles.confidenceInfo}>🎯 Confiança da IA: {iaConfidence}%</Text>
-                )}
+
+            {/* Card Cinza - Saldo e Custo da Geração */}
+            <View style={styles.infoCard}>
+                <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>💳 SALDO ATUAL</Text>
+                    <Text style={styles.infoValue}>{creditsRemaining} créditos</Text>
+                </View>
+                <View style={styles.infoDivider} />
+                <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>🎲 CUSTO DA GERAÇÃO</Text>
+                    <Text style={styles.infoValue}>{totalCost} créditos</Text>
+                </View>
             </View>
 
             {/* Quantidade */}
@@ -176,6 +186,7 @@ export default function GenerateScreen() {
                         <Text style={styles.quantityButtonText}>+</Text>
                     </TouchableOpacity>
                 </View>
+                <Text style={styles.quantityHint}>Cada jogo custa 3 créditos</Text>
             </View>
 
             {/* Modos de IA - 4 opções */}
@@ -239,20 +250,11 @@ export default function GenerateScreen() {
     );
 }
 
-// Substitua apenas a seção de estilos (styles) no final do arquivo
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#0f172a',
         padding: 16,
-    },
-    costInfoContainer: {
-        backgroundColor: '#1e293b',
-        borderRadius: 12,
-        padding: 12,
-        marginBottom: 16,
-        alignItems: 'center',
     },
     header: {
         alignItems: 'center',
@@ -311,13 +313,16 @@ const styles = StyleSheet.create({
     periodButtonTextActive: {
         color: '#ffffff',
     },
-    // CARD DE CRÉDITOS - REFORMULADO
+    // Card de Créditos - Laranja
     creditsCard: {
         backgroundColor: '#f59e0b',
         borderRadius: 16,
         paddingVertical: 12,
-        paddingHorizontal: 20,
-        marginBottom: 16,
+        paddingHorizontal: 16,
+        marginBottom: 12,
+        alignItems: 'center',
+    },
+    creditsRow: {
         flexDirection: 'row',
         alignItems: 'baseline',
         justifyContent: 'center',
@@ -333,25 +338,41 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#1e293b',
     },
-    costInfo: {
-        fontSize: 12,
-        color: '#1e293b',
-        marginTop: 4,
-        opacity: 0.8,
-        textAlign: 'center',
+    // Card Cinza - Informações
+    infoCard: {
+        backgroundColor: '#1e293b',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#334155',
     },
-    confidenceInfo: {
-        fontSize: 11,
-        color: '#1e293b',
-        marginTop: 8,
-        fontWeight: '500',
-        textAlign: 'center',
+    infoRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    infoLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#94a3b8',
+    },
+    infoValue: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#f59e0b',
+    },
+    infoDivider: {
+        height: 1,
+        backgroundColor: '#334155',
+        marginVertical: 12,
     },
     quantityContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 20,
+        marginBottom: 8,
     },
     quantityButton: {
         width: 44,
@@ -371,6 +392,11 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#f59e0b',
         minWidth: 50,
+        textAlign: 'center',
+    },
+    quantityHint: {
+        fontSize: 12,
+        color: '#64748b',
         textAlign: 'center',
     },
     modesGrid: {
