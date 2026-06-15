@@ -1,12 +1,14 @@
 // mobile/app/(tabs)/generate.tsx
 // app/(tabs)/generate.tsx 14/06/2024
-import React, { useState } from 'react';
+// app/(tabs)/generate.tsx
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LOTTERIES } from '../../src/constants/lotteries';
 import { generateGames } from '../../src/services/api';
 import { useAuthStore } from '../../src/stores/authStore';
 import { NumberBall } from '../../src/components/NumberBall';
+import IATraining from '../../src/components/IATraining';
 
 const PERIODS = [
     { value: 'all', label: 'Todos' },
@@ -37,9 +39,34 @@ export default function GenerateScreen() {
     const [generatedGames, setGeneratedGames] = useState<number[][]>([]);
     const [creditsRemaining, setCreditsRemaining] = useState(0);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    
+    // States para o treinamento da IA
+    const [isTraining, setIsTraining] = useState(false);
+    const [isTrained, setIsTrained] = useState(false);
+    const [iaConfidence, setIaConfidence] = useState(0);
+    const [totalDataPoints, setTotalDataPoints] = useState(0);
 
     const COST_PER_GAME = 3;
     const totalCost = quantity * COST_PER_GAME;
+
+    // Função para treinar IA
+    const trainIA = async () => {
+        setIsTraining(true);
+        setIsTrained(false);
+        
+        // Simular treinamento (depois conecta com API real)
+        setTimeout(() => {
+            setIsTraining(false);
+            setIsTrained(true);
+            setIaConfidence(85);
+            setTotalDataPoints(156);
+        }, 2500);
+    };
+
+    // Chamar trainIA quando período ou modo mudar
+    useEffect(() => {
+        trainIA();
+    }, [selectedPeriod, mode]);
 
     const handleGenerate = async () => {
         setErrorMessage(null);
@@ -115,11 +142,24 @@ export default function GenerateScreen() {
                 </View>
             </View>
 
+            {/* Componente de Treinamento da IA */}
+            <IATraining 
+                isTraining={isTraining}
+                isTrained={isTrained}
+                confidence={iaConfidence}
+                totalDataPoints={totalDataPoints}
+                selectedPeriod={selectedPeriod.toString()}
+                selectedMode={mode}
+            />
+
             {/* Créditos */}
             <View style={styles.creditsCard}>
                 <Text style={styles.creditsLabel}>💰 SEUS CRÉDITOS</Text>
                 <Text style={styles.creditsValue}>{creditsRemaining}</Text>
                 <Text style={styles.costInfo}>Custo: {totalCost} créditos ({quantity} jogo(s) x 3 créditos)</Text>
+                {iaConfidence > 0 && (
+                    <Text style={styles.confidenceInfo}>🎯 Confiança da IA: {iaConfidence}%</Text>
+                )}
             </View>
 
             {/* Quantidade */}
@@ -282,6 +322,12 @@ const styles = StyleSheet.create({
         color: '#1e293b',
         marginTop: 4,
         opacity: 0.8,
+    },
+    confidenceInfo: {
+        fontSize: 11,
+        color: '#1e293b',
+        marginTop: 8,
+        fontWeight: '500',
     },
     quantityContainer: {
         flexDirection: 'row',
