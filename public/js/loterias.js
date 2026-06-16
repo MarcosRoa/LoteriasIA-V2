@@ -3,6 +3,10 @@
 // ============================================
 
 // ============================================
+// LOTERIAS.js - Gerenciamento de loterias (FASE 18 - CACHE OTIMIZADO)
+// ============================================
+
+// ============================================
 // VARIÁVEIS LOCAIS
 // ============================================
 let loteriaAtual = 'megasena';
@@ -231,7 +235,7 @@ function atualizarAnimacaoTreinamento(status) {
 }
 
 // ============================================
-// PROCESSAR CSV (COM CACHE)
+// PROCESSAR CSV (COM CACHE) - CORRIGIDO PARA LOTECA
 // ============================================
 function processarCSV(loteria, texto, nome) {
     const config = window.LOTERIAS[loteria];
@@ -239,7 +243,8 @@ function processarCSV(loteria, texto, nome) {
     
     if (linhas.length < 2) return;
     
-    const sep = linhas[0].includes(';') ? ';' : ',';
+    // CORREÇÃO: Força separador ';' para Loteca
+    let sep = (loteria === 'loteca') ? ';' : (linhas[0].includes(';') ? ';' : ',');
     
     const dados = [];
     const dadosExtras = [];
@@ -292,6 +297,18 @@ function processarCSV(loteria, texto, nome) {
             let valor = colunas[j]?.trim();
             if (valor === '' || valor === undefined) continue;
             
+            // CORREÇÃO: Tratamento especial para Loteca
+            if (loteria === 'loteca') {
+                if (valor === 'Coluna 1') {
+                    numeros.push(1);
+                } else if (valor === 'Coluna do meio') {
+                    numeros.push(0);
+                } else if (valor === 'Coluna 2') {
+                    numeros.push(2);
+                }
+                continue;
+            }
+            
             if (loteria === 'timemania') {
                 const numTeste = parseInt(valor);
                 if (isNaN(numTeste) || valor.includes('/') || /[A-Za-zÀ-ú]/.test(valor)) {
@@ -315,22 +332,35 @@ function processarCSV(loteria, texto, nome) {
             }
         }
         
-        if (numeros.length >= config.numeros) {
-            const numerosOrdenados = numeros.slice(0, config.numeros).sort((a, b) => a - b);
-            dados.push(numerosOrdenados);
-            
-            if (loteria === 'timemania' && timeCoracao) {
-                dadosExtras.push(timeCoracao);
-            } else {
+        // CORREÇÃO: Para Loteca, NÃO ordenar os números (a ordem dos jogos importa!)
+        if (loteria === 'loteca') {
+            if (numeros.length === config.numeros) {
+                dados.push([...numeros]);
                 dadosExtras.push(null);
+            }
+        } else {
+            // Para outras loterias, mantém a ordenação original
+            if (numeros.length >= config.numeros) {
+                const numerosOrdenados = numeros.slice(0, config.numeros).sort((a, b) => a - b);
+                dados.push(numerosOrdenados);
+                
+                if (loteria === 'timemania' && timeCoracao) {
+                    dadosExtras.push(timeCoracao);
+                } else {
+                    dadosExtras.push(null);
+                }
             }
         }
     }
     
     if (dados.length > 0) {
+        // Inicializar caches se não existirem
+        if (!window.cacheDados) window.cacheDados = {};
+        if (!window.cacheDatas) window.cacheDatas = {};
+        if (!window.cacheDadosExtras) window.cacheDadosExtras = {};
+        
         window.cacheDados[loteria] = { dados, carregado: true, nomeArquivo: nome };
         window.cacheDatas[loteria] = { datas };
-        window.cacheDadosExtras = window.cacheDadosExtras || {};
         window.cacheDadosExtras[loteria] = dadosExtras;
         
         // Limpar cache de processamento para esta loteria
@@ -341,6 +371,9 @@ function processarCSV(loteria, texto, nome) {
         if (loteriaAtual === loteria) { 
             dadosAtuais = [...dados]; 
             if (loteria === 'timemania') {
+                dadosExtrasAtuais = [...dadosExtras];
+            }
+            if (loteria === 'loteca') {
                 dadosExtrasAtuais = [...dadosExtras];
             }
             renderizarConteudo(loteria); 
@@ -391,14 +424,18 @@ async function selecionarLoteria(loteria) {
     iaTreinada = false; 
     aiModel = null;
     const config = window.LOTERIAS[loteria];
-    if (config.temDispersao) dispersaoAtual = config.dispersaoPadrao;
+    if (config && config.temDispersao) dispersaoAtual = config.dispersaoPadrao;
     document.querySelectorAll('.lottery-card').forEach(c => c.classList.remove('active'));
     document.getElementById(`card-${loteria}`)?.classList.add('active');
     
+    // Inicializar cacheDados se não existir
+    if (!window.cacheDados) window.cacheDados = {};
+    if (!window.cacheDadosExtras) window.cacheDadosExtras = {};
+    
     // Verificar cache primeiro
-    if (window.cacheDados[loteria].carregado) {
+    if (window.cacheDados[loteria] && window.cacheDados[loteria].carregado) {
         dadosAtuais = [...window.cacheDados[loteria].dados];
-        if (window.cacheDadosExtras && window.cacheDadosExtras[loteria]) {
+        if (window.cacheDadosExtras[loteria]) {
             dadosExtrasAtuais = [...window.cacheDadosExtras[loteria]];
         }
         renderizarConteudo(loteria);
@@ -411,7 +448,7 @@ async function selecionarLoteria(loteria) {
     // Carregar sob demanda
     dadosAtuais = [];
     try { 
-        const r = await fetch(`csv/${loteria}.csv`); 
+        const r = await fetch(`/csv/${loteria}.csv`);
         if (r.ok) processarCSV(loteria, await r.text(), `csv/${loteria}.csv`); 
         else console.log(`Arquivo csv/${loteria}.csv não encontrado`);
     } catch(e) { console.log(`Erro ao carregar csv/${loteria}.csv:`, e); }
@@ -424,19 +461,19 @@ function renderizarConteudo(loteria) {
     const config = window.LOTERIAS[loteria];
     const div = document.getElementById('conteudoLoteria');
     if (!div) return;
-    const cache = window.cacheDados[loteria];
+    const cache = window.cacheDados[loteria] || { carregado: false, dados: [] };
     const dadosCount = dadosAtuais.length;
     const dadosFiltradosCount = filtrarDados().length;
     const datasPeriodo = getDatasPeriodo();
     
     let controlesExtras = '';
-    if (config.temDispersao) controlesExtras += `<div class="dispersao-slider">
+    if (config && config.temDispersao) controlesExtras += `<div class="dispersao-slider">
         <label class="config-label">🎯 Dispersão</label>
         <input type="range" id="dispersaoSlider" min="${config.dispersaoMin}" max="${config.dispersaoMax}" value="${dispersaoAtual}" oninput="window.atualizarDispersao(this.value)">
         <div class="dispersao-valor">Bloquear números recentes: <strong id="dispersaoValor">${dispersaoAtual} concursos</strong></div>
     </div>`;
     
-    let html = `<div class="card"><h3 style="color:${config.cor};">${config.icone} ${config.nome} - IA V.6.1 PRO</h3>`;
+    let html = `<div class="card"><h3 style="color:${config ? config.cor : '#fff'};">${config ? config.icone : '🎲'} ${config ? config.nome : loteria} - IA V.6.1 PRO</h3>`;
     if (!cache.carregado) html += `<div class="mensagem-erro"><strong>⚠️ Nenhum dado!</strong><br>📁 Upload do CSV (pasta /csv/)</div>`;
     html += `<div style="display:flex;gap:15px;flex-wrap:wrap;margin:15px 0;"><h4>📁 ${dadosCount} concursos</h4><span id="trainingStatus" class="status-badge ${iaTreinada?'status-ready':'status-error'}">${iaTreinada?'✓ Treinada':'Pendente'}</span><button class="btn btn-upload" onclick="document.getElementById('uploadManual').click()">📁 Upload CSV</button><input type="file" id="uploadManual" accept=".csv" onchange="importarArquivo(this,'${loteria}')" style="display:none;"></div>`;
     html += `<div class="stats-grid"><div class="stat-card">Concursos: ${dadosCount}</div><div class="stat-card">Período: ${dadosFiltradosCount}</div><div class="stat-card">Engine: 🧠 V.6.1 PRO</div></div></div>`;
@@ -500,7 +537,7 @@ function renderizarConteudo(loteria) {
             </select>
         </div>`;
     
-    if (config.temDispersao) {
+    if (config && config.temDispersao) {
         html += `<div>
             <label class="config-label">🎯 Dispersão</label>
             <input type="range" id="dispersaoSlider" min="${config.dispersaoMin}" max="${config.dispersaoMax}" value="${dispersaoAtual}" oninput="window.atualizarDispersao(this.value); window.atualizarVisualizacaoConfiguracoes?.()">
@@ -508,7 +545,7 @@ function renderizarConteudo(loteria) {
         </div>`;
     }
     
-    if (config.permiteBolao) {
+    if (config && config.permiteBolao) {
         html += `<div>
             <label class="config-label">⭐ MODO BOLÃO (PRO)</label>
             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -521,7 +558,7 @@ function renderizarConteudo(loteria) {
     
     html += `</div>`;
     
-    if (config.permiteBolao) {
+    if (config && config.permiteBolao) {
         html += `<div id="bolaoContainer" style="display: none; margin-top: 15px; padding: 15px; background: rgba(139, 92, 246, 0.1); border-radius: 12px; border-left: 4px solid #8b5cf6;">
             <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
                 <div style="flex: 2; min-width: 200px;">
@@ -538,12 +575,14 @@ function renderizarConteudo(loteria) {
         </div>`;
     }
     
-    html += `<button class="btn btn-primary" onclick="window.gerarJogos()" style="background:${config.cor}; margin-top: 20px; width: 100%; max-width: 300px; display: block; margin-left: auto; margin-right: auto;">${config.icone} GERAR JOGOS (R$ 3,00/jogo)</button>
+    html += `<button class="btn btn-primary" onclick="window.gerarJogos()" style="background:${config ? config.cor : '#38bdf8'}; margin-top: 20px; width: 100%; max-width: 300px; display: block; margin-left: auto; margin-right: auto;">${config ? config.icone : '🎲'} GERAR JOGOS (R$ 3,00/jogo)</button>
     <div id="backtestResultados" style="margin-top:15px;"></div>
     <div id="resultados" style="margin-top:20px;"></div>
     </div>`;
     
-    html += `<div class="regras-oficiais"><h4>📜 Regras</h4><p>${window.REGRAS_OFICIAIS[loteria]}</p></div>`;
+    if (window.REGRAS_OFICIAIS && window.REGRAS_OFICIAIS[loteria]) {
+        html += `<div class="regras-oficiais"><h4>📜 Regras</h4><p>${window.REGRAS_OFICIAIS[loteria]}</p></div>`;
+    }
     
     html += `
     <div class="footer-buttons">
