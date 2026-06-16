@@ -126,7 +126,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
     
-    const { lottery, period = 'all' } = req.query;
+    // CORREÇÃO: Converter query params corretamente
+    const lottery = req.query.lottery as string;
+    let period: string | number = req.query.period as string || 'all';
+    
+    // Se period for número, converter
+    if (period !== 'all' && !isNaN(Number(period))) {
+        period = Number(period);
+    }
     
     if (!lottery) {
         return res.status(400).json({ error: 'Loteria é obrigatória' });
@@ -138,7 +145,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     try {
-        // CORREÇÃO: usa host dinâmico e caminho correto
         const host = req.headers.host;
         const protocol = host?.includes('localhost') ? 'http' : 'https';
         const csvUrl = `${protocol}://${host}/csv/${lottery}.csv`;
