@@ -43,6 +43,31 @@ function debounce(func, wait) {
 }
 
 // ============================================
+// FUNÇÃO AUXILIAR - CONVERTER MÊS TEXTO PARA NÚMERO
+// ============================================
+function converterMesTextoParaNumero(texto) {
+    if (!texto) return null;
+    
+    const meses = {
+        'JANEIRO': 1, 'JAN': 1,
+        'FEVEREIRO': 2, 'FEV': 2,
+        'MARÇO': 3, 'MAR': 3,
+        'ABRIL': 4, 'ABR': 4,
+        'MAIO': 5,
+        'JUNHO': 6, 'JUN': 6,
+        'JULHO': 7, 'JUL': 7,
+        'AGOSTO': 8, 'AGO': 8,
+        'SETEMBRO': 9, 'SET': 9,
+        'OUTUBRO': 10, 'OUT': 10,
+        'NOVEMBRO': 11, 'NOV': 11,
+        'DEZEMBRO': 12, 'DEZ': 12
+    };
+    
+    const chave = texto.toUpperCase().trim();
+    return meses[chave] || null;
+}
+
+// ============================================
 // FUNÇÕES DE DATA E FILTRO (COM CACHE)
 // ============================================
 function getDataCortePorAnos(anos) {
@@ -349,10 +374,17 @@ function processarCSV(loteria, texto, nome) {
             // DIA DE SORTE - Captura o mês da sorte
             // ============================================
             if (loteria === 'diadesorte') {
-                const numTeste = parseInt(valor);
-                // Os 7 primeiros números pertencem ao jogo, o próximo é o mês
-                if (numeros.length >= config.numeros && !isNaN(numTeste) && numTeste >= 1 && numTeste <= 12) {
-                    mesSorte = numTeste;
+                // Se já temos 7 números, o próximo valor é o mês
+                if (numeros.length >= config.numeros) {
+                    const numTeste = parseInt(valor);
+                    
+                    if (!isNaN(numTeste) && numTeste >= 1 && numTeste <= 12) {
+                        // É um número (ex: 2, 12, 4)
+                        mesSorte = numTeste;
+                    } else {
+                        // É texto (ex: "MARÇO", "JANEIRO") - converte
+                        mesSorte = converterMesTextoParaNumero(valor);
+                    }
                     continue;
                 }
             }
