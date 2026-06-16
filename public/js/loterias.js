@@ -6,6 +6,10 @@
 // ============================================
 
 // ============================================
+// LOTERIAS.js - Gerenciamento de loterias (VERSÃO DEFINITIVA CORRIGIDA) 16/06/2026
+// ============================================
+
+// ============================================
 // VARIÁVEIS LOCAIS
 // ============================================
 let loteriaAtual = 'megasena';
@@ -19,22 +23,22 @@ let aiModel = null;
 let filtrosTreinamento = null;
 
 // Cache persistente em memória
-const cacheCSV = {};
 const cacheProcessamento = {};
 
-// Debounce para evitar cálculos excessivos
-let debounceTimeout = null;
+// 🔧 MELHORIA 3: Debounces separados
+let debouncePeriodo = null;
+let debounceDispersao = null;
 
 // ============================================
-// FUNÇÃO DE DEBOUNCE
+// FUNÇÃO DE DEBOUNCE (GENÉRICA)
 // ============================================
 function debounce(func, wait) {
     return function executedFunction(...args) {
-        if (debounceTimeout) clearTimeout(debounceTimeout);
-        debounceTimeout = setTimeout(() => {
+        // Cada chamada cria seu próprio timeout
+        const timeoutId = setTimeout(() => {
             func(...args);
-            debounceTimeout = null;
         }, wait);
+        return timeoutId;
     };
 }
 
@@ -110,12 +114,14 @@ function getDatasPeriodo() {
     const datasFiltradas = window.cacheDatas[loteriaAtual]?.datas || [];
     if (datasFiltradas.length === 0 || dadosFiltrados.length === 0) return { inicio: 'N/A', fim: 'N/A' };
     
+    // 🔧 MELHORIA 2: Usar Set para busca O(1)
+    const dadosFiltradosSet = new Set(dadosFiltrados);
     let primeiraData = null;
     let ultimaData = null;
     
     for (let i = 0; i < dadosAtuais.length; i++) {
         const dataStr = window.cacheDatas[loteriaAtual]?.datas[i];
-        if (dataStr && dadosFiltrados.includes(dadosAtuais[i])) {
+        if (dataStr && dadosFiltradosSet.has(dadosAtuais[i])) {
             const partes = dataStr.split('/');
             if (partes.length === 3) {
                 if (!primeiraData) primeiraData = dataStr;
@@ -150,7 +156,9 @@ function getFiltrosAtivos() {
     return filtros;
 }
 
-// Versão com debounce para setPeriodo
+// ============================================
+// SET PERIODO - COM DEBOUNCE SEPARADO
+// ============================================
 const setPeriodoDebounced = debounce((p) => {
     periodoSelecionado = p;
     iaTreinada = false;
@@ -163,10 +171,17 @@ const setPeriodoDebounced = debounce((p) => {
 }, 100);
 
 function setPeriodo(p) {
-    setPeriodoDebounced(p);
+    // 🔧 MELHORIA 3: Debounce separado para período
+    if (debouncePeriodo) clearTimeout(debouncePeriodo);
+    debouncePeriodo = setTimeout(() => {
+        setPeriodoDebounced(p);
+        debouncePeriodo = null;
+    }, 100);
 }
 
-// Versão com debounce para atualizarDispersao
+// ============================================
+// ATUALIZAR DISPERSAO - COM DEBOUNCE SEPARADO
+// ============================================
 const atualizarDispersaoDebounced = debounce((v) => {
     dispersaoAtual = parseInt(v);
     document.getElementById('dispersaoValor') && (document.getElementById('dispersaoValor').textContent = `${v} concursos`);
@@ -178,7 +193,12 @@ const atualizarDispersaoDebounced = debounce((v) => {
 }, 100);
 
 function atualizarDispersao(v) {
-    atualizarDispersaoDebounced(v);
+    // 🔧 MELHORIA 3: Debounce separado para dispersão
+    if (debounceDispersao) clearTimeout(debounceDispersao);
+    debounceDispersao = setTimeout(() => {
+        atualizarDispersaoDebounced(v);
+        debounceDispersao = null;
+    }, 100);
 }
 
 // ============================================
@@ -234,7 +254,7 @@ function atualizarAnimacaoTreinamento(status) {
 }
 
 // ============================================
-// PROCESSAR CSV (COM CACHE) - CORRIGIDO PARA LOTECA
+// PROCESSAR CSV - PARSER DEFINITIVO CORRIGIDO
 // ============================================
 function processarCSV(loteria, texto, nome) {
     const config = window.LOTERIAS[loteria];
@@ -242,7 +262,7 @@ function processarCSV(loteria, texto, nome) {
     
     if (linhas.length < 2) return;
     
-    // CORREÇÃO: Força separador ';' para Loteca
+    // Força separador ';' para Loteca
     let sep = (loteria === 'loteca') ? ';' : (linhas[0].includes(';') ? ';' : ',');
     
     const dados = [];
@@ -261,6 +281,9 @@ function processarCSV(loteria, texto, nome) {
         }
         return null;
     }
+    
+    // 🔧 MELHORIA 1: Definir valor mínimo baseado em incluiZero
+    const minimo = config.incluiZero ? 0 : 1;
     
     for (let i = 0; i < linhas.length; i++) {
         const linha = linhas[i];
@@ -296,7 +319,9 @@ function processarCSV(loteria, texto, nome) {
             let valor = colunas[j]?.trim();
             if (valor === '' || valor === undefined) continue;
             
-            // CORREÇÃO: Tratamento especial para Loteca
+            // ============================================
+            // LOTECA - Converte strings para números
+            // ============================================
             if (loteria === 'loteca') {
                 if (valor === 'Coluna 1') {
                     numeros.push(1);
@@ -308,7 +333,9 @@ function processarCSV(loteria, texto, nome) {
                 continue;
             }
             
-            // Processamento normal para Timemania
+            // ============================================
+            // TIMEMANIA - Captura o time do coração
+            // ============================================
             if (loteria === 'timemania') {
                 const numTeste = parseInt(valor);
                 if (isNaN(numTeste) || valor.includes('/') || /[A-Za-zÀ-ú]/.test(valor)) {
@@ -317,6 +344,9 @@ function processarCSV(loteria, texto, nome) {
                 }
             }
             
+            // ============================================
+            // DEMAIS LOTERIAS - Processamento numérico
+            // ============================================
             let num = parseInt(valor);
             if (isNaN(num)) {
                 const numStr = valor.toString().trim();
@@ -327,23 +357,27 @@ function processarCSV(loteria, texto, nome) {
                 }
             }
             
-            if (num >= 0 && num <= config.maxNumero) {
+            // 🔧 MELHORIA 1: Validar com o mínimo correto
+            if (num >= minimo && num <= config.maxNumero) {
                 numeros.push(num);
             }
         }
         
-        // CORREÇÃO: Para Loteca, NÃO ordenar os números (a ordem dos jogos importa!)
+        // ============================================
+        // VALIDAÇÃO ESPECIAL PARA LOTECA
+        // ============================================
         if (loteria === 'loteca') {
             if (numeros.length === config.numeros) {
-                dados.push([...numeros]);
+                dados.push([...numeros]);  // Mantém ordem original!
                 dadosExtras.push(null);
             }
         } else {
-            // Para outras loterias, mantém a ordenação original
+            // DEMAIS LOTERIAS - Ordena os números
             if (numeros.length >= config.numeros) {
                 const numerosOrdenados = numeros.slice(0, config.numeros).sort((a, b) => a - b);
                 dados.push(numerosOrdenados);
                 
+                // Timemania: salva o time do coração como string
                 if (loteria === 'timemania' && timeCoracao) {
                     dadosExtras.push(timeCoracao);
                 } else {
@@ -354,7 +388,7 @@ function processarCSV(loteria, texto, nome) {
     }
     
     if (dados.length > 0) {
-        // Inicializar caches se não existirem
+        // Inicializar caches
         if (!window.cacheDados) window.cacheDados = {};
         if (!window.cacheDatas) window.cacheDatas = {};
         if (!window.cacheDadosExtras) window.cacheDadosExtras = {};
@@ -363,7 +397,7 @@ function processarCSV(loteria, texto, nome) {
         window.cacheDatas[loteria] = { datas };
         window.cacheDadosExtras[loteria] = dadosExtras;
         
-        // Limpar cache de processamento para esta loteria
+        // Limpar cache de processamento
         Object.keys(cacheProcessamento).forEach(key => {
             if (key.startsWith(loteria)) delete cacheProcessamento[key];
         });
@@ -376,7 +410,9 @@ function processarCSV(loteria, texto, nome) {
             renderizarConteudo(loteria); 
             if (dados.length >= 10) setTimeout(() => window.treinarIAComFiltrosAtuais(), 500); 
         }
-        window.mostrarToast(`${config.nome}: ${dados.length} concursos carregados!`, 'success');
+        
+        const msgExtras = loteria === 'timemania' ? ` (${dadosExtras.filter(t => t !== null).length} times)` : '';
+        window.mostrarToast(`${config.nome}: ${dados.length} concursos carregados!${msgExtras}`, 'success');
     } else {
         console.warn(`Nenhum dado válido encontrado para ${loteria}`);
         window.mostrarToast(`Erro ao carregar ${config.nome}: formato inválido`, 'error');
@@ -398,11 +434,17 @@ function importarArquivo(input, loteria) {
 function carregarGridLoterias() {
     const grid = document.getElementById('lotteryGrid');
     if (!grid) return;
-    grid.innerHTML = Object.entries(window.LOTERIAS).map(([id, c]) => `<div class="lottery-card ${id==='megasena'?'active':''}" onclick="window.selecionarLoteria('${id}')" id="card-${id}"><div class="ia-status nao-treinado" id="status-${id}"></div><h3>${c.icone} ${c.nome}</h3><p class="rules">${c.numeros} números • 1 a ${c.maxNumero}${c.temMes ? ' + Mês' : ''}${c.temTime ? ' + Time' : ''}${c.temTrevos ? ' + Trevos' : ''}</p></div>`).join('');
+    grid.innerHTML = Object.entries(window.LOTERIAS).map(([id, c]) => `
+        <div class="lottery-card ${id==='megasena'?'active':''}" onclick="window.selecionarLoteria('${id}')" id="card-${id}">
+            <div class="ia-status nao-treinado" id="status-${id}"></div>
+            <h3>${c.icone} ${c.nome}</h3>
+            <p class="rules">${c.numeros} números • ${c.incluiZero ? '0 a' : '1 a'} ${c.maxNumero}${c.temMes ? ' + Mês' : ''}${c.temTime ? ' + Time' : ''}${c.temTrevos ? ' + Trevos' : ''}${c.incluiZero ? ' • Inclui 0' : ''}</p>
+        </div>
+    `).join('');
 }
 
 // ============================================
-// LIMPAR RESULTADOS AO TROCAR DE LOTERIA
+// LIMPAR RESULTADOS
 // ============================================
 function limparResultados() {
     const resultadosDiv = document.getElementById('resultados');
@@ -412,7 +454,7 @@ function limparResultados() {
 }
 
 // ============================================
-// SELECIONAR LOTERIA (COM CARREGAMENTO SOB DEMANDA)
+// SELECIONAR LOTERIA
 // ============================================
 async function selecionarLoteria(loteria) {
     limparResultados();
@@ -425,11 +467,9 @@ async function selecionarLoteria(loteria) {
     document.querySelectorAll('.lottery-card').forEach(c => c.classList.remove('active'));
     document.getElementById(`card-${loteria}`)?.classList.add('active');
     
-    // Inicializar cacheDados se não existir
     if (!window.cacheDados) window.cacheDados = {};
     if (!window.cacheDadosExtras) window.cacheDadosExtras = {};
     
-    // Verificar cache primeiro
     if (window.cacheDados[loteria] && window.cacheDados[loteria].carregado) {
         dadosAtuais = [...window.cacheDados[loteria].dados];
         if (window.cacheDadosExtras[loteria]) {
@@ -442,7 +482,6 @@ async function selecionarLoteria(loteria) {
         return;
     }
     
-    // Carregar sob demanda
     dadosAtuais = [];
     try { 
         const r = await fetch(`/csv/${loteria}.csv`);
@@ -462,13 +501,6 @@ function renderizarConteudo(loteria) {
     const dadosCount = dadosAtuais.length;
     const dadosFiltradosCount = filtrarDados().length;
     const datasPeriodo = getDatasPeriodo();
-    
-    let controlesExtras = '';
-    if (config && config.temDispersao) controlesExtras += `<div class="dispersao-slider">
-        <label class="config-label">🎯 Dispersão</label>
-        <input type="range" id="dispersaoSlider" min="${config.dispersaoMin}" max="${config.dispersaoMax}" value="${dispersaoAtual}" oninput="window.atualizarDispersao(this.value)">
-        <div class="dispersao-valor">Bloquear números recentes: <strong id="dispersaoValor">${dispersaoAtual} concursos</strong></div>
-    </div>`;
     
     let html = `<div class="card"><h3 style="color:${config ? config.cor : '#fff'};">${config ? config.icone : '🎲'} ${config ? config.nome : loteria} - IA V.6.1 PRO</h3>`;
     if (!cache.carregado) html += `<div class="mensagem-erro"><strong>⚠️ Nenhum dado!</strong><br>📁 Upload do CSV (pasta /csv/)</div>`;
@@ -508,7 +540,7 @@ function renderizarConteudo(loteria) {
     
     html += `<div class="training-section"><h4>🧠 Treinamento da IA</h4><div style="display:flex;gap:15px;flex-wrap:wrap;"><span id="trainingStatus2" class="status-badge ${iaTreinada?'status-ready':'status-error'}">${iaTreinada?'Treinado ✓':'Não Treinado'}</span><button class="btn btn-treinar" onclick="window.treinarIAComFiltrosAtuais()">🚀 Treinar IA</button><button class="btn btn-backtest" onclick="window.executarBacktesting()">🔬 Backtest</button><button class="btn btn-relatorio" onclick="window.mostrarRelatorioPadroes()">📋 Relatório</button></div><div class="training-progress"><div class="training-progress-bar" id="trainingProgressBar" style="width:${iaTreinada?'100%':'0%'};"></div></div><div class="training-log" id="trainingLog">${iaTreinada?'✅ IA pronta!':'⏳ Clique em Treinar'}</div>${animacaoHtml}</div>`;
     
-    // Área de visualização das configurações em tempo real
+    // Configurações
     html += `<div id="configVisualizacao" style="background: rgba(56, 189, 248, 0.1); border-radius: 12px; padding: 12px; margin: 15px 0; border-left: 4px solid #38bdf8;">
         <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">📋 CONFIGURAÇÕES ATUAIS:</div>
         <div id="configTags" style="display: flex; flex-wrap: wrap; gap: 8px;">
@@ -624,10 +656,14 @@ window.filtrosTreinamento = () => filtrosTreinamento;
 window.dispersaoAtual = () => dispersaoAtual;
 window.periodoSelecionado = () => periodoSelecionado;
 
+// 🔧 MELHORIA 4: Exportar dadosExtrasAtuais
+window.dadosExtrasAtuais = () => dadosExtrasAtuais;
+
 window.setIaTreinada = (val) => { iaTreinada = val; };
 window.setAiModel = (model) => { aiModel = model; };
 window.setFiltrosTreinamento = (filtros) => { filtrosTreinamento = filtros; };
 window.setIsTraining = (val) => { isTraining = val; };
 window.setDadosAtuais = (dados) => { dadosAtuais = dados; };
+window.setDadosExtrasAtuais = (dados) => { dadosExtrasAtuais = dados; };
 
-console.log('✅ LOTERIAS.js corrigido (Loteca + Timemania)');
+console.log('✅ LOTERIAS.js carregado (VERSÃO DEFINITIVA CORRIGIDA)');
