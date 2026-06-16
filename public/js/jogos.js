@@ -2,6 +2,10 @@
 // ============================================
 
 // js/jogos.js - Geração de jogos (V2.0)
+// ============================================
+// JOGOS.js - Geração de palpites (VERSÃO COMPLETA CORRIGIDA) 16/06/2026
+// ============================================
+
 function validarSaldoEAcesso(qtd, valorTotal) {
     if (!window.usuarioAtual) {
         window.mostrarModalLogin();
@@ -22,6 +26,9 @@ function validarSaldoEAcesso(qtd, valorTotal) {
     return { valido: true };
 }
 
+// ============================================
+// FUNÇÃO PRINCIPAL - GERAR JOGOS
+// ============================================
 async function gerarJogos() {
     if (!window.usuarioAtual) {
         window.mostrarModalLogin();
@@ -49,47 +56,122 @@ async function gerarJogos() {
     }
     
     const resultadosDiv = document.getElementById('resultados');
-    if (resultadosDiv) resultadosDiv.innerHTML = '<div class="loading">🎲 Gerando jogos...</div>';
+    if (resultadosDiv) resultadosDiv.innerHTML = '<div class="loading">🎲 Gerando jogos com IA...</div>';
     
     try {
+        // Obter filtros atuais
+        const periodo = window.periodoSelecionado ? window.periodoSelecionado() : 'all';
+        const dispersao = window.dispersaoAtual ? window.dispersaoAtual() : 15;
+        
+        // Chamar a API com os parâmetros corretos
         const result = await window.apiClient.generateGames({
             lottery: loteria,
             quantity: qtd,
             mode: modo,
-            extraNumbers: quantidadeNumerosJogo
+            extraNumbers: quantidadeNumerosJogo,
+            filters: {
+                periodo: periodo,
+                dispersao: dispersao
+            }
         });
         
-        if (result.creditsRemaining !== undefined) window.creditosUsuario = result.creditsRemaining;
+        // 🔧 CORREÇÃO 1: Usar ?? em vez de || para valores numéricos
+        if (result.creditsRemaining !== undefined && result.creditsRemaining !== null) {
+            window.creditosUsuario = result.creditsRemaining;
+        }
         
+        // ============================================
+        // RENDERIZAR RESULTADOS COM TIME E CONFIANÇA
+        // ============================================
         if (resultadosDiv && result.games) {
-            resultadosDiv.innerHTML = `
+            const isLoteca = loteria === 'loteca';
+            // 🔧 CORREÇÃO 3: Remover variável não utilizada
+            // const isTimemania = loteria === 'timemania';
+            
+            let html = `
                 <div class="resultados-container">
-                    <h4>🎲 ${result.games.length} JOGO(S) GERADO(S)</h4>
-                    <div class="jogos-grid" style="display: flex; flex-direction: column; gap: 12px;">
-                        ${result.games.map((jogo, idx) => `
-                            <div style="background: var(--bg-card); padding: 12px; border-radius: 12px;">
-                                <div style="font-weight: bold; margin-bottom: 8px;">Jogo ${idx + 1}</div>
-                                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                                    ${jogo.map(n => `<span style="background: linear-gradient(135deg, #8b5cf6, #06b6d4); padding: 6px 12px; border-radius: 8px; font-weight: bold;">${String(n).padStart(2, '0')}</span>`).join('')}
-                                </div>
-                            </div>
-                        `).join('')}
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 16px;">
+                        <h4>🎲 ${result.games.length} JOGO(S) GERADO(S)</h4>
+                        <span style="font-size: 14px; color: var(--text-secondary);">
+                            🎯 Modo: ${modo.replace('_', ' ').toUpperCase()}
+                            ${result.confiancaMedia ? `| 📊 Confiança média: ${result.confiancaMedia}%` : ''}
+                        </span>
                     </div>
-                    <div class="resultados-footer" style="margin-top: 16px; padding: 12px; background: rgba(56,189,248,0.1); border-radius: 12px;">
-                        <p>💰 Créditos gastos: R$ ${result.creditsSpent}</p>
-                        <p>💰 Saldo restante: R$ ${result.creditsRemaining}</p>
+                    <div class="jogos-grid" style="display: flex; flex-direction: column; gap: 12px;">
+            `;
+            
+            result.games.forEach((jogo, idx) => {
+                // Suporte a dois formatos: { numeros: [...] } ou array direto
+                const numeros = jogo.numeros || jogo;
+                const timeCoracao = jogo.timeCoracao || null;
+                
+                // 🔧 CORREÇÃO 2: Usar ?? para confiança (permite valor 0)
+                const confianca = jogo.confianca ?? null;
+                
+                html += `
+                    <div style="background: var(--bg-card); padding: 14px; border-radius: 12px; border-left: 4px solid ${isLoteca ? '#10b981' : '#8b5cf6'};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 8px;">
+                            <div style="font-weight: bold; font-size: 14px;">Jogo ${idx + 1}</div>
+                            ${confianca !== null ? `<span style="font-size: 12px; color: ${confianca > 70 ? '#10b981' : confianca > 40 ? '#f59e0b' : '#ef4444'};">🎯 Confiança: ${confianca}%</span>` : ''}
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            ${numeros.map(n => `
+                                <span style="background: linear-gradient(135deg, #8b5cf6, #06b6d4); padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 14px; min-width: 32px; text-align: center;">
+                                    ${String(n).padStart(2, '0')}
+                                </span>
+                            `).join('')}
+                        </div>
+                        ${timeCoracao ? `
+                            <div style="margin-top: 10px; padding: 8px 12px; background: rgba(251, 191, 36, 0.15); border-radius: 8px; border-left: 3px solid #fbbf24;">
+                                ⚽ <strong>Time do Coração:</strong> <span style="color: #fbbf24; font-weight: bold;">${timeCoracao}</span>
+                            </div>
+                        ` : ''}
+                        ${isLoteca ? `
+                            <div style="margin-top: 8px; font-size: 11px; color: var(--text-secondary);">
+                                📊 14 jogos • Valores: 0=Empate, 1=Coluna 1, 2=Coluna 2
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            // 🔧 CORREÇÃO 1: Usar ?? em vez de || para valores numéricos
+            const creditsSpent = result.creditsSpent ?? 0;
+            const creditsRemaining = result.creditsRemaining ?? 0;
+            
+            html += `
+                    </div>
+                    <div class="resultados-footer" style="margin-top: 16px; padding: 12px; background: rgba(56,189,248,0.1); border-radius: 12px; display: flex; justify-content: space-between; flex-wrap: wrap;">
+                        <p>💰 Créditos gastos: R$ ${creditsSpent}</p>
+                        <p>💰 Saldo restante: R$ ${creditsRemaining}</p>
+                        ${result.confiancaMedia ? `<p>📊 Confiança média: ${result.confiancaMedia}%</p>` : ''}
                     </div>
                 </div>
             `;
+            
+            resultadosDiv.innerHTML = html;
         }
         
-        window.mostrarToast(`${qtd} jogo(s) gerado(s)! Saldo: R$ ${window.creditosUsuario}`, 'success');
+        // 🔧 CORREÇÃO 1: Usar ?? para exibir mensagem
+        const saldoMsg = window.creditosUsuario !== undefined && window.creditosUsuario !== null 
+            ? `R$ ${window.creditosUsuario}` 
+            : 'indisponível';
         
-        if (typeof window.atualizarInterfaceUsuario === 'function') window.atualizarInterfaceUsuario();
+        window.mostrarToast(`${qtd} jogo(s) gerado(s) com IA! Saldo: ${saldoMsg}`, 'success');
+        
+        if (typeof window.atualizarInterfaceUsuario === 'function') {
+            window.atualizarInterfaceUsuario();
+        }
         
     } catch (error) {
         console.error('Erro na API:', error);
-        if (resultadosDiv) resultadosDiv.innerHTML = `<div class="mensagem-erro">❌ Erro ao gerar jogos: ${error.error || error.message}</div>`;
+        if (resultadosDiv) {
+            resultadosDiv.innerHTML = `
+                <div class="mensagem-erro">
+                    ❌ Erro ao gerar jogos: ${error.error || error.message || 'Tente novamente'}
+                </div>
+            `;
+        }
         if (error.status === 402) {
             window.mostrarToast('Saldo insuficiente! Compre créditos.', 'error');
             window.abrirModalComprar();
@@ -99,7 +181,10 @@ async function gerarJogos() {
     }
 }
 
+// ============================================
+// EXPORTAÇÃO
+// ============================================
 window.gerarJogos = gerarJogos;
 window.validarSaldoEAcesso = validarSaldoEAcesso;
 
-console.log('✅ JOGOS.js carregado (V2.0)');
+console.log('✅ JOGOS.js carregado (VERSÃO COMPLETA CORRIGIDA)');
