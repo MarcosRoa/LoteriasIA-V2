@@ -377,13 +377,20 @@ function processarCSV(loteria, texto, nome) {
                 // Se já temos 7 números, o próximo valor é o mês
                 if (numeros.length >= config.numeros) {
                     const numTeste = parseInt(valor);
+                    let mes = null;
                     
                     if (!isNaN(numTeste) && numTeste >= 1 && numTeste <= 12) {
                         // É um número (ex: 2, 12, 4)
-                        mesSorte = numTeste;
+                        mes = numTeste;
                     } else {
                         // É texto (ex: "MARÇO", "JANEIRO") - converte
-                        mesSorte = converterMesTextoParaNumero(valor);
+                        mes = converterMesTextoParaNumero(valor);
+                    }
+                    
+                    if (mes !== null) {
+                        // 🔧 CORREÇÃO: Adiciona o mês DIRETAMENTE ao array de números
+                        numeros.push(mes);
+                        mesSorte = mes;
                     }
                     continue;
                 }
@@ -419,16 +426,33 @@ function processarCSV(loteria, texto, nome) {
         } else {
             // DEMAIS LOTERIAS - Ordena os números
             if (numeros.length >= config.numeros) {
-                const numerosOrdenados = numeros.slice(0, config.numeros).sort((a, b) => a - b);
-                dados.push(numerosOrdenados);
-                
-                // Salva os dados extras conforme a loteria
-                if (loteria === 'timemania') {
-                    dadosExtras.push(timeCoracao || null);
-                } else if (loteria === 'diadesorte') {
-                    dadosExtras.push(mesSorte || null);
+                // Para Dia de Sorte, verificar se tem 8 elementos (7 números + 1 mês)
+                if (loteria === 'diadesorte') {
+                    // Se tem 8 elementos, o último é o mês
+                    if (numeros.length === 8) {
+                        const numerosJogo = numeros.slice(0, 7).sort((a, b) => a - b);
+                        const mes = numeros[7];
+                        // Adiciona o mês como 8º elemento
+                        numerosJogo.push(mes);
+                        dados.push(numerosJogo);
+                        dadosExtras.push(mesSorte || null);
+                    } else if (numeros.length >= 7) {
+                        // Fallback: se não tiver mês, só os números
+                        const numerosOrdenados = numeros.slice(0, 7).sort((a, b) => a - b);
+                        dados.push(numerosOrdenados);
+                        dadosExtras.push(null);
+                    }
                 } else {
-                    dadosExtras.push(null);
+                    // Para outras loterias (Mega, Quina, etc.)
+                    const numerosOrdenados = numeros.slice(0, config.numeros).sort((a, b) => a - b);
+                    dados.push(numerosOrdenados);
+                    
+                    // Salva os dados extras conforme a loteria
+                    if (loteria === 'timemania') {
+                        dadosExtras.push(timeCoracao || null);
+                    } else {
+                        dadosExtras.push(null);
+                    }
                 }
             }
         }
