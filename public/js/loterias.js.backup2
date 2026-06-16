@@ -1,6 +1,8 @@
 // ============================================
 // LOTERIAS.js - Gerenciamento de loterias (FASE 18 - CACHE OTIMIZADO + LOTECA)
 // ============================================
+// LOTERIAS.js - Gerenciamento de loterias (FASE 18 - CACHE OTIMIZADO)
+// ============================================
 
 // ============================================
 // VARIÁVEIS LOCAIS
@@ -231,17 +233,7 @@ function atualizarAnimacaoTreinamento(status) {
 }
 
 // ============================================
-// FUNÇÃO AUXILIAR PARA FORMATAR RESULTADO LOTECA
-// ============================================
-function formatarResultadoLoteca(valor) {
-    if (valor === 0) return "⚖️ Empate";
-    if (valor === 1) return "🏠 Coluna 1";
-    if (valor === 2) return "✈️ Coluna 2";
-    return "?";
-}
-
-// ============================================
-// PROCESSAR CSV (COM CACHE E SUPORTE A LOTECA)
+// PROCESSAR CSV (COM CACHE) - CORRIGIDO PARA LOTECA
 // ============================================
 function processarCSV(loteria, texto, nome) {
     const config = window.LOTERIAS[loteria];
@@ -249,11 +241,8 @@ function processarCSV(loteria, texto, nome) {
     
     if (linhas.length < 2) return;
     
-    // Força separador ; para Loteca, senão detecta automaticamente
-    let sep = ';';
-    if (loteria !== 'loteca') {
-        sep = linhas[0].includes(';') ? ';' : ',';
-    }
+    // CORREÇÃO: Força separador ';' para Loteca
+    let sep = (loteria === 'loteca') ? ';' : (linhas[0].includes(';') ? ';' : ',');
     
     const dados = [];
     const dadosExtras = [];
@@ -306,19 +295,18 @@ function processarCSV(loteria, texto, nome) {
             let valor = colunas[j]?.trim();
             if (valor === '' || valor === undefined) continue;
             
-            // 🆕 TRATAMENTO ESPECIAL PARA LOTECA
+            // CORREÇÃO: Tratamento especial para Loteca
             if (loteria === 'loteca') {
                 if (valor === 'Coluna 1') {
-                    numeros.push(1);      // Vitória do mandante
+                    numeros.push(1);
                 } else if (valor === 'Coluna do meio') {
-                    numeros.push(0);      // Empate
+                    numeros.push(0);
                 } else if (valor === 'Coluna 2') {
-                    numeros.push(2);      // Vitória do visitante
+                    numeros.push(2);
                 }
-                continue;  // Pula o resto do processamento numérico
+                continue;
             }
             
-            // Processamento normal para outras loterias
             if (loteria === 'timemania') {
                 const numTeste = parseInt(valor);
                 if (isNaN(numTeste) || valor.includes('/') || /[A-Za-zÀ-ú]/.test(valor)) {
@@ -342,14 +330,14 @@ function processarCSV(loteria, texto, nome) {
             }
         }
         
-        // Validação para Loteca: precisa ter exatamente 14 resultados
+        // CORREÇÃO: Para Loteca, NÃO ordenar os números (a ordem dos jogos importa!)
         if (loteria === 'loteca') {
             if (numeros.length === config.numeros) {
                 dados.push([...numeros]);
                 dadosExtras.push(null);
             }
         } else {
-            // Validação normal para outras loterias
+            // Para outras loterias, mantém a ordenação original
             if (numeros.length >= config.numeros) {
                 const numerosOrdenados = numeros.slice(0, config.numeros).sort((a, b) => a - b);
                 dados.push(numerosOrdenados);
@@ -379,9 +367,6 @@ function processarCSV(loteria, texto, nome) {
             if (loteria === 'timemania') {
                 dadosExtrasAtuais = [...dadosExtras];
             }
-            if (loteria === 'loteca') {
-                dadosExtrasAtuais = [...dadosExtras];
-            }
             renderizarConteudo(loteria); 
             if (dados.length >= 10) setTimeout(() => window.treinarIAComFiltrosAtuais(), 500); 
         }
@@ -407,7 +392,7 @@ function importarArquivo(input, loteria) {
 function carregarGridLoterias() {
     const grid = document.getElementById('lotteryGrid');
     if (!grid) return;
-    grid.innerHTML = Object.entries(window.LOTERIAS).map(([id, c]) => `<div class="lottery-card ${id==='megasena'?'active':''}" onclick="window.selecionarLoteria('${id}')" id="card-${id}"><div class="ia-status nao-treinado" id="status-${id}"></div><h3>${c.icone} ${c.nome}</h3><p class="rules">${c.numeros} números • 1 a ${c.maxNumero}${c.temMes ? ' + Mês' : ''}${c.temTime ? ' + Time' : ''}${c.temTrevos ? ' + Trevos' : ''}${c.incluiZero ? ' • Inclui 0 (empate)' : ''}</p></div>`).join('');
+    grid.innerHTML = Object.entries(window.LOTERIAS).map(([id, c]) => `<div class="lottery-card ${id==='megasena'?'active':''}" onclick="window.selecionarLoteria('${id}')" id="card-${id}"><div class="ia-status nao-treinado" id="status-${id}"></div><h3>${c.icone} ${c.nome}</h3><p class="rules">${c.numeros} números • 1 a ${c.maxNumero}${c.temMes ? ' + Mês' : ''}${c.temTime ? ' + Time' : ''}${c.temTrevos ? ' + Trevos' : ''}</p></div>`).join('');
 }
 
 // ============================================
@@ -618,7 +603,6 @@ window.atualizarAnimacaoTreinamento = atualizarAnimacaoTreinamento;
 window.limparResultados = limparResultados;
 window.toggleModoBolao = toggleModoBolao;
 window.atualizarQuantidadeNumerosBolao = atualizarQuantidadeNumerosBolao;
-window.formatarResultadoLoteca = formatarResultadoLoteca;
 
 window.loteriaAtual = () => loteriaAtual;
 window.dadosAtuais = () => dadosAtuais;
