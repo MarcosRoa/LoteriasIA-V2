@@ -640,4 +640,54 @@ function renderizarConteudo(loteria) {
     html += `
     <div class="footer-buttons">
         <button onclick="window.open('politica.html', '_blank')" style="background: linear-gradient(135deg, #8b5cf6, #06b6d4); border: none; border-radius: 30px; color: white; font-weight: 600; cursor: pointer;">🔒 Política</button>
-        <button onclick
+        <button onclick="window.open('sobre.html', '_blank')" style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; border-radius: 30px; color: #1e293b; font-weight: 600; cursor: pointer;">📖 Sobre Nós</button>
+        <button onclick="window.open('contatos.html', '_blank')" style="background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 30px; color: white; font-weight: 600; cursor: pointer;">📞 Contatos</button>
+        <button onclick="window.location.href='estatisticas.html'" style="background: linear-gradient(135deg, #ec4899, #8b5cf6); border: none; border-radius: 30px; color: white; font-weight: 600; cursor: pointer;">📊 Estatísticas</button>
+    </div>
+    <div style="text-align: center; margin-top: 15px; margin-bottom: 20px; font-size: 11px; color: var(--text-secondary);">
+        © 2025 Loterias IA - Sistema Profissional com Inteligência Artificial | Versão 6.1 PRO
+    </div>`;
+    
+    div.innerHTML = html;
+    
+    if (typeof window.atualizarVisualizacaoConfiguracoes === 'function') {
+        setTimeout(() => window.atualizarVisualizacaoConfiguracoes(), 100);
+    }
+}
+
+// ============================================
+// EXPORTAÇÃO PARA O WINDOW
+// ============================================
+window.carregarGridLoterias = carregarGridLoterias;
+window.selecionarLoteria = selecionarLoteria;
+window.renderizarConteudo = renderizarConteudo;
+window.setPeriodo = setPeriodo;
+window.atualizarDispersao = atualizarDispersao;
+window.getFiltrosAtivos = getFiltrosAtivos;
+window.filtrarDados = filtrarDados;
+window.importarArquivo = importarArquivo;
+window.processarCSV = processarCSV;
+window.atualizarAnimacaoTreinamento = atualizarAnimacaoTreinamento;
+window.limparResultados = limparResultados;
+window.toggleModoBolao = toggleModoBolao;
+window.atualizarQuantidadeNumerosBolao = atualizarQuantidadeNumerosBolao;
+
+window.loteriaAtual = () => loteriaAtual;
+window.dadosAtuais = () => dadosAtuais;
+window.iaTreinada = () => iaTreinada;
+window.aiModel = () => aiModel;
+window.filtrosTreinamento = () => filtrosTreinamento;
+window.dispersaoAtual = () => dispersaoAtual;
+window.periodoSelecionado = () => periodoSelecionado;
+
+// 🔧 MELHORIA 4: Exportar dadosExtrasAtuais
+window.dadosExtrasAtuais = () => dadosExtrasAtuais;
+
+window.setIaTreinada = (val) => { iaTreinada = val; };
+window.setAiModel = (model) => { aiModel = model; };
+window.setFiltrosTreinamento = (filtros) => { filtrosTreinamento = filtros; };
+window.setIsTraining = (val) => { isTraining = val; };
+window.setDadosAtuais = (dados) => { dadosAtuais = dados; };
+window.setDadosExtrasAtuais = (dados) => { dadosExtrasAtuais = dados; };
+
+console.log('✅ LOTERIAS.js carregado (VERSÃO DEFINITIVA CORRIGIDA)');
