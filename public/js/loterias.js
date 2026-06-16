@@ -1,9 +1,8 @@
 // ============================================
 // LOTERIAS.js - Gerenciamento de loterias (FASE 18 - CACHE OTIMIZADO)
 // ============================================
-
 // ============================================
-// LOTERIAS.js - Gerenciamento de loterias (FASE 18 - CACHE OTIMIZADO)
+// LOTERIAS.js - Gerenciamento de loterias (FASE 18 - CACHE OTIMIZADO + LOTECA)
 // ============================================
 
 // ============================================
@@ -309,6 +308,7 @@ function processarCSV(loteria, texto, nome) {
                 continue;
             }
             
+            // Processamento normal para Timemania
             if (loteria === 'timemania') {
                 const numTeste = parseInt(valor);
                 if (isNaN(numTeste) || valor.includes('/') || /[A-Za-zÀ-ú]/.test(valor)) {
@@ -370,10 +370,7 @@ function processarCSV(loteria, texto, nome) {
         
         if (loteriaAtual === loteria) { 
             dadosAtuais = [...dados]; 
-            if (loteria === 'timemania') {
-                dadosExtrasAtuais = [...dadosExtras];
-            }
-            if (loteria === 'loteca') {
+            if (loteria === 'timemania' || loteria === 'loteca') {
                 dadosExtrasAtuais = [...dadosExtras];
             }
             renderizarConteudo(loteria); 
@@ -632,3 +629,5 @@ window.setAiModel = (model) => { aiModel = model; };
 window.setFiltrosTreinamento = (filtros) => { filtrosTreinamento = filtros; };
 window.setIsTraining = (val) => { isTraining = val; };
 window.setDadosAtuais = (dados) => { dadosAtuais = dados; };
+
+console.log('✅ LOTERIAS.js corrigido (Loteca + Timemania)');
