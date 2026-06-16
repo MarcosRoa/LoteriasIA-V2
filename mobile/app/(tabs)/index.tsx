@@ -1,26 +1,27 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator, Image, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+// app/(tabs)/index.tsx 15/06/2026
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator, Image, ScrollView, Alert } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { LOTTERIES } from '../../src/constants/lotteries';
 import { useAuthStore } from '../../src/stores/authStore';
+import { useSessionStore } from '../../src/stores/sessionStore';
 import { getCredits } from '../../src/services/api';
 
 export default function HomeScreen() {
     const router = useRouter();
-    const { user } = useAuthStore();
+    const { user, logout } = useAuthStore();
+    const { openLoginModal } = useSessionStore();
     const [credits, setCredits] = useState(0);
     const [isPro, setIsPro] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (user) {
-            loadUserData();
-        } else {
-            setLoading(false);
-        }
-    }, [user]);
-
     const loadUserData = async () => {
+        if (!user) {
+            setLoading(false);
+            return;
+        }
+        
         try {
             const data = await getCredits();
             setCredits(data.credits || 0);
@@ -32,11 +33,50 @@ export default function HomeScreen() {
         }
     };
 
+    // Recarregar dados quando a tela ganhar foco
+    useFocusEffect(
+        useCallback(() => {
+            loadUserData();
+        }, [user])
+    );
+
     const handleSelectLottery = (lotteryId: string) => {
         router.push({
             pathname: '/(tabs)/generate',
             params: { lottery: lotteryId }
         });
+    };
+
+    const handleLogout = () => {
+        Alert.alert(
+            'Sair da conta',
+            'Tem certeza que deseja sair?',
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                { 
+                    text: 'Sair', 
+                    style: 'destructive',
+                    onPress: async () => {
+                        await logout();
+                        openLoginModal();
+                    }
+                }
+            ]
+        );
+    };
+
+    const handleActivatePro = () => {
+        if (!user) {
+            Alert.alert('Faça login', 'Você precisa estar logado para ativar o plano PRO');
+            openLoginModal();
+            return;
+        }
+        
+        Alert.alert(
+            '⭐ Plano PRO',
+            'Benefícios do plano PRO:\n\n• Jogos por apenas 2 créditos\n• Modo Bolão exclusivo\n• Estatísticas avançadas\n• Suporte prioritário\n\nEm breve disponível!',
+            [{ text: 'Entendi', style: 'default' }]
+        );
     };
 
     const getGreeting = () => {
@@ -108,6 +148,25 @@ export default function HomeScreen() {
                             </Text>
                         </TouchableOpacity>
                     ))}
+                </View>
+
+                {/* Botões SAIR e ATIVAR PRO lado a lado */}
+                <View style={styles.buttonsContainer}>
+                    <TouchableOpacity 
+                        style={[styles.actionButton, styles.logoutButton]}
+                        onPress={handleLogout}
+                    >
+                        <Ionicons name="log-out-outline" size={20} color="#fff" />
+                        <Text style={styles.actionButtonText}>Sair</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                        style={[styles.actionButton, styles.proButton]}
+                        onPress={handleActivatePro}
+                    >
+                        <Ionicons name="star-outline" size={20} color="#fff" />
+                        <Text style={styles.actionButtonText}>Ativar PRO</Text>
+                    </TouchableOpacity>
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -220,5 +279,32 @@ const styles = StyleSheet.create({
         color: '#94a3b8',
         fontSize: 10,
         textAlign: 'center',
+    },
+    buttonsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 16,
+        marginTop: 24,
+        marginHorizontal: 16,
+    },
+    actionButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingVertical: 12,
+        borderRadius: 30,
+    },
+    logoutButton: {
+        backgroundColor: '#ef4444',
+    },
+    proButton: {
+        backgroundColor: '#8b5cf6',
+    },
+    actionButtonText: {
+        color: '#ffffff',
+        fontSize: 14,
+        fontWeight: '600',
     },
 });
