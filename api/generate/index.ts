@@ -1,5 +1,6 @@
 // api/generate/index.ts
 // api/generate/index.ts 16/06/2026
+// api/generate/index.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
@@ -54,7 +55,6 @@ class AdvancedLotteryAI {
         this.treinado = false;
         this.confianca = 0;
         
-        // 🔧 CORREÇÃO 1: Usar o nome da loteria diretamente
         const loteriaId = this.getLoteriaId(loteriaNome);
         const config = LOTTERY_CONFIGS[loteriaId];
         this.incluirZero = config?.incluiZero || false;
@@ -63,10 +63,9 @@ class AdvancedLotteryAI {
         this.isLoteca = loteriaId === 'loteca';
         this.isTimemania = loteriaId === 'timemania';
         
-        // 🔧 CORREÇÃO 2: Usar .flat() para achatar o array de arrays
+        // Timemania: extrair times históricos
         if (this.isTimemania && this.dadosExtras && this.dadosExtras.length > 0) {
             // dadosExtras pode vir como [['FLAMENGO'], ['VASCO']] ou ['FLAMENGO', 'VASCO']
-            // .flat() garante que fique ['FLAMENGO', 'VASCO']
             const flattened = Array.isArray(this.dadosExtras[0]) 
                 ? this.dadosExtras.flat() 
                 : this.dadosExtras;
@@ -80,31 +79,30 @@ class AdvancedLotteryAI {
         }
     }
 
-    // 🔧 CORREÇÃO 1: getLoteriaId simplificado
     getLoteriaId(nome: string): string {
-        // Mapeamento para garantir compatibilidade
+        const lowerNome = nome.toLowerCase().trim();
+        
         const mapa: Record<string, string> = {
-            'megasena': 'megasena',
             'mega-sena': 'megasena',
+            'megasena': 'megasena',
             'quina': 'quina',
-            'lotofacil': 'lotofacil',
             'lotofácil': 'lotofacil',
+            'lotofacil': 'lotofacil',
             'lotomania': 'lotomania',
-            'duplasena': 'duplasena',
             'dupla sena': 'duplasena',
+            'duplasena': 'duplasena',
             'timemania': 'timemania',
-            'milionaria': 'milionaria',
             '+milionária': 'milionaria',
+            'milionaria': 'milionaria',
+            '+milionaria': 'milionaria',
             'loteca': 'loteca',
-            'diadesorte': 'diadesorte',
             'dia de sorte': 'diadesorte',
-            'supersete': 'supersete',
-            'super sete': 'supersete'
+            'diadesorte': 'diadesorte',
+            'super sete': 'supersete',
+            'supersete': 'supersete'
         };
         
-        // Tentar o mapeamento direto ou converter para lower case
-        const lowerNome = nome.toLowerCase().trim();
-        return mapa[lowerNome] || lowerNome;
+        return mapa[lowerNome] || 'megasena';
     }
 
     calcularFrequenciaPonderada() {
@@ -272,7 +270,6 @@ class AdvancedLotteryAI {
     // MÉTODO ALEATÓRIO CORRIGIDO
     // ============================================
     predizerAleatorio(qtd: number, seed: number = 0): number[] {
-        // LOTECA: permite repetição
         if (this.isLoteca) {
             const jogo: number[] = [];
             for (let i = 0; i < qtd; i++) {
@@ -281,7 +278,6 @@ class AdvancedLotteryAI {
             return jogo;
         }
         
-        // DEMAIS LOTERIAS: números únicos
         const res = new Set<number>();
         const limite = this.maxNumero + (this.incluirZero ? 1 : 0);
         
@@ -294,9 +290,7 @@ class AdvancedLotteryAI {
             res.add(num);
         }
         
-        // Fallback: se não conseguiu todos, preencher com números aleatórios
         if (res.size < qtd) {
-            const limite = this.maxNumero + (this.incluirZero ? 1 : 0);
             for (let i = 0; i < 100 && res.size < qtd; i++) {
                 const num = Math.floor(Math.random() * (limite - this.minNumero)) + this.minNumero;
                 res.add(num);
@@ -382,61 +376,6 @@ class AdvancedLotteryAI {
         if (resultado.size < qtd) {
             const todos = Array.from({ length: limite - this.minNumero }, (_, i) => i + this.minNumero);
             const disp = todos.filter(n => !resultado.has(n));
-            while (resultado.size < qtd && disp.length > 0) {
-                const idx = Math.floor(Math.random() * disp.length);
-                resultado.add(disp[idx]);
-                disp.splice(idx, 1);
-            }
-        }
-        
-        return Array.from(resultado).sort((a, b) => a - b);
-    }
-
-    // ============================================
-    // MÉTODO PRINCIPAL IA ESPECIALISTA (COM PROTEÇÃO CONTRA LOOP)
-    // ============================================
-    predizerIAEspecialista(qtd: number, usarDispersao: boolean = true, windowDispersao: number = 10, seed: number = 0): number[] {
-        // LOTECA
-        if (this.isLoteca) {
-            return this.predizerLoteca(qtd);
-        }
-        
-        // DEMAIS LOTERIAS
-        if (!this.treinado) return this.predizerAleatorio(qtd, seed);
-        
-        const scores = this.calcularScoreCompleto();
-        const ruido = (seed % 100) / 100;
-        let scoresRuido = scores.map(s => ({ ...s, score: s.score * (0.7 + ruido + Math.random() * 0.6) }));
-        
-        // 🔧 CORREÇÃO 3: Usar !this.isLoteca em vez de config.maxNumero > 2
-        if (usarDispersao && this.dados.length >= windowDispersao && !this.isLoteca) {
-            const recentes = new Set<number>();
-            this.dados.slice(-windowDispersao).forEach(jogo => jogo.forEach(n => recentes.add(n)));
-            scoresRuido = scoresRuido.map(s => ({ ...s, score: recentes.has(s.numero) ? s.score * 0.1 : s.score }));
-        }
-        
-        scoresRuido.sort((a, b) => b.score - a.score);
-        
-        const candidatos = scoresRuido.filter(s => s.numero >= this.minNumero).slice(0, Math.max(qtd * 2, 20));
-        
-        const resultado = new Set<number>();
-        
-        // 🔧 CORREÇÃO 4: Adicionar proteção contra loop infinito
-        let tentativas = 0;
-        const maxTentativas = 1000;
-        
-        while (resultado.size < qtd && tentativas < maxTentativas && candidatos.length > 0) {
-            tentativas++;
-            const idx = Math.floor(Math.random() * candidatos.length);
-            resultado.add(candidatos[idx].numero);
-            candidatos.splice(idx, 1);
-        }
-        
-        // Fallback: se não conseguiu todos os números
-        if (resultado.size < qtd) {
-            const limite = this.maxNumero + (this.incluirZero ? 1 : 0);
-            const todos = Array.from({ length: limite - this.minNumero }, (_, i) => i + this.minNumero);
-            const disp = todos.filter(n => !resultado.has(n));
             let fallbackTentativas = 0;
             while (resultado.size < qtd && disp.length > 0 && fallbackTentativas < 1000) {
                 fallbackTentativas++;
@@ -445,7 +384,6 @@ class AdvancedLotteryAI {
                 disp.splice(idx, 1);
             }
             
-            // Último recurso: forçar números únicos
             if (resultado.size < qtd) {
                 for (let n = this.minNumero; n <= this.maxNumero && resultado.size < qtd; n++) {
                     resultado.add(n);
@@ -457,8 +395,62 @@ class AdvancedLotteryAI {
     }
 
     // ============================================
-    // MÉTODO PREDIZER TIME SORTE
+    // MÉTODO PRINCIPAL IA ESPECIALISTA
     // ============================================
+    predizerIAEspecialista(qtd: number, usarDispersao: boolean = true, windowDispersao: number = 10, seed: number = 0): number[] {
+        if (this.isLoteca) {
+            return this.predizerLoteca(qtd);
+        }
+        
+        if (!this.treinado) return this.predizerAleatorio(qtd, seed);
+        
+        const scores = this.calcularScoreCompleto();
+        const ruido = (seed % 100) / 100;
+        let scoresRuido = scores.map(s => ({ ...s, score: s.score * (0.7 + ruido + Math.random() * 0.6) }));
+        
+        if (usarDispersao && this.dados.length >= windowDispersao && !this.isLoteca) {
+            const recentes = new Set<number>();
+            this.dados.slice(-windowDispersao).forEach(jogo => jogo.forEach(n => recentes.add(n)));
+            scoresRuido = scoresRuido.map(s => ({ ...s, score: recentes.has(s.numero) ? s.score * 0.1 : s.score }));
+        }
+        
+        scoresRuido.sort((a, b) => b.score - a.score);
+        
+        const candidatos = scoresRuido.filter(s => s.numero >= this.minNumero).slice(0, Math.max(qtd * 2, 20));
+        
+        const resultado = new Set<number>();
+        let tentativas = 0;
+        const maxTentativas = 1000;
+        
+        while (resultado.size < qtd && tentativas < maxTentativas && candidatos.length > 0) {
+            tentativas++;
+            const idx = Math.floor(Math.random() * candidatos.length);
+            resultado.add(candidatos[idx].numero);
+            candidatos.splice(idx, 1);
+        }
+        
+        if (resultado.size < qtd) {
+            const limite = this.maxNumero + (this.incluirZero ? 1 : 0);
+            const todos = Array.from({ length: limite - this.minNumero }, (_, i) => i + this.minNumero);
+            const disp = todos.filter(n => !resultado.has(n));
+            let fallbackTentativas = 0;
+            while (resultado.size < qtd && disp.length > 0 && fallbackTentativas < maxTentativas) {
+                fallbackTentativas++;
+                const idx = Math.floor(Math.random() * disp.length);
+                resultado.add(disp[idx]);
+                disp.splice(idx, 1);
+            }
+            
+            if (resultado.size < qtd) {
+                for (let n = this.minNumero; n <= this.maxNumero && resultado.size < qtd; n++) {
+                    resultado.add(n);
+                }
+            }
+        }
+        
+        return Array.from(resultado).sort((a, b) => a - b);
+    }
+
     predizerTimeSorte(): string {
         return this.predizerTimeTimemania();
     }
@@ -473,7 +465,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
     
-    const { uid, lottery, quantity, mode, extraNumbers, filters } = req.body;
+    const { uid, lottery, quantity, mode, extraNumbers, filters, dados, dadosExtras } = req.body;
     
     if (!uid || !lottery || !quantity) {
         return res.status(400).json({ error: 'Missing required fields' });
@@ -505,51 +497,59 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         
         // ============================================
         // CARREGAR DADOS HISTÓRICOS
+        // 🔧 CORRIGIDO: Usar dados enviados pelo frontend OU buscar do Supabase
         // ============================================
-        const { data: historico, error: histError } = await supabase
-            .from('historico_resultados')
-            .select('dados, dados_extras, data')
-            .eq('loteria', lottery)
-            .order('data', { ascending: false })
-            .limit(1000);
+        let dadosFiltrados: number[][] = [];
+        let dadosExtrasFiltrados: any[] = [];
         
-        if (histError) throw histError;
-        
-        // Preparar dados para a IA
-        const dados = historico?.map(item => item.dados) || [];
-        const dadosExtras = historico?.map(item => item.dados_extras) || [];
-        
-        // Aplicar filtros de período (se fornecidos)
-        let dadosFiltrados = dados;
-        let dadosExtrasFiltrados = dadosExtras;
-        
-        if (filters?.periodo && filters.periodo !== 'all') {
-            const anos = parseInt(filters.periodo);
-            if (!isNaN(anos) && anos > 0) {
-                const dataCorte = new Date();
-                dataCorte.setFullYear(dataCorte.getFullYear() - anos);
+        // PRIORIDADE 1: Usar dados enviados pelo frontend (dos CSVs)
+        if (dados && Array.isArray(dados) && dados.length > 0) {
+            dadosFiltrados = dados;
+            dadosExtrasFiltrados = dadosExtras || [];
+            console.log(`📊 Usando dados do frontend: ${dadosFiltrados.length} concursos`);
+        } else {
+            // PRIORIDADE 2: Buscar do Supabase (fallback)
+            console.log(`📊 Buscando dados do Supabase para ${lottery}...`);
+            
+            // 🔧 CORRIGIDO: Usar historico_palpites em vez de historico_resultados
+            const { data: historico, error: histError } = await supabase
+                .from('historico_palpites')
+                .select('jogos, extras, times, data')
+                .eq('loteria', lottery)
+                .order('data', { ascending: false })
+                .limit(1000);
+            
+            if (histError) {
+                console.warn('⚠️ Erro ao buscar histórico:', histError.message);
+                // Se não encontrar dados, usar arrays vazios
+                dadosFiltrados = [];
+                dadosExtrasFiltrados = [];
+            } else if (historico && historico.length > 0) {
+                // 🔧 CORRIGIDO: Extrair jogos corretamente
+                dadosFiltrados = historico
+                    .map(item => item.jogos)
+                    .flat()
+                    .filter(j => Array.isArray(j) && j.length > 0) as number[][];
                 
-                const indicesFiltrados: number[] = [];
-                for (let i = 0; i < historico.length; i++) {
-                    const data = new Date(historico[i].data);
-                    if (data >= dataCorte) {
-                        indicesFiltrados.push(i);
-                    }
+                // Timemania: extrair times
+                if (lottery === 'timemania') {
+                    dadosExtrasFiltrados = historico
+                        .map(item => item.times)
+                        .flat()
+                        .filter(t => t !== null && t !== undefined);
                 }
                 
-                dadosFiltrados = indicesFiltrados.map(i => dados[i]);
-                dadosExtrasFiltrados = indicesFiltrados.map(i => dadosExtras[i]);
+                console.log(`📊 Dados do Supabase: ${dadosFiltrados.length} concursos`);
             }
         }
         
         // ============================================
         // CRIAR E TREINAR A IA
         // ============================================
-        // 🔧 CORREÇÃO 1: Usar lottery diretamente como nome
         const ai = new AdvancedLotteryAI(
             dadosFiltrados,
             config.maxNumero,
-            lottery,  // ← AGORA usa 'loteca', 'timemania', etc.
+            lottery,
             dadosExtrasFiltrados
         );
         ai.treinar();
@@ -612,16 +612,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         
         // ============================================
         // SALVAR HISTÓRICO
+        // 🔧 CORRIGIDO: Usar colunas que existem
         // ============================================
+        const timesArray = lottery === 'timemania' 
+            ? jogos.map(j => j.timeCoracao).filter(t => t) 
+            : [];
+        
         await supabase
             .from('historico_palpites')
             .insert({
                 usuario_uid: uid,
                 loteria: lottery,
                 jogos: jogos.map(j => j.numeros),
-                jogos_completos: jogos,
                 quantidade_numeros: numerosPorJogo,
-                modo: modoIA,
+                filtros: {
+                    modo: modoIA,
+                    periodo: filters?.periodo || 'all',
+                    dispersao: filters?.dispersao || 15
+                },
+                extras: jogos.map(j => ({
+                    confianca: j.confianca || null,
+                    timeCoracao: j.timeCoracao || null
+                })),
+                times: timesArray.length > 0 ? timesArray : null,
                 data: new Date().toISOString()
             });
         
