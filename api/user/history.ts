@@ -25,19 +25,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .from('historico_palpites')
             .select('*')
             .eq('usuario_uid', uid)
-            .order('created_at', { ascending: false })
+            .order('data', { ascending: false })
             .limit(limit);
         
         if (error) throw error;
         
         // Formatar os dados para o app
-        const formattedHistory = history?.map(item => ({
+        const formattedHistory = history?.map((item: any) => ({
             id: item.id,
             loteria: item.loteria,
-            data: item.created_at,
+            data: item.data,
             jogos: item.jogos || [],
-            filtros: item.modo || 'IA Especialista',
-            quantidade_numeros: item.quantidade_numeros || 0
+            filtros: item.filtros || item.modo || 'IA Especialista',
+            quantidade_numeros: item.quantidade_numeros || 0,
+            extras: item.extras || null,
+            meses: item.meses || null,
+            times: item.times || null
         })) || [];
         
         return res.status(200).json({
