@@ -22,7 +22,7 @@ const LOTERIAS = {
         incluirZero: false
     },
     lotomania: { 
-        nome: 'Lotomania', icone: '🎪', numeros: 20, maxNumero: 99, cor: '#ef4444', 
+        nome: 'Lotomania', icone: '🎪', numeros: 50, maxNumero: 99, cor: '#ef4444', 
         incluirZero: true, temDispersao: true, dispersaoPadrao: 15, dispersaoMin: 5, dispersaoMax: 30,
         minNumeros: 50, maxNumeros: 50, permiteBolao: false, jogoSimples: 50
     },
