@@ -6,6 +6,10 @@
 // JOGOS.js - Geração de palpites (VERSÃO COMPLETA CORRIGIDA) 16/06/2026
 // ============================================
 
+// ============================================
+// JOGOS.js - Geração de palpites (VERSÃO COMPLETA CORRIGIDA)
+// ============================================
+
 function validarSaldoEAcesso(qtd, valorTotal) {
     if (!window.usuarioAtual) {
         window.mostrarModalLogin();
@@ -24,6 +28,15 @@ function validarSaldoEAcesso(qtd, valorTotal) {
     }
     
     return { valido: true };
+}
+
+// ============================================
+// FUNÇÃO AUXILIAR - NOME DO MÊS
+// ============================================
+function getNomeMes(numero) {
+    const meses = ['', 'JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 
+                   'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
+    return meses[numero] || numero;
 }
 
 // ============================================
@@ -69,24 +82,24 @@ async function gerarJogos() {
             quantity: qtd,
             mode: modo,
             extraNumbers: quantidadeNumerosJogo,
+            dados: window.dadosAtuais(),
+            dadosExtras: window.dadosExtrasAtuais(),
             filters: {
                 periodo: periodo,
                 dispersao: dispersao
             }
         });
         
-        // 🔧 CORREÇÃO 1: Usar ?? em vez de || para valores numéricos
         if (result.creditsRemaining !== undefined && result.creditsRemaining !== null) {
             window.creditosUsuario = result.creditsRemaining;
         }
         
         // ============================================
-        // RENDERIZAR RESULTADOS COM TIME E CONFIANÇA
+        // RENDERIZAR RESULTADOS
         // ============================================
         if (resultadosDiv && result.games) {
             const isLoteca = loteria === 'loteca';
-            // 🔧 CORREÇÃO 3: Remover variável não utilizada
-            // const isTimemania = loteria === 'timemania';
+            const isDiaDeSorte = loteria === 'diadesorte';
             
             let html = `
                 <div class="resultados-container">
@@ -101,26 +114,29 @@ async function gerarJogos() {
             `;
             
             result.games.forEach((jogo, idx) => {
-                // Suporte a dois formatos: { numeros: [...] } ou array direto
                 const numeros = jogo.numeros || jogo;
                 const timeCoracao = jogo.timeCoracao || null;
-                
-                // 🔧 CORREÇÃO 2: Usar ?? para confiança (permite valor 0)
+                const mesSorte = jogo.mesSorte || null;
                 const confianca = jogo.confianca ?? null;
                 
                 html += `
-                    <div style="background: var(--bg-card); padding: 14px; border-radius: 12px; border-left: 4px solid ${isLoteca ? '#10b981' : '#8b5cf6'};">
+                    <div style="background: var(--bg-card); padding: 14px; border-radius: 12px; border-left: 4px solid ${isLoteca ? '#10b981' : isDiaDeSorte ? '#f59e0b' : '#8b5cf6'};">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 8px;">
                             <div style="font-weight: bold; font-size: 14px;">Jogo ${idx + 1}</div>
                             ${confianca !== null ? `<span style="font-size: 12px; color: ${confianca > 70 ? '#10b981' : confianca > 40 ? '#f59e0b' : '#ef4444'};">🎯 Confiança: ${confianca}%</span>` : ''}
                         </div>
                         <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                             ${numeros.map(n => `
-                                <span style="background: linear-gradient(135deg, #8b5cf6, #06b6d4); padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 14px; min-width: 32px; text-align: center;">
+                                <span style="background: linear-gradient(135deg, ${isDiaDeSorte ? '#f59e0b' : '#8b5cf6'}, ${isDiaDeSorte ? '#eab308' : '#06b6d4'}); padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 14px; min-width: 32px; text-align: center;">
                                     ${String(n).padStart(2, '0')}
                                 </span>
                             `).join('')}
                         </div>
+                        ${mesSorte ? `
+                            <div style="margin-top: 10px; padding: 8px 12px; background: rgba(251, 191, 36, 0.15); border-radius: 8px; border-left: 3px solid #fbbf24;">
+                                🎁 <strong>Mês da Sorte:</strong> <span style="color: #fbbf24; font-weight: bold;">${mesSorte} - ${getNomeMes(mesSorte)}</span>
+                            </div>
+                        ` : ''}
                         ${timeCoracao ? `
                             <div style="margin-top: 10px; padding: 8px 12px; background: rgba(251, 191, 36, 0.15); border-radius: 8px; border-left: 3px solid #fbbf24;">
                                 ⚽ <strong>Time do Coração:</strong> <span style="color: #fbbf24; font-weight: bold;">${timeCoracao}</span>
@@ -131,11 +147,15 @@ async function gerarJogos() {
                                 📊 14 jogos • Valores: 0=Empate, 1=Coluna 1, 2=Coluna 2
                             </div>
                         ` : ''}
+                        ${isDiaDeSorte ? `
+                            <div style="margin-top: 8px; font-size: 11px; color: var(--text-secondary);">
+                                📊 7 números + 1 mês da sorte
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             });
             
-            // 🔧 CORREÇÃO 1: Usar ?? em vez de || para valores numéricos
             const creditsSpent = result.creditsSpent ?? 0;
             const creditsRemaining = result.creditsRemaining ?? 0;
             
@@ -152,7 +172,6 @@ async function gerarJogos() {
             resultadosDiv.innerHTML = html;
         }
         
-        // 🔧 CORREÇÃO 1: Usar ?? para exibir mensagem
         const saldoMsg = window.creditosUsuario !== undefined && window.creditosUsuario !== null 
             ? `R$ ${window.creditosUsuario}` 
             : 'indisponível';
@@ -186,5 +205,6 @@ async function gerarJogos() {
 // ============================================
 window.gerarJogos = gerarJogos;
 window.validarSaldoEAcesso = validarSaldoEAcesso;
+window.getNomeMes = getNomeMes;
 
 console.log('✅ JOGOS.js carregado (VERSÃO COMPLETA CORRIGIDA)');
