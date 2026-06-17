@@ -18,6 +18,7 @@ const LOTTERY_CONFIGS: Record<string, {
     permiteRepeticao?: boolean;
     incluiZero?: boolean;
     temTime?: boolean;
+    temMes?: boolean;
 }> = {
     megasena: { maxNumero: 60, numerosPadrao: 6 },
     quina: { maxNumero: 80, numerosPadrao: 5 },
@@ -27,7 +28,7 @@ const LOTTERY_CONFIGS: Record<string, {
     timemania: { maxNumero: 80, numerosPadrao: 10, temTime: true },
     milionaria: { maxNumero: 50, numerosPadrao: 6 },
     loteca: { maxNumero: 2, numerosPadrao: 14, permiteRepeticao: true, incluiZero: true },
-    diadesorte: { maxNumero: 31, numerosPadrao: 7 },
+    diadesorte: { maxNumero: 31, numerosPadrao: 7, temMes: true },
     supersete: { maxNumero: 9, numerosPadrao: 7 }
 };
 
@@ -45,7 +46,9 @@ class AdvancedLotteryAI {
     minNumero: number;
     isLoteca: boolean;
     isTimemania: boolean;
+    isDiaDeSorte: boolean;
     timesHistoricos: string[];
+    mesesHistoricos: number[];
 
     constructor(dados: number[][], maxNumero: number, loteriaNome: string, dadosExtras: any[] = []) {
         this.dados = dados || [];
@@ -62,10 +65,10 @@ class AdvancedLotteryAI {
         
         this.isLoteca = loteriaId === 'loteca';
         this.isTimemania = loteriaId === 'timemania';
+        this.isDiaDeSorte = loteriaId === 'diadesorte';
         
         // Timemania: extrair times históricos
         if (this.isTimemania && this.dadosExtras && this.dadosExtras.length > 0) {
-            // dadosExtras pode vir como [['FLAMENGO'], ['VASCO']] ou ['FLAMENGO', 'VASCO']
             const flattened = Array.isArray(this.dadosExtras[0]) 
                 ? this.dadosExtras.flat() 
                 : this.dadosExtras;
@@ -76,6 +79,19 @@ class AdvancedLotteryAI {
                 .filter(t => t.length > 0);
         } else {
             this.timesHistoricos = [];
+        }
+        
+        // 🔧 CORREÇÃO: Dia de Sorte - extrair meses históricos
+        if (this.isDiaDeSorte && this.dadosExtras && this.dadosExtras.length > 0) {
+            const flattened = Array.isArray(this.dadosExtras[0]) 
+                ? this.dadosExtras.flat() 
+                : this.dadosExtras;
+            
+            this.mesesHistoricos = flattened
+                .filter(m => m !== null && m !== undefined && typeof m === 'number' && m >= 1 && m <= 12)
+                .map(m => Number(m));
+        } else {
+            this.mesesHistoricos = [];
         }
     }
 
@@ -264,6 +280,47 @@ class AdvancedLotteryAI {
             'ATLÉTICO/MG'
         ];
         return timesFallback[Math.floor(Math.random() * timesFallback.length)];
+    }
+
+    // ============================================
+    // MÉTODO ESPECIAL PARA DIA DE SORTE
+    // ============================================
+    predizerMesSorte(): number {
+        // Se temos meses históricos, usar frequência
+        if (this.mesesHistoricos && this.mesesHistoricos.length > 0) {
+            // Contar frequência de cada mês
+            const freqMeses: Record<number, number> = {};
+            for (const mes of this.mesesHistoricos) {
+                if (mes >= 1 && mes <= 12) {
+                    freqMeses[mes] = (freqMeses[mes] || 0) + 1;
+                }
+            }
+            
+            // Ordenar meses por frequência
+            const mesesOrdenados = Object.entries(freqMeses)
+                .sort((a, b) => b[1] - a[1])
+                .map(entry => parseInt(entry[0]));
+            
+            if (mesesOrdenados.length > 0) {
+                // Pegar os 3 meses mais frequentes
+                const topMeses = mesesOrdenados.slice(0, Math.min(3, mesesOrdenados.length));
+                // Escolher aleatoriamente entre os top meses (com peso)
+                const pesos = topMeses.map((_, idx) => Math.max(1, 3 - idx));
+                const totalPeso = pesos.reduce((a, b) => a + b, 0);
+                let rand = Math.random() * totalPeso;
+                
+                for (let i = 0; i < topMeses.length; i++) {
+                    rand -= pesos[i];
+                    if (rand <= 0) {
+                        return topMeses[i];
+                    }
+                }
+                return topMeses[0];
+            }
+        }
+        
+        // Fallback: mês aleatório
+        return Math.floor(Math.random() * 12) + 1;
     }
 
     // ============================================
@@ -497,21 +554,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         
         // ============================================
         // CARREGAR DADOS HISTÓRICOS
-        // 🔧 CORRIGIDO: Usar dados enviados pelo frontend OU buscar do Supabase
         // ============================================
         let dadosFiltrados: number[][] = [];
         let dadosExtrasFiltrados: any[] = [];
         
-        // PRIORIDADE 1: Usar dados enviados pelo frontend (dos CSVs)
         if (dados && Array.isArray(dados) && dados.length > 0) {
             dadosFiltrados = dados;
             dadosExtrasFiltrados = dadosExtras || [];
             console.log(`📊 Usando dados do frontend: ${dadosFiltrados.length} concursos`);
         } else {
-            // PRIORIDADE 2: Buscar do Supabase (fallback)
             console.log(`📊 Buscando dados do Supabase para ${lottery}...`);
             
-            // 🔧 CORRIGIDO: Usar historico_palpites em vez de historico_resultados
             const { data: historico, error: histError } = await supabase
                 .from('historico_palpites')
                 .select('jogos, extras, times, data')
@@ -521,22 +574,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             
             if (histError) {
                 console.warn('⚠️ Erro ao buscar histórico:', histError.message);
-                // Se não encontrar dados, usar arrays vazios
                 dadosFiltrados = [];
                 dadosExtrasFiltrados = [];
             } else if (historico && historico.length > 0) {
-                // 🔧 CORRIGIDO: Extrair jogos corretamente
                 dadosFiltrados = historico
                     .map(item => item.jogos)
                     .flat()
                     .filter(j => Array.isArray(j) && j.length > 0) as number[][];
                 
-                // Timemania: extrair times
                 if (lottery === 'timemania') {
                     dadosExtrasFiltrados = historico
                         .map(item => item.times)
                         .flat()
                         .filter(t => t !== null && t !== undefined);
+                } else if (lottery === 'diadesorte') {
+                    dadosExtrasFiltrados = historico
+                        .map(item => item.extras?.mesSorte)
+                        .filter(m => m !== null && m !== undefined);
                 }
                 
                 console.log(`📊 Dados do Supabase: ${dadosFiltrados.length} concursos`);
@@ -562,8 +616,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const modoIA = mode || 'ia_especialista';
         
         for (let i = 0; i < quantity; i++) {
+            // 🔧 CORREÇÃO: Adicionar mesSorte
             let numeros: number[] = [];
             let timeCoracao: string | null = null;
+            let mesSorte: number | null = null;
             
             switch (modoIA) {
                 case 'ia_especialista':
@@ -586,6 +642,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 timeCoracao = ai.predizerTimeSorte();
             }
             
+            // 🔧 CORREÇÃO: Dia de Sorte - gerar mês da sorte
+            if (lottery === 'diadesorte' && dadosExtrasFiltrados && dadosExtrasFiltrados.length > 0) {
+                // Usar a IA para prever o mês baseado nos dados históricos
+                mesSorte = ai.predizerMesSorte();
+            } else if (lottery === 'diadesorte') {
+                // Fallback: mês aleatório
+                mesSorte = Math.floor(Math.random() * 12) + 1;
+            }
+            
             const jogo: any = {
                 numeros: numeros,
                 confianca: ai.treinado ? Math.round(ai.confianca * (0.7 + Math.random() * 0.3)) : 50
@@ -593,6 +658,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             
             if (timeCoracao) {
                 jogo.timeCoracao = timeCoracao;
+            }
+            
+            // 🔧 CORREÇÃO: Adicionar mês ao jogo
+            if (mesSorte !== null) {
+                jogo.mesSorte = mesSorte;
             }
             
             jogos.push(jogo);
@@ -612,10 +682,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         
         // ============================================
         // SALVAR HISTÓRICO
-        // 🔧 CORRIGIDO: Usar colunas que existem
         // ============================================
         const timesArray = lottery === 'timemania' 
             ? jogos.map(j => j.timeCoracao).filter(t => t) 
+            : [];
+        
+        const mesesArray = lottery === 'diadesorte'
+            ? jogos.map(j => j.mesSorte).filter(m => m !== null)
             : [];
         
         await supabase
@@ -632,9 +705,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 },
                 extras: jogos.map(j => ({
                     confianca: j.confianca || null,
-                    timeCoracao: j.timeCoracao || null
+                    timeCoracao: j.timeCoracao || null,
+                    mesSorte: j.mesSorte || null
                 })),
                 times: timesArray.length > 0 ? timesArray : null,
+                meses: mesesArray.length > 0 ? mesesArray : null,
                 data: new Date().toISOString()
             });
         
