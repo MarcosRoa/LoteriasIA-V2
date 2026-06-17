@@ -2,6 +2,10 @@
 // ============================================
 // api-client.js - V2.0
 // api-client.js - V2.0
+// js/api-client.js - VERSÃO 2.0 (Núcleo do Frontend)
+// ============================================
+// api-client.js - V2.0 16/06/2026
+
 const API_BASE = '/api';
 
 class ApiClient {
@@ -64,9 +68,11 @@ class ApiClient {
         }
     }
 
+    // 🔧 CORREÇÃO: Adicionar filters, dados e dadosExtras
     async generateGames(request) {
         const user = firebase.auth().currentUser;
         if (!user) throw new Error('User not logged in');
+        
         try {
             return await this.request('/generate', {
                 method: 'POST',
@@ -75,7 +81,11 @@ class ApiClient {
                     lottery: request.lottery,
                     quantity: request.quantity,
                     mode: request.mode || 'ia_especialista',
-                    extraNumbers: request.extraNumbers
+                    extraNumbers: request.extraNumbers || 0,
+                    // 🔧 CORREÇÃO: Enviar dados necessários para a IA
+                    filters: request.filters || {},
+                    dados: request.dados || [],
+                    dadosExtras: request.dadosExtras || []
                 })
             });
         } catch (error) {
