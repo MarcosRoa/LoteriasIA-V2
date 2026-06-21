@@ -1,5 +1,5 @@
 // src/services/api.ts
-// src/services/api.ts 14/06/2026
+// src/services/api.ts 21/06/2026
 import axios from 'axios';
 import { getAuth } from 'firebase/auth';
 
@@ -39,24 +39,22 @@ api.interceptors.request.use(async (config) => {
 }, (error) => {
     return Promise.reject(error);
 });
-
 // ============================================
 // CRÉDITOS
 // ============================================
 export const getCredits = async () => {
-    try {
-        const auth = getAuth();
-        const user = auth.currentUser;
-        if (!user) throw new Error('Usuário não logado');
-        
-        const response = await api.get(`/credits?uid=${user.uid}`);
-        return response.data;
-    } catch (error: any) {
-        console.error('Erro ao buscar créditos:', error);
-        throw error;
-    }
+  const auth = getAuth();
+  const user = auth.currentUser;
+  
+  if (!user) throw new Error('Usuário não logado');
+  
+  // ✅ Só cria no Supabase se e-mail for verificado
+  if (!user.emailVerified) {
+    throw new Error('E-mail não verificado. Confirme seu e-mail primeiro.');
+  }
+  
+  // ... resto do código
 };
-
 // ============================================
 // GERAR JOGOS
 // ============================================
