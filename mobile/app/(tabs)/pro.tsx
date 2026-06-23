@@ -57,7 +57,7 @@ export default function ProScreen() {
     const [credits, setCredits] = useState(0);
     const [isPro, setIsPro] = useState(false);
     const [proDaysLeft, setProDaysLeft] = useState(0);
-    const [loading, setLoading] = = useState(true);
+    const [loading, setLoading] = useState(true);
     const [selectedPlan, setSelectedPlan] = useState('trimestral');
 
     const loadUserData = async () => {
