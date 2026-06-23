@@ -1,5 +1,6 @@
 // src/services/api.ts
-// src/services/api.ts 21/06/2026
+// src/services/api.ts 26/06/2026
+// src/services/api.ts
 import axios from 'axios';
 import { getAuth } from 'firebase/auth';
 
@@ -13,7 +14,7 @@ const api = axios.create({
     timeout: 30000,
 });
 
-// Interceptor para adicionar token Firebase e dados do usuário
+// Interceptor para adicionar token Firebase e uid
 api.interceptors.request.use(async (config) => {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -25,11 +26,6 @@ api.interceptors.request.use(async (config) => {
             config.headers['X-User-Id'] = user.uid;
             config.headers['X-User-Email'] = user.email || '';
             config.headers['X-User-Name'] = user.displayName || user.email?.split('@')[0] || 'Usuário';
-            console.log('🔐 Headers enviados:', { 
-                uid: user.uid, 
-                email: user.email,
-                name: user.displayName 
-            });
         } catch (error) {
             console.error('Erro ao obter token:', error);
         }
@@ -39,22 +35,34 @@ api.interceptors.request.use(async (config) => {
 }, (error) => {
     return Promise.reject(error);
 });
+
 // ============================================
 // CRÉDITOS
 // ============================================
 export const getCredits = async () => {
-  const auth = getAuth();
-  const user = auth.currentUser;
-  
-  if (!user) throw new Error('Usuário não logado');
-  
-  // ✅ Só cria no Supabase se e-mail for verificado
-  if (!user.emailVerified) {
-    throw new Error('E-mail não verificado. Confirme seu e-mail primeiro.');
-  }
-  
-  // ... resto do código
+    try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) throw new Error('Usuário não logado');
+        
+        const response = await api.get(`/credits?uid=${user.uid}`);
+        
+        // ✅ VERIFICAR SE A RESPOSTA É VÁLIDA
+        if (!response.data || typeof response.data !== 'object') {
+            console.error('❌ Resposta inválida de /credits:', response.data);
+            return { credits: 0, isPro: false };
+        }
+        
+        return {
+            credits: response.data.credits || 0,
+            isPro: response.data.isPro || false
+        };
+    } catch (error: any) {
+        console.error('❌ Erro ao buscar créditos:', error);
+        return { credits: 0, isPro: false };
+    }
 };
+
 // ============================================
 // GERAR JOGOS
 // ============================================
@@ -89,17 +97,13 @@ export const generateGames = async (data: {
 // ============================================
 // HISTÓRICO
 // ============================================
-export const getHistory = async (limit: number = 50) => {
+export const getHistory = async (uid: string, limit: number = 50) => {
     try {
-        const auth = getAuth();
-        const user = auth.currentUser;
-        if (!user) throw new Error('Usuário não logado');
-        
-        const response = await api.get(`/user/history?uid=${user.uid}&limit=${limit}`);
+        const response = await api.get(`/user/history?uid=${uid}&limit=${limit}`);
         return response.data;
     } catch (error: any) {
         console.error('Erro ao buscar histórico:', error);
-        throw error;
+        return { history: [] };
     }
 };
 
@@ -113,10 +117,10 @@ export const getProStatus = async () => {
         if (!user) throw new Error('Usuário não logado');
         
         const response = await api.get(`/pro/status?uid=${user.uid}`);
-        return response.data;
+        return response.data || { isPro: false, daysLeft: 0 };
     } catch (error: any) {
         console.error('Erro ao buscar status PRO:', error);
-        throw error;
+        return { isPro: false, daysLeft: 0 };
     }
 };
 
