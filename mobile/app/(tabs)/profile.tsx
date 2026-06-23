@@ -1,6 +1,8 @@
-// app/(tabs)/profile.tsx 14/06/2026
-import React, { useState, useEffect } from 'react';
+// app/(tabs)/profile.tsx 26/06/2026
+// app/(tabs)/profile.tsx - VERSÃO CORRIGIDA
+import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore } from '../../src/stores/authStore';
 import { getCredits, getProStatus, createPayment } from '../../src/services/api';
 
@@ -11,15 +13,12 @@ export default function ProfileScreen() {
     const [proDaysLeft, setProDaysLeft] = useState(0);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (user) {
-            loadUserData();
-        } else {
-            setLoading(false);
-        }
-    }, [user]);
-
     const loadUserData = async () => {
+        if (!user) {
+            setLoading(false);
+            return;
+        }
+        
         setLoading(true);
         try {
             const creditsData = await getCredits();
@@ -35,6 +34,13 @@ export default function ProfileScreen() {
             setLoading(false);
         }
     };
+
+    // ✅ RECARREGAR SEMPRE QUE A TELA GANHAR FOCO
+    useFocusEffect(
+        useCallback(() => {
+            loadUserData();
+        }, [user])
+    );
 
     const handleBuyCredits = () => {
         Alert.alert(
