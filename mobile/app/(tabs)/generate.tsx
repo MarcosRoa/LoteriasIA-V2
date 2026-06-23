@@ -1,12 +1,11 @@
-// mobile/app/(tabs)/generate.tsx
-// app/(tabs)/generate.tsx 15/06/2024
+// app/(tabs)/generate.tsx 26/06/2024
 // app/(tabs)/generate.tsx
-// app/(tabs)/generate.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { LOTTERIES } from '../../src/constants/lotteries';
-import { generateGames } from '../../src/services/api';
+import { generateGames, getCredits } from '../../src/services/api';
 import { useAuthStore } from '../../src/stores/authStore';
 import { NumberBall } from '../../src/components/NumberBall';
 import IATraining from '../../src/components/IATraining';
@@ -50,12 +49,29 @@ export default function GenerateScreen() {
     const COST_PER_GAME = 3;
     const totalCost = quantity * COST_PER_GAME;
 
+    // ✅ FUNÇÃO PARA CARREGAR CRÉDITOS
+    const loadCredits = async () => {
+        if (!user) return;
+        try {
+            const data = await getCredits();
+            setCreditsRemaining(data.credits || 0);
+        } catch (error) {
+            console.error('Erro ao carregar créditos:', error);
+        }
+    };
+
+    // ✅ RECARREGAR SEMPRE QUE A TELA GANHAR FOCO
+    useFocusEffect(
+        useCallback(() => {
+            loadCredits();
+        }, [user])
+    );
+
     // Função para treinar IA
     const trainIA = async () => {
         setIsTraining(true);
         setIsTrained(false);
         
-        // Simular treinamento (depois conecta com API real)
         setTimeout(() => {
             setIsTraining(false);
             setIsTrained(true);
@@ -151,7 +167,7 @@ export default function GenerateScreen() {
                 totalDataPoints={totalDataPoints}
                 selectedPeriod={selectedPeriod.toString()}
                 selectedMode={mode}
-                lotteryId={lottery.id}  // ← ADICIONAR ESTA LINHA
+                lotteryId={lottery.id}
             />
 
             {/* Card de Créditos - Laranja */}
@@ -314,7 +330,6 @@ const styles = StyleSheet.create({
     periodButtonTextActive: {
         color: '#ffffff',
     },
-    // Card de Créditos - Laranja
     creditsCard: {
         backgroundColor: '#f59e0b',
         borderRadius: 16,
@@ -339,7 +354,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#1e293b',
     },
-    // Card Cinza - Informações
     infoCard: {
         backgroundColor: '#1e293b',
         borderRadius: 16,
