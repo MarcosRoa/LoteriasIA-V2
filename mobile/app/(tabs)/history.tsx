@@ -1,3 +1,4 @@
+// app/(tabs)/history.tsx 23/06/2026
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { getHistory } from '../../src/services/api';
@@ -71,8 +72,25 @@ export default function HistoryScreen() {
                                 <Text style={styles.moreGames}>+ {item.jogos.length - 3} jogo(s)</Text>
                             )}
                         </View>
+                        {/* ✅ FILTROS */}
                         {item.filtros && (
                             <Text style={styles.filters}>⚙️ {item.filtros.substring(0, 80)}</Text>
+                        )}
+                        {/* ✅ QUANTIDADE DE NÚMEROS */}
+                        {item.quantidade_numeros > 0 && (
+                            <Text style={styles.filters}>🔢 {item.quantidade_numeros} números por jogo</Text>
+                        )}
+                        {/* ✅ EXTRAS (Timemania, +Milionária, etc) */}
+                        {item.extras && (
+                            <Text style={styles.filters}>📦 Extras: {JSON.stringify(item.extras)}</Text>
+                        )}
+                        {/* ✅ TIMES (Timemania) */}
+                        {item.times && (
+                            <Text style={styles.filters}>⚽ Time: {item.times}</Text>
+                        )}
+                        {/* ✅ MESES (Dia de Sorte) */}
+                        {item.meses && (
+                            <Text style={styles.filters}>📅 Mês: {item.meses}</Text>
                         )}
                     </View>
                 )}
