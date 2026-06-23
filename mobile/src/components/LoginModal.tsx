@@ -1,5 +1,6 @@
 // src/components/LoginModal.tsx - VERIFIQUE ESTAS PARTES 15/06
 // src/components/LoginModal.tsx 26/06/2026
+// src/components/LoginModal.tsx 26/06/2026
 // src/components/LoginModal.tsx
 import React, { useState } from 'react';
 import {
@@ -13,6 +14,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
 
 import { useAuthStore } from '../stores/authStore';
 import { useSessionStore } from '../stores/sessionStore';
@@ -101,6 +103,29 @@ export default function LoginModal({ visible }: LoginModalProps) {
     }
   };
 
+  // ✅ RECUPERAÇÃO DE SENHA
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      Alert.alert('Erro', 'Informe o seu e-mail para recuperar a senha.');
+      return;
+    }
+
+    try {
+      const auth = getAuth();
+      await sendPasswordResetEmail(auth, email.trim());
+      Alert.alert(
+        '✅ E-mail enviado!',
+        `Enviamos um link para ${email.trim()} para criar uma nova senha.`
+      );
+    } catch (error: any) {
+      let message = 'Erro ao enviar e-mail de recuperação.';
+      if (error.code === 'auth/user-not-found') {
+        message = 'E-mail não encontrado. Verifique ou crie uma conta.';
+      }
+      Alert.alert('Erro', message);
+    }
+  };
+
   const handleGuest = () => {
     enableGuestMode();
     Alert.alert('Modo Convidado', 'Você pode navegar, mas para gerar palpites precisa fazer login.');
@@ -116,16 +141,7 @@ export default function LoginModal({ visible }: LoginModalProps) {
     setShowVerificationMessage(false);
   };
 
-  const handleResendVerification = async () => {
-    const success = await sendVerificationEmail();
-    if (success) {
-      Alert.alert('Sucesso', 'Novo e-mail de verificação enviado!');
-    } else {
-      Alert.alert('Erro', 'Não foi possível reenviar o e-mail. Tente novamente.');
-    }
-  };
-
-  // ✅ Tela de verificação
+  // Tela de verificação
   if (showVerificationMessage) {
     return (
       <Modal visible={visible} transparent animationType="fade">
@@ -141,7 +157,18 @@ export default function LoginModal({ visible }: LoginModalProps) {
             </Text>
             <TouchableOpacity
               style={styles.verificationButton}
-              onPress={handleResendVerification}
+              onPress={async () => {
+                const auth = getAuth();
+                const user = auth.currentUser;
+                if (user) {
+                  try {
+                    await sendEmailVerification(user);
+                    Alert.alert('Sucesso', 'Novo e-mail enviado!');
+                  } catch (e) {
+                    Alert.alert('Erro', 'Não foi possível reenviar.');
+                  }
+                }
+              }}
             >
               <Text style={styles.verificationButtonText}>📨 Reenviar e-mail</Text>
             </TouchableOpacity>
@@ -236,8 +263,9 @@ export default function LoginModal({ visible }: LoginModalProps) {
                 )}
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => Alert.alert('Em breve', 'Recuperação de senha disponível em breve')}>
-                <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
+              {/* ✅ BOTÃO ESQUECI MINHA SENHA */}
+              <TouchableOpacity onPress={handleForgotPassword}>
+                <Text style={styles.forgotPasswordText}>🔑 Esqueci minha senha</Text>
               </TouchableOpacity>
             </>
           )}
@@ -333,13 +361,12 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   forgotPasswordText: {
-    color: '#64748b',
+    color: '#38bdf8',
     textAlign: 'center',
     marginTop: 10,
-    fontSize: 12,
+    fontSize: 14,
     textDecorationLine: 'underline',
   },
-  // Estilos da tela de verificação
   verificationTitle: {
     color: '#f59e0b',
     fontSize: 22,
