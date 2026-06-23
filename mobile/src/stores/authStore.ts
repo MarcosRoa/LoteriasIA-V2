@@ -1,7 +1,8 @@
 // src/stores/authStore.ts
 // src/stores/authStore.ts - VERSÃO CORRIGIDA (SEM react-native import)
 // src/stores/authStore.ts - VERSÃO SIMPLIFICADA (SEM ERROS)
-// src/stores/authStore.ts 21/06/2026
+// src/stores/authStore.ts - VERSÃO SIMPLIFICADA (SEM ERROS)
+// src/stores/authStore.ts 26/06/2026
 import { create } from 'zustand';
 import { initializeApp, getApps } from 'firebase/app';
 import {
@@ -35,7 +36,7 @@ interface AuthState {
   emailVerified: boolean;
 
   registerWithEmail: (email: string, password: string, name: string) => Promise<{ success: boolean; message: string }>;
-  loginWithEmail: (email: string, password: string) => Promise<boolean>;
+  loginWithEmail: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<User | null>;
   clearError: () => void;
@@ -57,8 +58,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(result.user, { displayName: name });
-      
-      // ✅ Enviar e-mail de verificação
       await sendEmailVerification(result.user);
       
       set({ user: result.user, isLoading: false });
@@ -71,6 +70,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (error.code === 'auth/email-already-in-use') message = 'E-mail já está em uso';
       else if (error.code === 'auth/weak-password') message = 'Senha muito fraca (mínimo 6 caracteres)';
       else if (error.code === 'auth/invalid-email') message = 'E-mail inválido';
+      else if (error.code === 'auth/network-request-failed') message = 'Erro de rede. Verifique sua conexão';
       
       set({ error: message, isLoading: false });
       return { success: false, message };
@@ -82,28 +82,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
-      
-      // ✅ Verificar se o e-mail foi confirmado
       await reload(result.user);
       
       if (!result.user.emailVerified) {
-        // Reenviar e-mail de verificação
         await sendEmailVerification(result.user);
         set({ isLoading: false });
-        return false;
+        return { 
+          success: false, 
+          message: 'E-mail não verificado. Enviamos um novo link de confirmação.' 
+        };
       }
       
       set({ user: result.user, isLoading: false });
-      return true;
+      return { success: true };
     } catch (error: any) {
       let message = 'Erro ao fazer login';
       if (error.code === 'auth/invalid-credential') message = 'E-mail ou senha inválidos';
       else if (error.code === 'auth/user-not-found') message = 'Usuário não encontrado';
       else if (error.code === 'auth/wrong-password') message = 'Senha incorreta';
       else if (error.code === 'auth/too-many-requests') message = 'Muitas tentativas. Tente mais tarde';
+      else if (error.code === 'auth/network-request-failed') message = 'Erro de rede. Verifique sua conexão';
       
       set({ error: message, isLoading: false });
-      return false;
+      return { success: false, message };
     }
   },
 
