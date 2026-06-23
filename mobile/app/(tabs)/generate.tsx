@@ -1,3 +1,4 @@
+// mobile/app/(tabs)/generate.tsx
 // app/(tabs)/generate.tsx 26/06/2024
 // app/(tabs)/generate.tsx
 import React, { useState, useEffect, useCallback } from 'react';
@@ -40,7 +41,6 @@ export default function GenerateScreen() {
     const [creditsRemaining, setCreditsRemaining] = useState(0);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     
-    // States para o treinamento da IA
     const [isTraining, setIsTraining] = useState(false);
     const [isTrained, setIsTrained] = useState(false);
     const [iaConfidence, setIaConfidence] = useState(0);
@@ -49,25 +49,23 @@ export default function GenerateScreen() {
     const COST_PER_GAME = 3;
     const totalCost = quantity * COST_PER_GAME;
 
-    // ✅ FUNÇÃO PARA CARREGAR CRÉDITOS
     const loadCredits = async () => {
         if (!user) return;
         try {
             const data = await getCredits();
-            setCreditsRemaining(data.credits || 0);
+            setCreditsRemaining(data?.credits || 0);
         } catch (error) {
-            console.error('Erro ao carregar créditos:', error);
+            console.error('❌ Erro ao carregar créditos:', error);
+            setCreditsRemaining(0);
         }
     };
 
-    // ✅ RECARREGAR SEMPRE QUE A TELA GANHAR FOCO
     useFocusEffect(
         useCallback(() => {
             loadCredits();
         }, [user])
     );
 
-    // Função para treinar IA
     const trainIA = async () => {
         setIsTraining(true);
         setIsTrained(false);
@@ -80,7 +78,6 @@ export default function GenerateScreen() {
         }, 2500);
     };
 
-    // Chamar trainIA quando período ou modo mudar
     useEffect(() => {
         trainIA();
     }, [selectedPeriod, mode]);
@@ -128,14 +125,12 @@ export default function GenerateScreen() {
 
     return (
         <ScrollView style={styles.container}>
-            {/* Header */}
             <View style={styles.header}>
                 <Text style={styles.lotteryIcon}>{lottery.icone}</Text>
                 <Text style={styles.lotteryName}>{lottery.nome}</Text>
                 <Text style={styles.lotteryRange}>{lottery.numeros} números • 1 a {lottery.maxNumero}</Text>
             </View>
 
-            {/* Período Selector */}
             <View style={styles.card}>
                 <Text style={styles.label}>📅 Período de Análise</Text>
                 <View style={styles.periodContainer}>
@@ -159,7 +154,6 @@ export default function GenerateScreen() {
                 </View>
             </View>
 
-            {/* Componente de Treinamento da IA */}
             <IATraining 
                 isTraining={isTraining}
                 isTrained={isTrained}
@@ -170,7 +164,6 @@ export default function GenerateScreen() {
                 lotteryId={lottery.id}
             />
 
-            {/* Card de Créditos - Laranja */}
             <View style={styles.creditsCard}>
                 <View style={styles.creditsRow}>
                     <Text style={styles.creditsLabel}>💰 Seus Créditos</Text>
@@ -178,7 +171,6 @@ export default function GenerateScreen() {
                 </View>
             </View>
 
-            {/* Card Cinza - Saldo e Custo da Geração */}
             <View style={styles.infoCard}>
                 <View style={styles.infoRow}>
                     <Text style={styles.infoLabel}>💳 SALDO ATUAL</Text>
@@ -191,7 +183,6 @@ export default function GenerateScreen() {
                 </View>
             </View>
 
-            {/* Quantidade */}
             <View style={styles.card}>
                 <Text style={styles.label}>📊 Quantidade de Jogos</Text>
                 <View style={styles.quantityContainer}>
@@ -206,7 +197,6 @@ export default function GenerateScreen() {
                 <Text style={styles.quantityHint}>Cada jogo custa 3 créditos</Text>
             </View>
 
-            {/* Modos de IA - 4 opções */}
             <View style={styles.card}>
                 <Text style={styles.label}>🎓 Modo de IA</Text>
                 <View style={styles.modesGrid}>
@@ -226,7 +216,6 @@ export default function GenerateScreen() {
                 </View>
             </View>
 
-            {/* Gerar Button */}
             <TouchableOpacity 
                 style={[styles.generateButton, isGenerating && styles.disabledButton]}
                 onPress={handleGenerate}
@@ -239,14 +228,12 @@ export default function GenerateScreen() {
                 )}
             </TouchableOpacity>
 
-            {/* Error Message */}
             {errorMessage && (
                 <View style={styles.errorCard}>
                     <Text style={styles.errorText}>❌ {errorMessage}</Text>
                 </View>
             )}
 
-            {/* Results */}
             {generatedGames.length > 0 && (
                 <View style={styles.resultCard}>
                     <Text style={styles.resultTitle}>🎯 RESULTADO</Text>
