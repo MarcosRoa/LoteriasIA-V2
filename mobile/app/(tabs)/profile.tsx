@@ -1,5 +1,5 @@
 // app/(tabs)/profile.tsx 26/06/2026
-// app/(tabs)/profile.tsx - VERSÃO CORRIGIDA
+// app/(tabs)/profile.tsx
 import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -22,20 +22,20 @@ export default function ProfileScreen() {
         setLoading(true);
         try {
             const creditsData = await getCredits();
-            setCredits(creditsData.credits || 0);
-            setIsPro(creditsData.isPro || false);
+            setCredits(creditsData?.credits || 0);
+            setIsPro(creditsData?.isPro || false);
             
             const proData = await getProStatus();
-            setProDaysLeft(proData.daysLeft || 0);
+            setProDaysLeft(proData?.daysLeft || 0);
         } catch (error: any) {
-            console.error('Erro ao carregar dados:', error);
-            Alert.alert('Erro', 'Não foi possível carregar seus dados');
+            console.error('❌ Erro ao carregar dados:', error);
+            setCredits(0);
+            setIsPro(false);
         } finally {
             setLoading(false);
         }
     };
 
-    // ✅ RECARREGAR SEMPRE QUE A TELA GANHAR FOCO
     useFocusEffect(
         useCallback(() => {
             loadUserData();
@@ -58,10 +58,10 @@ export default function ProfileScreen() {
     const processPayment = async (amount: number) => {
         try {
             const result = await createPayment(amount);
-            if (result.mode === 'simulation') {
+            if (result?.mode === 'simulation') {
                 Alert.alert('Simulação', `R$ ${amount} adicionados (modo demonstração)`);
                 loadUserData();
-            } else if (result.paymentLink) {
+            } else if (result?.paymentLink) {
                 Alert.alert('Pagamento', `Abra o link para pagar: ${result.paymentLink}`);
             }
         } catch (error) {
