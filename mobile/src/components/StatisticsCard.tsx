@@ -1,11 +1,12 @@
 // src/components/StatisticsCard.tsx 24/06/20206
+// src/components/StatisticsCard.tsx
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
 interface StatisticsCardProps {
   title: string;
   icon: string;
-  data: { label: string; value: number | string }[];
+  data: { label: string; value: string | number }[];
   isPro: boolean;
   showProBadge?: boolean;
 }
