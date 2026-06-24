@@ -1,5 +1,5 @@
 // mobile/app/(tabs)/generate.tsx
-// app/(tabs)/generate.tsx 26/06/2024
+// app/(tabs)/generate.tsx 24/06/2024
 // app/(tabs)/generate.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
@@ -36,6 +36,7 @@ export default function GenerateScreen() {
     const [quantity, setQuantity] = useState(1);
     const [mode, setMode] = useState('ia_especialista');
     const [selectedPeriod, setSelectedPeriod] = useState<string | number>('all');
+    const [dispersao, setDispersao] = useState(15); // ✅ NOVO: dispersão
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedGames, setGeneratedGames] = useState<number[][]>([]);
     const [creditsRemaining, setCreditsRemaining] = useState(0);
@@ -80,7 +81,7 @@ export default function GenerateScreen() {
 
     useEffect(() => {
         trainIA();
-    }, [selectedPeriod, mode]);
+    }, [selectedPeriod, mode, dispersao]); // ✅ Adicionado dispersao
 
     const handleGenerate = async () => {
         setErrorMessage(null);
@@ -99,6 +100,8 @@ export default function GenerateScreen() {
                 quantity: quantity,
                 mode: mode,
                 extraNumbers: lottery.numeros,
+                period: selectedPeriod, // ✅ ENVIANDO PERÍODO
+                dispersao: dispersao,   // ✅ ENVIANDO DISPERSÃO
             });
 
             setGeneratedGames(result.games || []);
@@ -131,6 +134,7 @@ export default function GenerateScreen() {
                 <Text style={styles.lotteryRange}>{lottery.numeros} números • 1 a {lottery.maxNumero}</Text>
             </View>
 
+            {/* Período */}
             <View style={styles.card}>
                 <Text style={styles.label}>📅 Período de Análise</Text>
                 <View style={styles.periodContainer}>
@@ -154,6 +158,41 @@ export default function GenerateScreen() {
                 </View>
             </View>
 
+            {/* ✅ DISPERSÃO - NOVO */}
+            <View style={styles.card}>
+                <Text style={styles.label}>🎯 Dispersão</Text>
+                <Text style={styles.dispersaoLabel}>
+                    Bloquear números dos últimos {dispersao} concursos
+                </Text>
+                <View style={styles.sliderContainer}>
+                    <Text style={styles.sliderMin}>5</Text>
+                    <View style={styles.sliderTrack}>
+                        <View style={[styles.sliderFill, { width: `${((dispersao - 5) / 20) * 100}%` }]} />
+                    </View>
+                    <Text style={styles.sliderMax}>25</Text>
+                </View>
+                <View style={styles.dispersaoButtons}>
+                    {[5, 10, 15, 20, 25].map((value) => (
+                        <TouchableOpacity
+                            key={value}
+                            style={[
+                                styles.dispersaoButton,
+                                dispersao === value && styles.dispersaoButtonActive
+                            ]}
+                            onPress={() => setDispersao(value)}
+                        >
+                            <Text style={[
+                                styles.dispersaoButtonText,
+                                dispersao === value && styles.dispersaoButtonTextActive
+                            ]}>
+                                {value}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            </View>
+
+            {/* Treinamento IA */}
             <IATraining 
                 isTraining={isTraining}
                 isTrained={isTrained}
@@ -164,6 +203,7 @@ export default function GenerateScreen() {
                 lotteryId={lottery.id}
             />
 
+            {/* Créditos */}
             <View style={styles.creditsCard}>
                 <View style={styles.creditsRow}>
                     <Text style={styles.creditsLabel}>💰 Seus Créditos</Text>
@@ -171,6 +211,7 @@ export default function GenerateScreen() {
                 </View>
             </View>
 
+            {/* Info Card */}
             <View style={styles.infoCard}>
                 <View style={styles.infoRow}>
                     <Text style={styles.infoLabel}>💳 SALDO ATUAL</Text>
@@ -181,8 +222,15 @@ export default function GenerateScreen() {
                     <Text style={styles.infoLabel}>🎲 CUSTO DA GERAÇÃO</Text>
                     <Text style={styles.infoValue}>{totalCost} créditos</Text>
                 </View>
+                {dispersao > 0 && (
+                    <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>🎯 DISPERSÃO</Text>
+                        <Text style={styles.infoValue}>{dispersao} concursos</Text>
+                    </View>
+                )}
             </View>
 
+            {/* Quantidade */}
             <View style={styles.card}>
                 <Text style={styles.label}>📊 Quantidade de Jogos</Text>
                 <View style={styles.quantityContainer}>
@@ -197,6 +245,7 @@ export default function GenerateScreen() {
                 <Text style={styles.quantityHint}>Cada jogo custa 3 créditos</Text>
             </View>
 
+            {/* Modos IA */}
             <View style={styles.card}>
                 <Text style={styles.label}>🎓 Modo de IA</Text>
                 <View style={styles.modesGrid}>
@@ -216,6 +265,7 @@ export default function GenerateScreen() {
                 </View>
             </View>
 
+            {/* Gerar Button */}
             <TouchableOpacity 
                 style={[styles.generateButton, isGenerating && styles.disabledButton]}
                 onPress={handleGenerate}
@@ -317,6 +367,62 @@ const styles = StyleSheet.create({
     periodButtonTextActive: {
         color: '#ffffff',
     },
+    // ✅ DISPERSÃO
+    dispersaoLabel: {
+        color: '#94a3b8',
+        fontSize: 14,
+        marginBottom: 12,
+        textAlign: 'center',
+    },
+    sliderContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        marginBottom: 12,
+    },
+    sliderMin: {
+        color: '#64748b',
+        fontSize: 12,
+    },
+    sliderMax: {
+        color: '#64748b',
+        fontSize: 12,
+    },
+    sliderTrack: {
+        flex: 1,
+        height: 6,
+        backgroundColor: '#334155',
+        borderRadius: 3,
+        overflow: 'hidden',
+    },
+    sliderFill: {
+        height: '100%',
+        backgroundColor: '#8b5cf6',
+        borderRadius: 3,
+    },
+    dispersaoButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 8,
+    },
+    dispersaoButton: {
+        flex: 1,
+        backgroundColor: '#334155',
+        paddingVertical: 8,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    dispersaoButtonActive: {
+        backgroundColor: '#8b5cf6',
+    },
+    dispersaoButtonText: {
+        color: '#94a3b8',
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    dispersaoButtonTextActive: {
+        color: '#ffffff',
+    },
     creditsCard: {
         backgroundColor: '#f59e0b',
         borderRadius: 16,
@@ -353,6 +459,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        paddingVertical: 4,
     },
     infoLabel: {
         fontSize: 14,
@@ -367,7 +474,7 @@ const styles = StyleSheet.create({
     infoDivider: {
         height: 1,
         backgroundColor: '#334155',
-        marginVertical: 12,
+        marginVertical: 8,
     },
     quantityContainer: {
         flexDirection: 'row',
