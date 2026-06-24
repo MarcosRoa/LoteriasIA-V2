@@ -1,5 +1,5 @@
 // src/services/api.ts
-// src/services/api.ts 26/06/2026
+// src/services/api.ts 24/06/2026
 // src/services/api.ts
 import axios from 'axios';
 import { getAuth } from 'firebase/auth';
@@ -14,7 +14,6 @@ const api = axios.create({
     timeout: 30000,
 });
 
-// Interceptor para adicionar token Firebase e uid
 api.interceptors.request.use(async (config) => {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -36,9 +35,6 @@ api.interceptors.request.use(async (config) => {
     return Promise.reject(error);
 });
 
-// ============================================
-// CRÉDITOS
-// ============================================
 export const getCredits = async () => {
     try {
         const auth = getAuth();
@@ -47,7 +43,6 @@ export const getCredits = async () => {
         
         const response = await api.get(`/credits?uid=${user.uid}`);
         
-        // ✅ VERIFICAR SE A RESPOSTA É VÁLIDA
         if (!response.data || typeof response.data !== 'object') {
             console.error('❌ Resposta inválida de /credits:', response.data);
             return { credits: 0, isPro: false };
@@ -63,14 +58,14 @@ export const getCredits = async () => {
     }
 };
 
-// ============================================
-// GERAR JOGOS
-// ============================================
+// ✅ GERAR JOGOS COM PERÍODO E DISPERSÃO
 export const generateGames = async (data: {
     lottery: string;
     quantity: number;
     mode: string;
     extraNumbers?: number;
+    period?: string | number;
+    dispersao?: number;
 }) => {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -86,6 +81,8 @@ export const generateGames = async (data: {
             quantity: data.quantity,
             mode: data.mode,
             extraNumbers: data.extraNumbers,
+            period: data.period || 'all',
+            dispersao: data.dispersao || 15,
         });
         return response.data;
     } catch (error: any) {
@@ -94,9 +91,6 @@ export const generateGames = async (data: {
     }
 };
 
-// ============================================
-// HISTÓRICO
-// ============================================
 export const getHistory = async (uid: string, limit: number = 50) => {
     try {
         const response = await api.get(`/user/history?uid=${uid}&limit=${limit}`);
@@ -107,9 +101,6 @@ export const getHistory = async (uid: string, limit: number = 50) => {
     }
 };
 
-// ============================================
-// STATUS PRO
-// ============================================
 export const getProStatus = async () => {
     try {
         const auth = getAuth();
@@ -124,9 +115,6 @@ export const getProStatus = async () => {
     }
 };
 
-// ============================================
-// CRIAR PAGAMENTO
-// ============================================
 export const createPayment = async (amount: number) => {
     const auth = getAuth();
     const user = auth.currentUser;
