@@ -41,21 +41,21 @@
         .footer-stats { margin-top: 40px; margin-bottom: 20px; text-align: center; }
         .btn-footer { background: #64748b; border: none; padding: 10px 25px; border-radius: 30px; color: white; font-weight: 600; cursor: pointer; margin: 5px; }
         .stats-note { font-size: 11px; color: #f59e0b; margin-top: 10px; text-align: center; }
+        .header-logo { font-size: 32px; min-width: 50px; text-align: center; }
         @media (max-width: 768px) { .stats-cards-grid { grid-template-columns: 1fr; } .lottery-grid-stats { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); } }
     </style>
 </head>
 <body>
-     <div class="header">
+    <div class="header">
         <div class="header-content">
-            <div class="header-logo"><img src="BrasãoRoa Imagem.png" onerror="this.style.display='none'" alt="Logo"></div>
+            <div class="header-logo">🎰</div>
             <div class="header-text">
                 <h1>🧠 Loterias V.6.1 <span class="version-badge">ESTATÍSTICAS</span></h1>
                 <p class="header-subtitle">Análise completa de números, duplas, tríades e times</p>
             </div>
-            <div class="header-logo"><img src="BrasãoRoa Imagem.png" onerror="this.style.display='none'" alt="Logo"></div>
+            <div class="header-logo">🎯</div>
         </div>
     </div>
-
 
     <div class="stats-container">
         <div class="lottery-grid-stats" id="lotteryGridStats"></div>
@@ -96,7 +96,6 @@
             appId: "1:124650527048:web:bc335922cb9e1586c3fb7d"
         };
         
-        // Inicializar Firebase
         if (!firebase.apps || firebase.apps.length === 0) {
             firebase.initializeApp(firebaseConfig);
         }
@@ -114,11 +113,11 @@
             megasena: { nome: 'Mega-Sena', icone: '💰', numerosCSV: 6, maxNumero: 60, incluirZero: false },
             quina: { nome: 'Quina', icone: '🎯', numerosCSV: 5, maxNumero: 80, incluirZero: false },
             lotofacil: { nome: 'Lotofácil', icone: '🍀', numerosCSV: 15, maxNumero: 25, incluirZero: false },
-            lotomania: { nome: 'Lotomania', icone: '🎪', numerosCSV: 20, maxNumero: 99, incluirZero: true, observacao: 'CSV contém 20 números sorteados' },
+            lotomania: { nome: 'Lotomania', icone: '🎪', numerosCSV: 20, maxNumero: 99, incluirZero: true, observacao: 'Sorteia 20 números entre 00 e 99' },
             duplasena: { nome: 'Dupla Sena', icone: '🎲', numerosCSV: 6, maxNumero: 50, incluirZero: false },
             timemania: { nome: 'Timemania', icone: '⚽', numerosCSV: 7, maxNumero: 80, incluirZero: false, temTime: true },
             milionaria: { nome: '+Milionária', icone: '💎', numerosCSV: 6, maxNumero: 50, incluirZero: false },
-            loteca: { nome: 'Loteca', icone: '⚽', numerosCSV: 14, maxNumero: 3, incluirZero: false },
+            loteca: { nome: 'Loteca', icone: '⚽', numerosCSV: 14, maxNumero: 3, incluirZero: true },
             diadesorte: { nome: 'Dia de Sorte', icone: '📅', numerosCSV: 7, maxNumero: 31, incluirZero: false },
             supersete: { nome: 'Super Sete', icone: '🌟', numerosCSV: 7, maxNumero: 9, incluirZero: true }
         };
@@ -210,10 +209,11 @@
                 ? `Todos os concursos (${data.filteredDraws || data.totalDraws || 0} concursos)`
                 : `${periodoSelecionadoStats} ano(s) (${data.filteredDraws || 0} concursos)`;
             
-            // A API não retorna datas específicas, então mostramos apenas o total
             document.getElementById('periodoInfo').innerHTML = `
                 <p>📊 ${periodoTexto}</p>
                 <div class="info-periodo-stats">
+                    <div><strong>📅 DATA INÍCIO:</strong> ${data.dataInicio || 'N/A'}</div>
+                    <div><strong>📅 DATA FIM:</strong> ${data.dataFim || 'N/A'}</div>
                     <div><strong>📊 Total de concursos:</strong> ${data.totalDraws || 0}</div>
                     <div><strong>📊 Período filtrado:</strong> ${data.filteredDraws || 0}</div>
                 </div>
@@ -227,7 +227,13 @@
             const container = document.getElementById('estatisticasContent');
             const config = LOTERIAS_STATS[loteriaAtualStats];
             
-            if (!data.frequencia || data.frequencia.length === 0) {
+            // Usa os novos campos: maisSorteados e menosSorteados
+            const maisSorteados = data.maisSorteados || [];
+            const menosSorteados = data.menosSorteados || [];
+            const duplas = data.duplas || [];
+            const triplas = data.triplas || [];
+            
+            if (maisSorteados.length === 0 && menosSorteados.length === 0) {
                 container.innerHTML = `
                     <div class="error-stats">
                         ⚠️ Nenhum dado disponível para ${config.nome} no período selecionado.
@@ -236,28 +242,6 @@
                     </div>
                 `;
                 return;
-            }
-            
-            // Dados já vêm processados da API
-            const frequencia = data.frequencia;
-            const maisSorteados = frequencia.slice(0, 20);
-            const menosSorteados = [...frequencia].sort((a, b) => a.quantidade - b.quantidade).slice(0, 20);
-            const duplas = data.duplas || [];
-            const triplas = data.triplas || [];
-            
-            let timesHtml = '';
-            // Nota: A API atualmente não retorna times, mas mantemos a estrutura para futuro
-            if (config.temTime && loteriaAtualStats === 'timemania') {
-                timesHtml = `
-                    <div class="stats-card">
-                        <h4>⚽ TIMES MAIS SORTEADOS</h4>
-                        <div class="stats-list">
-                            <div class="stats-item" style="justify-content: center; color: #94a3b8; padding: 20px;">
-                                ⏳ Em breve disponível
-                            </div>
-                        </div>
-                    </div>
-                `;
             }
             
             const proWarning = !isUserPro ? `
@@ -277,24 +261,32 @@
                     <div class="stats-card">
                         <h4>🔢 MAIS SORTEADOS (Top 20)</h4>
                         <div class="stats-list">
-                            ${maisSorteados.map(item => `
+                            ${maisSorteados.length > 0 ? maisSorteados.map(item => `
                                 <div class="stats-item">
                                     <span class="${isUserPro ? 'numero' : 'numero-pro'}">${formatarNumero(item.numero, config.incluirZero)}</span>
                                     <span class="quantidade">${item.quantidade} vez(es)</span>
                                 </div>
-                            `).join('')}
+                            `).join('') : `
+                                <div class="stats-item" style="justify-content: center; color: #94a3b8; padding: 20px;">
+                                    Nenhum dado disponível
+                                </div>
+                            `}
                         </div>
                     </div>
                     
                     <div class="stats-card">
                         <h4>🔢 MENOS SORTEADOS (Bottom 20)</h4>
                         <div class="stats-list">
-                            ${menosSorteados.map(item => `
+                            ${menosSorteados.length > 0 ? menosSorteados.map(item => `
                                 <div class="stats-item">
                                     <span class="${isUserPro ? 'numero' : 'numero-pro'}">${formatarNumero(item.numero, config.incluirZero)}</span>
                                     <span class="quantidade">${item.quantidade} vez(es)</span>
                                 </div>
-                            `).join('')}
+                            `).join('') : `
+                                <div class="stats-item" style="justify-content: center; color: #94a3b8; padding: 20px;">
+                                    Nenhum dado disponível
+                                </div>
+                            `}
                         </div>
                     </div>
                     
@@ -329,7 +321,6 @@
                             `}
                         </div>
                     </div>
-                    ${timesHtml}
                 </div>
                 
                 <div style="margin-top: 20px; padding: 15px; background: rgba(56, 189, 248, 0.1); border-radius: 12px; text-align: center;">
@@ -385,11 +376,9 @@
             });
         }
         
-        // Exportar função para o window
         window.selecionarLoteriaStats = selecionarLoteriaStats;
         window.carregarEstatisticas = carregarEstatisticas;
         
-        // Iniciar
         init();
     </script>
 </body>
