@@ -1,4 +1,5 @@
 // app/(tabs)/statistics.tsx
+// app/(tabs)/statistics.tsx 24/06/2026
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -11,7 +12,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore } from '../../src/stores/authStore';
-import { getCredits, getProStatus } from '../../src/services/api';
+import { getCredits } from '../../src/services/api';
 import StatisticsCard from '../../src/components/StatisticsCard';
 
 const LOTTERIES = [
@@ -36,57 +37,6 @@ const PERIODS = [
   { value: 9, label: '9 Anos' },
 ];
 
-// Dados mockados para simular o que viria da API
-const MOCK_STATISTICS = {
-  megasena: {
-    maisSorteados: [
-      { label: '10', value: '42 vezes' },
-      { label: '23', value: '38 vezes' },
-      { label: '45', value: '36 vezes' },
-      { label: '12', value: '34 vezes' },
-      { label: '33', value: '33 vezes' },
-    ],
-    menosSorteados: [
-      { label: '55', value: '8 vezes' },
-      { label: '58', value: '9 vezes' },
-      { label: '60', value: '10 vezes' },
-      { label: '02', value: '11 vezes' },
-      { label: '17', value: '12 vezes' },
-    ],
-    duplas: [
-      { label: '(10, 23)', value: '12 vezes' },
-      { label: '(23, 45)', value: '10 vezes' },
-      { label: '(10, 45)', value: '9 vezes' },
-    ],
-    triplas: [
-      { label: '(10, 23, 45)', value: '5 vezes' },
-      { label: '(12, 23, 33)', value: '4 vezes' },
-    ],
-  },
-  timemania: {
-    maisSorteados: [
-      { label: '12', value: '45 vezes' },
-      { label: '34', value: '42 vezes' },
-      { label: '56', value: '39 vezes' },
-    ],
-    menosSorteados: [
-      { label: '78', value: '10 vezes' },
-      { label: '80', value: '11 vezes' },
-    ],
-    duplas: [
-      { label: '(12, 34)', value: '15 vezes' },
-    ],
-    triplas: [
-      { label: '(12, 34, 56)', value: '6 vezes' },
-    ],
-    times: [
-      { label: 'Corinthians', value: '18 vezes' },
-      { label: 'Flamengo', value: '15 vezes' },
-      { label: 'Palmeiras', value: '12 vezes' },
-    ],
-  },
-};
-
 export default function StatisticsScreen() {
   const { user } = useAuthStore();
   const [isPro, setIsPro] = useState(false);
@@ -95,6 +45,7 @@ export default function StatisticsScreen() {
   const [selectedPeriod, setSelectedPeriod] = useState('all');
   const [statistics, setStatistics] = useState<any>(null);
   const [totalDraws, setTotalDraws] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const loadUserData = async () => {
     if (!user) {
@@ -106,8 +57,6 @@ export default function StatisticsScreen() {
       setIsPro(creditsData?.isPro || false);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -119,18 +68,53 @@ export default function StatisticsScreen() {
 
   const loadStatistics = async () => {
     setLoading(true);
+    setError(null);
+    
     try {
-      // 🔥 TODO: Substituir pela chamada real da API
-      // const response = await fetch(`https://loterias-ia.vercel.app/api/statistics?lottery=${selectedLottery}&period=${selectedPeriod}`);
-      // const data = await response.json();
+      const response = await fetch(
+        `https://loterias-ia.vercel.app/api/statistics?lottery=${selectedLottery}&period=${selectedPeriod}`
+      );
       
-      // Usando dados mockados para demonstração
-      const mockData = MOCK_STATISTICS[selectedLottery as keyof typeof MOCK_STATISTICS] || MOCK_STATISTICS.megasena;
-      setStatistics(mockData);
-      setTotalDraws(156 + Math.floor(Math.random() * 100));
-    } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error);
-      Alert.alert('Erro', 'Não foi possível carregar as estatísticas.');
+      const data = await response.json();
+      
+      if (data.success) {
+        setTotalDraws(data.filteredDraws || data.totalDraws || 0);
+        
+        if (data.frequencia && data.frequencia.length > 0) {
+          setStatistics({
+            maisSorteados: data.frequencia.slice(0, 20).map((item: any) => ({
+              label: String(item.numero).padStart(2, '0'),
+              value: `${item.quantidade} vezes`
+            })),
+            menosSorteados: data.frequencia.slice(-20).reverse().map((item: any) => ({
+              label: String(item.numero).padStart(2, '0'),
+              value: `${item.quantidade} vezes`
+            })),
+            duplas: data.duplas?.slice(0, 20).map((item: any) => ({
+              label: `(${String(item.dupla[0]).padStart(2, '0')}, ${String(item.dupla[1]).padStart(2, '0')})`,
+              value: `${item.quantidade} vezes`
+            })) || [],
+            triplas: data.triplas?.slice(0, 20).map((item: any) => ({
+              label: `(${String(item.tripla[0]).padStart(2, '0')}, ${String(item.tripla[1]).padStart(2, '0')}, ${String(item.tripla[2]).padStart(2, '0')})`,
+              value: `${item.quantidade} vezes`
+            })) || [],
+          });
+        } else {
+          setStatistics({
+            maisSorteados: [],
+            menosSorteados: [],
+            duplas: [],
+            triplas: [],
+          });
+        }
+      } else {
+        setError(data.error || 'Erro ao carregar estatísticas');
+        setTotalDraws(0);
+      }
+    } catch (error: any) {
+      console.error('❌ Erro ao carregar estatísticas:', error);
+      setError(error.message || 'Erro de conexão');
+      setTotalDraws(0);
     } finally {
       setLoading(false);
     }
@@ -154,9 +138,19 @@ export default function StatisticsScreen() {
     );
   }
 
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.errorText}>❌ {error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={loadStatistics}>
+          <Text style={styles.retryButtonText}>🔄 Tentar novamente</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>📊 Estatísticas</Text>
         <Text style={styles.headerSubtitle}>
@@ -169,7 +163,6 @@ export default function StatisticsScreen() {
         )}
       </View>
 
-      {/* Grid de Loterias */}
       <View style={styles.gridContainer}>
         {LOTTERIES.map((lottery) => (
           <TouchableOpacity
@@ -186,7 +179,6 @@ export default function StatisticsScreen() {
         ))}
       </View>
 
-      {/* Período Selector */}
       <View style={styles.periodContainer}>
         <Text style={styles.periodLabel}>📅 Período:</Text>
         <View style={styles.periodButtons}>
@@ -212,66 +204,53 @@ export default function StatisticsScreen() {
         </View>
       </View>
 
-      {/* Informações do período */}
       <View style={styles.infoCard}>
         <Text style={styles.infoText}>
           📊 {getPeriodText()} • {totalDraws} concursos analisados
         </Text>
       </View>
 
-      {/* Estatísticas */}
       {statistics && (
         <View style={styles.statsContainer}>
-          {/* Mais Sorteados */}
-          <StatisticsCard
-            title="MAIS SORTEADOS"
-            icon="🔢"
-            data={statistics.maisSorteados || []}
-            isPro={isPro}
-            showProBadge
-          />
-
-          {/* Menos Sorteados */}
-          <StatisticsCard
-            title="MENOS SORTEADOS"
-            icon="🔢"
-            data={statistics.menosSorteados || []}
-            isPro={isPro}
-            showProBadge
-          />
-
-          {/* Duplas */}
-          <StatisticsCard
-            title="DUPLAS MAIS SORTEADAS"
-            icon="👥"
-            data={statistics.duplas || []}
-            isPro={isPro}
-            showProBadge
-          />
-
-          {/* Tríades */}
-          <StatisticsCard
-            title="TRÍADES MAIS SORTEADAS"
-            icon="🔢"
-            data={statistics.triplas || []}
-            isPro={isPro}
-            showProBadge
-          />
-
-          {/* Times (Timemania) */}
-          {selectedLottery === 'timemania' && statistics.times && (
-            <StatisticsCard
-              title="TIMES MAIS SORTEADOS"
-              icon="⚽"
-              data={statistics.times}
-              isPro={isPro}
-              showProBadge
-            />
+          {statistics.maisSorteados?.length > 0 ? (
+            <>
+              <StatisticsCard
+                title="MAIS SORTEADOS (Top 20)"
+                icon="🔢"
+                data={statistics.maisSorteados}
+                isPro={isPro}
+                showProBadge
+              />
+              <StatisticsCard
+                title="MENOS SORTEADOS (Bottom 20)"
+                icon="🔢"
+                data={statistics.menosSorteados}
+                isPro={isPro}
+                showProBadge
+              />
+              <StatisticsCard
+                title="DUPLAS MAIS SORTEADAS (Top 20)"
+                icon="👥"
+                data={statistics.duplas}
+                isPro={isPro}
+                showProBadge
+              />
+              <StatisticsCard
+                title="TRÍADES MAIS SORTEADAS (Top 20)"
+                icon="🔢"
+                data={statistics.triplas}
+                isPro={isPro}
+                showProBadge
+              />
+            </>
+          ) : (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyText}>📭 Nenhum dado disponível para esta loteria e período</Text>
+            </View>
           )}
         </View>
       )}
 
-      {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>© 2025 Loterias IA</Text>
       </View>
@@ -290,10 +269,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#0f172a',
+    padding: 20,
   },
   loadingText: {
     color: '#94a3b8',
     marginTop: 12,
+  },
+  errorText: {
+    color: '#fca5a5',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#8b5cf6',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 30,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
   },
   header: {
     alignItems: 'center',
@@ -402,6 +398,17 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     marginBottom: 16,
+  },
+  emptyCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    padding: 24,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#94a3b8',
+    fontSize: 14,
+    textAlign: 'center',
   },
   footer: {
     marginTop: 16,
