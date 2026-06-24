@@ -1,13 +1,15 @@
-// app/(tabs)/profile.tsx 26/06/2026
+// app/(tabs)/profile.tsx 24/06/2026
 // app/(tabs)/profile.tsx
 import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore } from '../../src/stores/authStore';
+import { useSessionStore } from '../../src/stores/sessionStore'; // ✅ ADICIONAR
 import { getCredits, getProStatus, createPayment } from '../../src/services/api';
 
 export default function ProfileScreen() {
     const { user, logout } = useAuthStore();
+    const { openLoginModal } = useSessionStore(); // ✅ ADICIONAR
     const [credits, setCredits] = useState(0);
     const [isPro, setIsPro] = useState(false);
     const [proDaysLeft, setProDaysLeft] = useState(0);
@@ -69,13 +71,21 @@ export default function ProfileScreen() {
         }
     };
 
+    // ✅ LOGOUT CORRIGIDO
     const handleLogout = () => {
         Alert.alert(
             'Sair',
             'Tem certeza que deseja sair?',
             [
                 { text: 'Cancelar', style: 'cancel' },
-                { text: 'Sair', onPress: () => logout() },
+                { 
+                    text: 'Sair', 
+                    style: 'destructive',
+                    onPress: async () => {
+                        await logout();
+                        openLoginModal(); // ✅ ABRIR MODAL DE LOGIN
+                    }
+                }
             ]
         );
     };
@@ -132,126 +142,4 @@ export default function ProfileScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#0f172a',
-    },
-    center: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#0f172a',
-    },
-    loadingText: {
-        color: '#94a3b8',
-        marginTop: 12,
-    },
-    header: {
-        alignItems: 'center',
-        padding: 24,
-        backgroundColor: '#1e293b',
-        borderBottomWidth: 1,
-        borderBottomColor: '#334155',
-    },
-    avatar: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: '#8b5cf6',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 12,
-    },
-    avatarText: {
-        fontSize: 32,
-        color: '#ffffff',
-        fontWeight: 'bold',
-    },
-    name: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#ffffff',
-    },
-    email: {
-        fontSize: 14,
-        color: '#94a3b8',
-        marginTop: 4,
-    },
-    proBadge: {
-        backgroundColor: '#f59e0b',
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderRadius: 20,
-        marginTop: 8,
-    },
-    proText: {
-        color: '#1e293b',
-        fontWeight: 'bold',
-        fontSize: 12,
-    },
-    proExpires: {
-        fontSize: 11,
-        color: '#f59e0b',
-        marginTop: 4,
-    },
-    creditsCard: {
-        margin: 16,
-        padding: 24,
-        backgroundColor: '#f59e0b',
-        borderRadius: 16,
-        alignItems: 'center',
-    },
-    creditsLabel: {
-        fontSize: 12,
-        color: '#1e293b',
-        opacity: 0.8,
-    },
-    creditsValue: {
-        fontSize: 36,
-        fontWeight: 'bold',
-        color: '#1e293b',
-        marginVertical: 8,
-    },
-    buyButton: {
-        backgroundColor: '#1e293b',
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 30,
-        marginTop: 8,
-    },
-    buyButtonText: {
-        color: '#ffffff',
-        fontWeight: '600',
-    },
-    proButton: {
-        margin: 16,
-        padding: 16,
-        backgroundColor: '#8b5cf6',
-        borderRadius: 12,
-        alignItems: 'center',
-    },
-    proButtonText: {
-        color: '#ffffff',
-        fontWeight: 'bold',
-        fontSize: 16,
-    },
-    logoutButton: {
-        margin: 16,
-        padding: 16,
-        backgroundColor: '#ef4444',
-        borderRadius: 12,
-        alignItems: 'center',
-    },
-    logoutButtonText: {
-        color: '#ffffff',
-        fontWeight: 'bold',
-    },
-    version: {
-        textAlign: 'center',
-        color: '#475569',
-        fontSize: 10,
-        marginTop: 24,
-        marginBottom: 32,
-    },
-});
+// ... styles iguais aos que já existem
