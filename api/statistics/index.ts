@@ -2,35 +2,105 @@
 // api/statistics/index.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const LOTTERY_CONFIGS: Record<string, { maxNumero: number; numerosPadrao: number; incluirZero: boolean }> = {
-    megasena: { maxNumero: 60, numerosPadrao: 6, incluirZero: false },
-    quina: { maxNumero: 80, numerosPadrao: 5, incluirZero: false },
-    lotofacil: { maxNumero: 25, numerosPadrao: 15, incluirZero: false },
-    lotomania: { maxNumero: 99, numerosPadrao: 50, incluirZero: true },
-    duplasena: { maxNumero: 50, numerosPadrao: 6, incluirZero: false },
-    timemania: { maxNumero: 80, numerosPadrao: 10, incluirZero: false },
-    milionaria: { maxNumero: 50, numerosPadrao: 6, incluirZero: false },
-    loteca: { maxNumero: 3, numerosPadrao: 14, incluirZero: true },
-    diadesorte: { maxNumero: 31, numerosPadrao: 7, incluirZero: false },
-    supersete: { maxNumero: 9, numerosPadrao: 7, incluirZero: true }
+// ============================================
+// CONFIGURAÇÕES DAS LOTERIAS
+// ============================================
+const LOTTERY_CONFIGS: Record<string, { 
+    maxNumero: number; 
+    numerosPadrao: number; 
+    incluirZero: boolean;
+    nome: string;
+}> = {
+    megasena: { 
+        maxNumero: 60, 
+        numerosPadrao: 6, 
+        incluirZero: false,
+        nome: 'Mega-Sena' 
+    },
+    quina: { 
+        maxNumero: 80, 
+        numerosPadrao: 5, 
+        incluirZero: false,
+        nome: 'Quina' 
+    },
+    lotofacil: { 
+        maxNumero: 25, 
+        numerosPadrao: 15, 
+        incluirZero: false,
+        nome: 'Lotofácil' 
+    },
+    // ✅ CORRIGIDO: Sorteia 20 números (não 50)
+    lotomania: { 
+        maxNumero: 99, 
+        numerosPadrao: 20, 
+        incluirZero: true,
+        nome: 'Lotomania' 
+    },
+    duplasena: { 
+        maxNumero: 50, 
+        numerosPadrao: 6, 
+        incluirZero: false,
+        nome: 'Dupla Sena' 
+    },
+    // ✅ CORRIGIDO: Sorteia 7 números (não 10)
+    timemania: { 
+        maxNumero: 80, 
+        numerosPadrao: 7, 
+        incluirZero: false,
+        nome: 'Timemania' 
+    },
+    milionaria: { 
+        maxNumero: 50, 
+        numerosPadrao: 6, 
+        incluirZero: false,
+        nome: '+Milionária' 
+    },
+    // ✅ Mantido: 14 jogos, cada um com 0, 1 ou 2
+    loteca: { 
+        maxNumero: 3, 
+        numerosPadrao: 14, 
+        incluirZero: true,
+        nome: 'Loteca' 
+    },
+    diadesorte: { 
+        maxNumero: 31, 
+        numerosPadrao: 7, 
+        incluirZero: false,
+        nome: 'Dia de Sorte' 
+    },
+    supersete: { 
+        maxNumero: 9, 
+        numerosPadrao: 7, 
+        incluirZero: true,
+        nome: 'Super Sete' 
+    }
 };
 
+// ============================================
+// PROCESSAR CSV
+// ============================================
 function processarCSV(texto: string, config: any): { dados: number[][]; datas: string[] } {
     const linhas = texto.split('\n').filter(l => l.trim() && !l.startsWith('Data'));
     const dados: number[][] = [];
     const datas: string[] = [];
+    
+    if (linhas.length === 0) return { dados, datas };
+    
     const sep = linhas[0]?.includes(';') ? ';' : ',';
-
+    
     for (const linha of linhas) {
         if (!linha.trim()) continue;
         
         let colunas = linha.split(sep);
+        
+        // Remove colunas vazias no final
         while (colunas.length > 0 && colunas[colunas.length - 1].trim() === '') {
             colunas.pop();
         }
         
         if (colunas.length < 2) continue;
         
+        // Encontra a coluna da data
         let dataIndex = -1;
         for (let j = 0; j < colunas.length; j++) {
             const valor = colunas[j].trim();
@@ -42,6 +112,7 @@ function processarCSV(texto: string, config: any): { dados: number[][]; datas: s
         
         if (dataIndex === -1) continue;
         
+        // Formata a data
         const dataStr = colunas[dataIndex].trim();
         let dataFormatada = dataStr;
         if (dataStr.includes('-')) {
@@ -50,28 +121,43 @@ function processarCSV(texto: string, config: any): { dados: number[][]; datas: s
         }
         datas.push(dataFormatada);
         
+        // Extrai os números
         const numeros: number[] = [];
+        const isTimemania = config.nome === 'Timemania';
+        
         for (let j = dataIndex + 1; j < colunas.length; j++) {
             let valor = colunas[j]?.trim();
             if (valor === '' || valor === undefined) continue;
             
-            // Timemania: pular Time do Coração
-            if (config.nome === 'Timemania' && isNaN(parseInt(valor))) continue;
-            
-            let num = parseInt(valor);
-            if (isNaN(num)) {
-                const numStr = valor.toString().trim();
-                if (/^\d+$/.test(numStr)) num = parseInt(numStr);
-                else continue;
+            // Timemania: pula o Time do Coração (string)
+            if (isTimemania && isNaN(parseInt(valor))) {
+                continue;
             }
             
-            if (num >= (config.incluirZero ? 0 : 1) && num <= config.maxNumero) {
+            // Tenta converter para número
+            let num = parseInt(valor);
+            if (isNaN(num)) {
+                // Tenta limpar o valor
+                const numStr = valor.toString().trim();
+                if (/^\d+$/.test(numStr)) {
+                    num = parseInt(numStr);
+                } else {
+                    continue;
+                }
+            }
+            
+            // Verifica se está dentro do range
+            const min = config.incluirZero ? 0 : 1;
+            if (num >= min && num <= config.maxNumero) {
                 numeros.push(num);
             }
         }
         
-        if (numeros.length >= config.numerosPadrao) {
-            const numerosOrdenados = numeros.slice(0, config.numerosPadrao).sort((a, b) => a - b);
+        // Pega apenas a quantidade esperada de números
+        const numerosSorteados = numeros.slice(0, config.numerosPadrao);
+        
+        if (numerosSorteados.length >= config.numerosPadrao) {
+            const numerosOrdenados = [...numerosSorteados].sort((a, b) => a - b);
             dados.push(numerosOrdenados);
         }
     }
@@ -79,7 +165,13 @@ function processarCSV(texto: string, config: any): { dados: number[][]; datas: s
     return { dados, datas };
 }
 
+// ============================================
+// FILTRO POR PERÍODO
+// ============================================
 function getDataCortePorAnos(datas: string[], anos: number): Date | null {
+    if (datas.length === 0) return null;
+    
+    // Pega a última data disponível
     let ultimaData: Date | null = null;
     for (let i = datas.length - 1; i >= 0; i--) {
         const dataStr = datas[i];
@@ -100,7 +192,9 @@ function getDataCortePorAnos(datas: string[], anos: number): Date | null {
 }
 
 function filtrarPorPeriodo(dados: number[][], datas: string[], period: string | number): number[][] {
-    if (period === 'all' || dados.length === 0 || datas.length === 0) return dados;
+    if (period === 'all' || dados.length === 0 || datas.length === 0) {
+        return dados;
+    }
     
     const anos = typeof period === 'number' ? period : parseInt(period as string);
     if (isNaN(anos) || anos <= 0) return dados;
@@ -126,13 +220,18 @@ function filtrarPorPeriodo(dados: number[][], datas: string[], period: string | 
     return dadosFiltrados;
 }
 
+// ============================================
+// CÁLCULOS ESTATÍSTICOS
+// ============================================
 function calcularFrequenciaNumeros(dados: number[][], maxNumero: number, incluirZero: boolean = false) {
     const limite = maxNumero + (incluirZero ? 1 : 0);
     const freq = new Array(limite).fill(0);
     
     dados.forEach(jogo => {
         jogo.forEach(numero => {
-            if (numero >= 0 && numero < limite) freq[numero]++;
+            if (numero >= 0 && numero < limite) {
+                freq[numero]++;
+            }
         });
     });
     
@@ -145,7 +244,8 @@ function calcularFrequenciaNumeros(dados: number[][], maxNumero: number, incluir
 }
 
 function calcularDuplasMaisSorteadas(dados: number[][]) {
-    const duplas = new Map();
+    const duplas = new Map<string, number>();
+    
     dados.forEach(jogo => {
         for (let i = 0; i < jogo.length; i++) {
             for (let j = i + 1; j < jogo.length; j++) {
@@ -154,6 +254,7 @@ function calcularDuplasMaisSorteadas(dados: number[][]) {
             }
         }
     });
+    
     const resultados = Array.from(duplas.entries()).map(([key, quantidade]) => {
         const [num1, num2] = key.split(',').map(Number);
         return { dupla: [num1, num2], quantidade };
@@ -163,7 +264,8 @@ function calcularDuplasMaisSorteadas(dados: number[][]) {
 }
 
 function calcularTriplasMaisSorteadas(dados: number[][]) {
-    const triplas = new Map();
+    const triplas = new Map<string, number>();
+    
     dados.forEach(jogo => {
         for (let i = 0; i < jogo.length; i++) {
             for (let j = i + 1; j < jogo.length; j++) {
@@ -175,6 +277,7 @@ function calcularTriplasMaisSorteadas(dados: number[][]) {
             }
         }
     });
+    
     const resultados = Array.from(triplas.entries()).map(([key, quantidade]) => {
         const [num1, num2, num3] = key.split(',').map(Number);
         return { tripla: [num1, num2, num3], quantidade };
@@ -183,11 +286,22 @@ function calcularTriplasMaisSorteadas(dados: number[][]) {
     return resultados;
 }
 
+// ============================================
+// HANDLER PRINCIPAL
+// ============================================
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+    // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     
-    if (req.method === 'OPTIONS') return res.status(200).end();
-    if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    
+    if (req.method !== 'GET') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
     
     const { lottery, period = 'all' } = req.query;
     
@@ -201,29 +315,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     try {
+        // Constrói a URL do CSV
         const host = req.headers.host;
         const protocol = host?.includes('localhost') ? 'http' : 'https';
         const csvUrl = `${protocol}://${host}/csv/${lottery}.csv`;
         
         console.log(`📥 Buscando CSV: ${csvUrl}`);
         
+        // Busca o CSV
         const response = await fetch(csvUrl);
         if (!response.ok) {
             console.log(`❌ CSV não encontrado: ${response.status}`);
             return res.status(200).json({
-                success: true,
+                success: false,
+                error: 'CSV não encontrado',
                 totalDraws: 0,
                 filteredDraws: 0,
                 period,
-                lottery,
-                error: 'CSV não encontrado'
+                lottery
             });
         }
         
         const csvText = await response.text();
+        
+        // Processa o CSV
         const { dados, datas } = processarCSV(csvText, config);
         const totalDraws = dados.length;
         
+        if (totalDraws === 0) {
+            return res.status(200).json({
+                success: false,
+                error: 'Nenhum dado encontrado no CSV',
+                totalDraws: 0,
+                filteredDraws: 0,
+                period,
+                lottery
+            });
+        }
+        
+        // Filtra por período
         const dadosFiltrados = filtrarPorPeriodo(dados, datas, period);
         const filteredDraws = dadosFiltrados.length;
         
@@ -238,10 +368,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
         
+        // Calcula estatísticas
         const frequencia = calcularFrequenciaNumeros(dadosFiltrados, config.maxNumero, config.incluirZero);
         const duplas = calcularDuplasMaisSorteadas(dadosFiltrados);
         const triplas = calcularTriplasMaisSorteadas(dadosFiltrados);
         
+        // Retorna os resultados
         return res.status(200).json({
             success: true,
             totalDraws,
@@ -255,6 +387,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         
     } catch (error: any) {
         console.error('❌ Erro:', error);
-        return res.status(500).json({ error: error.message });
+        return res.status(500).json({
+            success: false,
+            error: error.message || 'Erro interno do servidor'
+        });
     }
 }
