@@ -1,5 +1,6 @@
 // app/generate.tsx (versão original mantida, apenas com pequenas melhorias)
-// app/(tabs)/_layout.tsx 14/06/2026
+// app/(tabs)/_layout.tsx 24/06/2026
+// app/(tabs)/_layout.tsx
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -42,6 +43,13 @@ export default function TabLayout() {
                     }}
                 />
                 <Tabs.Screen
+                    name="statistics"  // ✅ NOVA ABA
+                    options={{
+                        title: '📊 Estatísticas',
+                        tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart" size={size} color={color} />,
+                    }}
+                />
+                <Tabs.Screen
                     name="history"
                     options={{
                         title: 'Histórico',
@@ -55,9 +63,15 @@ export default function TabLayout() {
                         tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
                     }}
                 />
+                <Tabs.Screen
+                    name="pro"
+                    options={{
+                        title: '⭐ PRO',
+                        tabBarIcon: ({ color, size }) => <Ionicons name="star" size={size} color={color} />,
+                    }}
+                />
             </Tabs>
-            
-            {/* Modal de Login */}
+
             <LoginModal visible={showLoginModal} />
         </>
     );
