@@ -107,6 +107,40 @@ class ApiClient {
             throw error;
         }
     }
+    
+    async getUserStatus() {
+        const user = firebase.auth().currentUser;
+        if (!user) {
+            return { 
+                success: false, 
+                error: 'Usuário não logado', 
+                isPro: false, 
+                credits: 0,
+                proExpiresAt: null,
+                daysLeft: 0
+            };
+        }
+        
+        try {
+            // 🔥 Usa o endpoint /api/pro/status (GET) ou /api/user/status (POST)
+            const response = await fetch(`${API_BASE}/pro/status?uid=${user.uid}`, {
+                credentials: 'include'
+            });
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Erro ao buscar status do usuário:', error);
+            return { 
+                success: false, 
+                error: error.message, 
+                isPro: false, 
+                credits: 0,
+                proExpiresAt: null,
+                daysLeft: 0
+            };
+        }
+    }
+    
 }
 
 const apiClient = new ApiClient();
