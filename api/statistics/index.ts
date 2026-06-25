@@ -10,6 +10,9 @@ const LOTTERY_CONFIGS: Record<string, {
     numerosPadrao: number; 
     incluirZero: boolean;
     nome: string;
+    temElementoExtra?: boolean;
+    nomeElemento?: string;
+    tipoElemento?: 'time' | 'mes';
 }> = {
     megasena: { 
         maxNumero: 60, 
@@ -45,7 +48,10 @@ const LOTTERY_CONFIGS: Record<string, {
         maxNumero: 80, 
         numerosPadrao: 7, 
         incluirZero: false,
-        nome: 'Timemania' 
+        nome: 'Timemania',
+        temElementoExtra: true,
+        nomeElemento: 'Time do Coração',
+        tipoElemento: 'time'
     },
     milionaria: { 
         maxNumero: 50, 
@@ -63,7 +69,10 @@ const LOTTERY_CONFIGS: Record<string, {
         maxNumero: 31, 
         numerosPadrao: 7, 
         incluirZero: false,
-        nome: 'Dia de Sorte' 
+        nome: 'Dia de Sorte',
+        temElementoExtra: true,
+        nomeElemento: 'Mês de Sorte',
+        tipoElemento: 'mes'
     },
     supersete: { 
         maxNumero: 9, 
@@ -76,14 +85,19 @@ const LOTTERY_CONFIGS: Record<string, {
 // ============================================
 // PROCESSAR CSV
 // ============================================
-function processarCSV(texto: string, config: any): { dados: number[][]; datas: string[] } {
+function processarCSV(texto: string, config: any): { 
+    dados: number[][]; 
+    datas: string[]; 
+    elementosExtras: string[] 
+} {
     const linhas = texto.split('\n').filter(l => l.trim() && !l.startsWith('Data'));
     const dados: number[][] = [];
     const datas: string[] = [];
+    const elementosExtras: string[] = [];
     
     if (linhas.length === 0) {
         console.log(`⚠️ Nenhuma linha encontrada no CSV para ${config.nome}`);
-        return { dados, datas };
+        return { dados, datas, elementosExtras };
     }
     
     const sep = linhas[0]?.includes(';') ? ';' : ',';
@@ -100,6 +114,7 @@ function processarCSV(texto: string, config: any): { dados: number[][]; datas: s
         
         if (colunas.length < 2) continue;
         
+        // Encontra a coluna da data
         let dataIndex = -1;
         for (let j = 0; j < colunas.length; j++) {
             const valor = colunas[j].trim();
@@ -111,6 +126,7 @@ function processarCSV(texto: string, config: any): { dados: number[][]; datas: s
         
         if (dataIndex === -1) continue;
         
+        // Formata a data
         const dataStr = colunas[dataIndex].trim();
         let dataFormatada = dataStr;
         if (dataStr.includes('-')) {
@@ -119,25 +135,53 @@ function processarCSV(texto: string, config: any): { dados: number[][]; datas: s
         }
         datas.push(dataFormatada);
         
+        // Extrai números e elementos extras
         const numeros: number[] = [];
+        let elementoExtra: string | null = null;
         const isTimemania = config.nome === 'Timemania';
+        const isDiaDeSorte = config.nome === 'Dia de Sorte';
+        const isLoteca = config.nome === 'Loteca';
         
         for (let j = dataIndex + 1; j < colunas.length; j++) {
             let valor = colunas[j]?.trim();
             if (valor === '' || valor === undefined) continue;
             
+            // 🔥 TIMEMANIA: Captura Time do Coração (string)
             if (isTimemania && isNaN(parseInt(valor))) {
+                elementoExtra = valor;
                 continue;
             }
             
+            // 🔥 DIA DE SORTE: Captura Mês de Sorte (string)
+            if (isDiaDeSorte && isNaN(parseInt(valor))) {
+                elementoExtra = valor;
+                continue;
+            }
+            
+            // 🔥 LOTECA: Converte "Coluna 1" -> 0, "Coluna do meio" -> 1, "Coluna 2" -> 2
+            if (isLoteca) {
+                let num: number | null = null;
+                if (valor.includes('Coluna 1')) num = 0;
+                else if (valor.includes('Coluna do meio') || valor.includes('Meio')) num = 1;
+                else if (valor.includes('Coluna 2')) num = 2;
+                else {
+                    // Tenta extrair número
+                    const match = valor.match(/\d+/);
+                    if (match) num = parseInt(match[0]);
+                }
+                
+                if (num !== null && num >= 0 && num <= 3) {
+                    numeros.push(num);
+                }
+                continue;
+            }
+            
+            // Outras loterias: converte para número
             let num = parseInt(valor);
             if (isNaN(num)) {
                 const match = valor.match(/\d+/);
-                if (match) {
-                    num = parseInt(match[0]);
-                } else {
-                    continue;
-                }
+                if (match) num = parseInt(match[0]);
+                else continue;
             }
             
             const min = config.incluirZero ? 0 : 1;
@@ -146,6 +190,24 @@ function processarCSV(texto: string, config: any): { dados: number[][]; datas: s
             }
         }
         
+        // Para Timemania e Dia de Sorte: salva o elemento extra
+        if (config.temElementoExtra && elementoExtra) {
+            elementosExtras.push(elementoExtra);
+        } else if (config.temElementoExtra) {
+            elementosExtras.push('Não informado');
+        }
+        
+        // Para Loteca: já temos os números convertidos
+        if (isLoteca) {
+            if (numeros.length >= config.numerosPadrao) {
+                const numerosSorteados = numeros.slice(0, config.numerosPadrao);
+                const numerosOrdenados = [...numerosSorteados].sort((a, b) => a - b);
+                dados.push(numerosOrdenados);
+            }
+            continue;
+        }
+        
+        // Para outras loterias: processamento normal
         if (numeros.length >= config.numerosPadrao) {
             const numerosSorteados = numeros.slice(0, config.numerosPadrao);
             const numerosOrdenados = [...numerosSorteados].sort((a, b) => a - b);
@@ -154,7 +216,9 @@ function processarCSV(texto: string, config: any): { dados: number[][]; datas: s
     }
     
     console.log(`✅ Processado ${dados.length} concursos para ${config.nome}`);
-    return { dados, datas };
+    console.log(`📊 Elementos extras capturados: ${elementosExtras.length}`);
+    
+    return { dados, datas, elementosExtras };
 }
 
 // ============================================
@@ -180,14 +244,22 @@ function obterUltimaData(datas: string[]): Date | null {
 // ============================================
 function filtrarPorPeriodoComDatas(
     dados: number[][], 
-    datas: string[], 
+    datas: string[],
+    elementosExtras: string[],
     period: string | number
-): { dadosFiltrados: number[][]; datasFiltradas: string[]; dataInicio: string; dataFim: string } {
+): { 
+    dadosFiltrados: number[][]; 
+    datasFiltradas: string[];
+    elementosExtrasFiltrados: string[];
+    dataInicio: string; 
+    dataFim: string 
+} {
     // Se for "all", retorna todos os dados
     if (period === 'all' || dados.length === 0 || datas.length === 0) {
         return {
             dadosFiltrados: dados,
             datasFiltradas: datas,
+            elementosExtrasFiltrados: elementosExtras,
             dataInicio: datas.length > 0 ? datas[0] : '',
             dataFim: datas.length > 0 ? datas[datas.length - 1] : ''
         };
@@ -198,17 +270,18 @@ function filtrarPorPeriodoComDatas(
         return {
             dadosFiltrados: dados,
             datasFiltradas: datas,
+            elementosExtrasFiltrados: elementosExtras,
             dataInicio: datas.length > 0 ? datas[0] : '',
             dataFim: datas.length > 0 ? datas[datas.length - 1] : ''
         };
     }
     
-    // CORREÇÃO 3: Usa a função melhorada para obter a última data
     const ultimaData = obterUltimaData(datas);
     if (!ultimaData) {
         return {
             dadosFiltrados: dados,
             datasFiltradas: datas,
+            elementosExtrasFiltrados: elementosExtras,
             dataInicio: datas.length > 0 ? datas[0] : '',
             dataFim: datas.length > 0 ? datas[datas.length - 1] : ''
         };
@@ -223,6 +296,7 @@ function filtrarPorPeriodoComDatas(
     
     const dadosFiltrados: number[][] = [];
     const datasFiltradas: string[] = [];
+    const elementosExtrasFiltrados: string[] = [];
     
     for (let i = 0; i < dados.length; i++) {
         const dataStr = datas[i];
@@ -238,12 +312,16 @@ function filtrarPorPeriodoComDatas(
         if (dataConcurso >= dataCorte) {
             dadosFiltrados.push(dados[i]);
             datasFiltradas.push(dataStr);
+            if (elementosExtras && i < elementosExtras.length) {
+                elementosExtrasFiltrados.push(elementosExtras[i]);
+            }
         }
     }
     
     return {
         dadosFiltrados,
         datasFiltradas,
+        elementosExtrasFiltrados,
         dataInicio: datasFiltradas.length > 0 ? datasFiltradas[0] : '',
         dataFim: datasFiltradas.length > 0 ? datasFiltradas[datasFiltradas.length - 1] : ''
     };
@@ -316,6 +394,74 @@ function calcularTriplasMaisSorteadas(dados: number[][]) {
 }
 
 // ============================================
+// 🔥 NOVO: CALCULAR ELEMENTOS EXTRAS (Times/Meses)
+// ============================================
+function calcularElementosExtras(elementos: string[], tipo: 'time' | 'mes'): { nome: string; quantidade: number }[] {
+    const freq = new Map<string, number>();
+    
+    elementos.forEach(el => {
+        if (el && el !== 'Não informado') {
+            freq.set(el, (freq.get(el) || 0) + 1);
+        }
+    });
+    
+    const resultados = Array.from(freq.entries()).map(([nome, quantidade]) => ({
+        nome,
+        quantidade
+    }));
+    
+    resultados.sort((a, b) => b.quantidade - a.quantidade);
+    return resultados.slice(0, 20);
+}
+
+// ============================================
+// 🔥 NOVO: CALCULAR ESTATÍSTICAS DA LOTECA
+// ============================================
+function calcularEstatisticasLoteca(dados: number[][]) {
+    // Frequência global (0, 1, 2)
+    const freqGlobal = [0, 0, 0];
+    const freqPorJogo: { casa: number; empate: number; fora: number }[] = [];
+    
+    // Inicializa freqPorJogo
+    if (dados.length > 0) {
+        for (let i = 0; i < dados[0].length; i++) {
+            freqPorJogo.push({ casa: 0, empate: 0, fora: 0 });
+        }
+    }
+    
+    dados.forEach(jogo => {
+        jogo.forEach((resultado, index) => {
+            // 0 = Casa, 1 = Empate, 2 = Fora
+            if (resultado === 0) {
+                freqGlobal[0]++;
+                if (freqPorJogo[index]) freqPorJogo[index].casa++;
+            } else if (resultado === 1) {
+                freqGlobal[1]++;
+                if (freqPorJogo[index]) freqPorJogo[index].empate++;
+            } else if (resultado === 2) {
+                freqGlobal[2]++;
+                if (freqPorJogo[index]) freqPorJogo[index].fora++;
+            }
+        });
+    });
+    
+    return {
+        frequenciaGlobal: [
+            { resultado: 'Casa (1)', quantidade: freqGlobal[0] },
+            { resultado: 'Empate (X)', quantidade: freqGlobal[1] },
+            { resultado: 'Fora (2)', quantidade: freqGlobal[2] }
+        ],
+        frequenciaPorJogo: freqPorJogo.map((f, i) => ({
+            jogo: i + 1,
+            casa: f.casa,
+            empate: f.empate,
+            fora: f.fora,
+            total: f.casa + f.empate + f.fora
+        }))
+    };
+}
+
+// ============================================
 // HANDLER PRINCIPAL
 // ============================================
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -365,7 +511,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 maisSorteados: [],
                 menosSorteados: [],
                 duplas: [],
-                triplas: []
+                triplas: [],
+                elementosExtras: []
             });
         }
         
@@ -376,7 +523,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.log(`📄 Primeiras linhas do CSV (${lottery}):`, primeirasLinhas);
         
         // Processa o CSV
-        const { dados, datas } = processarCSV(csvText, config);
+        const { dados, datas, elementosExtras } = processarCSV(csvText, config);
         const totalDraws = dados.length;
         
         if (totalDraws === 0) {
@@ -392,13 +539,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 maisSorteados: [],
                 menosSorteados: [],
                 duplas: [],
-                triplas: []
+                triplas: [],
+                elementosExtras: []
             });
         }
         
-        // CORREÇÃO 2: Filtra por período com datas
-        const { dadosFiltrados, datasFiltradas, dataInicio, dataFim } = 
-            filtrarPorPeriodoComDatas(dados, datas, period);
+        // Filtra por período com datas
+        const { dadosFiltrados, datasFiltradas, elementosExtrasFiltrados, dataInicio, dataFim } = 
+            filtrarPorPeriodoComDatas(dados, datas, elementosExtras, period);
         
         const filteredDraws = dadosFiltrados.length;
         
@@ -415,22 +563,88 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 maisSorteados: [],
                 menosSorteados: [],
                 duplas: [],
-                triplas: []
+                triplas: [],
+                elementosExtras: []
             });
         }
         
-        // Calcula estatísticas
+        // ============================================
+        // CÁLCULOS ESPECÍFICOS POR LOTERIA
+        // ============================================
+        
+        // 🔥 LOTECA: Estatísticas especiais
+        if (config.nome === 'Loteca') {
+            const estatisticasLoteca = calcularEstatisticasLoteca(dadosFiltrados);
+            
+            // Para Loteca, a frequência de números é a frequência global
+            const frequencia = calcularFrequenciaNumeros(dadosFiltrados, config.maxNumero, config.incluirZero);
+            const maisSorteados = frequencia.slice(0, 20);
+            const menosSorteados = [...frequencia]
+                .sort((a, b) => a.quantidade - b.quantidade)
+                .slice(0, 20);
+            
+            return res.status(200).json({
+                success: true,
+                lottery: lottery as string,
+                period: period as string,
+                totalDraws,
+                filteredDraws,
+                dataInicio,
+                dataFim,
+                maisSorteados,
+                menosSorteados,
+                duplas: [],
+                triplas: [],
+                elementosExtras: [],
+                loteca: estatisticasLoteca
+            });
+        }
+        
+        // 🔥 TIMEMANIA e DIA DE SORTE: Com elementos extras
+        if (config.temElementoExtra) {
+            const frequencia = calcularFrequenciaNumeros(dadosFiltrados, config.maxNumero, config.incluirZero);
+            const duplas = calcularDuplasMaisSorteadas(dadosFiltrados);
+            const triplas = calcularTriplasMaisSorteadas(dadosFiltrados);
+            
+            const maisSorteados = frequencia.slice(0, 20);
+            const menosSorteados = [...frequencia]
+                .sort((a, b) => a.quantidade - b.quantidade)
+                .slice(0, 20);
+            
+            // Calcula elementos extras (Times ou Meses)
+            const elementosExtrasCalculados = calcularElementosExtras(
+                elementosExtrasFiltrados,
+                config.tipoElemento || 'time'
+            );
+            
+            return res.status(200).json({
+                success: true,
+                lottery: lottery as string,
+                period: period as string,
+                totalDraws,
+                filteredDraws,
+                dataInicio,
+                dataFim,
+                maisSorteados,
+                menosSorteados,
+                duplas: duplas.slice(0, 20),
+                triplas: triplas.slice(0, 20),
+                elementosExtras: elementosExtrasCalculados,
+                tipoElemento: config.tipoElemento || 'time',
+                nomeElemento: config.nomeElemento || 'Elemento Extra'
+            });
+        }
+        
+        // 🔥 OUTRAS LOTERIAS: Processamento normal
         const frequencia = calcularFrequenciaNumeros(dadosFiltrados, config.maxNumero, config.incluirZero);
         const duplas = calcularDuplasMaisSorteadas(dadosFiltrados);
         const triplas = calcularTriplasMaisSorteadas(dadosFiltrados);
         
-        // CORREÇÃO 1: Retorna maisSorteados e menosSorteados separados
         const maisSorteados = frequencia.slice(0, 20);
         const menosSorteados = [...frequencia]
             .sort((a, b) => a.quantidade - b.quantidade)
             .slice(0, 20);
         
-        // CORREÇÃO 4: JSON final padronizado
         return res.status(200).json({
             success: true,
             lottery: lottery as string,
@@ -442,7 +656,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             maisSorteados,
             menosSorteados,
             duplas: duplas.slice(0, 20),
-            triplas: triplas.slice(0, 20)
+            triplas: triplas.slice(0, 20),
+            elementosExtras: []
         });
         
     } catch (error: any) {
@@ -459,7 +674,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             maisSorteados: [],
             menosSorteados: [],
             duplas: [],
-            triplas: []
+            triplas: [],
+            elementosExtras: []
         });
     }
 }
