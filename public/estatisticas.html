@@ -230,7 +230,7 @@
                 if (user) {
                     try {
                         userData.uid = user.uid;
-                        userData.email = user.email;
+                        //userData.email = user.email;
                         
                         // 🔒 Busca os dados do usuário via backend
                         const response = await fetch(`${API_URL}/user/status`, {
