@@ -7,13 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-    
-    <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <style>
         .stats-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
         .lottery-grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px; }
@@ -42,6 +35,14 @@
         .btn-footer { background: #64748b; border: none; padding: 10px 25px; border-radius: 30px; color: white; font-weight: 600; cursor: pointer; margin: 5px; }
         .stats-note { font-size: 11px; color: #f59e0b; margin-top: 10px; text-align: center; }
         .header-logo { font-size: 32px; min-width: 50px; text-align: center; }
+        .loteca-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
+        .loteca-jogo-card { background: var(--bg-card); border-radius: var(--radius); padding: 12px; border: 2px solid var(--border); }
+        .loteca-jogo-card h5 { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+        .loteca-bar { display: flex; gap: 4px; height: 20px; margin: 4px 0; }
+        .loteca-bar .casa { background: #38bdf8; height: 100%; border-radius: 3px; }
+        .loteca-bar .empate { background: #f59e0b; height: 100%; border-radius: 3px; }
+        .loteca-bar .fora { background: #ef4444; height: 100%; border-radius: 3px; }
+        .loteca-legend { display: flex; gap: 15px; font-size: 11px; color: var(--text-secondary); margin-top: 6px; flex-wrap: wrap; }
         @media (max-width: 768px) { .stats-cards-grid { grid-template-columns: 1fr; } .lottery-grid-stats { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); } }
     </style>
 </head>
@@ -51,7 +52,7 @@
             <div class="header-logo">🎰</div>
             <div class="header-text">
                 <h1>🧠 Loterias V.6.1 <span class="version-badge">ESTATÍSTICAS</span></h1>
-                <p class="header-subtitle">Análise completa de números, duplas, tríades e times</p>
+                <p class="header-subtitle">Análise completa de números, duplas, tríades, times e meses</p>
             </div>
             <div class="header-logo">🎯</div>
         </div>
@@ -85,66 +86,48 @@
         // ============================================
         // CONFIGURAÇÕES
         // ============================================
+        // 🔒 SEGURO: API chamada via backend, sem chaves expostas
         const API_URL = 'https://loterias-ia.vercel.app/api/statistics';
         
-        const firebaseConfig = {
-            apiKey: "AIzaSyCA_FoID7Ch8LkcwK5TbQSK23lU7BxQMuE",
-            authDomain: "loteriasia.firebaseapp.com",
-            projectId: "loteriasia",
-            storageBucket: "loteriasia.firebasestorage.app",
-            messagingSenderId: "124650527048",
-            appId: "1:124650527048:web:bc335922cb9e1586c3fb7d"
-        };
-        
-        if (!firebase.apps || firebase.apps.length === 0) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        
-        const supabaseUrl = 'https://fuiaikymhsjdgdhojjhq.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1aWFpa3ltaHNqZGdkaG9qamhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwODI1NTEsImV4cCI6MjA5MzY1ODU1MX0.X9Qa1eJ6ut-QdKEZdjX2Ttm2STgJqOkEdNyohDpH3bk';
-        window.supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        // ✅ A autenticação agora é feita via backend
+        // O front-end apenas verifica o status do usuário via cookie/session
         
         let isUserPro = false;
         let loteriaAtualStats = 'megasena';
         let periodoSelecionadoStats = 'all';
         let dadosAtuaisStats = null;
         
+        // ============================================
+        // CONFIGURAÇÕES DAS LOTERIAS (Apenas para exibição)
+        // ============================================
         const LOTERIAS_STATS = {
             megasena: { nome: 'Mega-Sena', icone: '💰', numerosCSV: 6, maxNumero: 60, incluirZero: false },
             quina: { nome: 'Quina', icone: '🎯', numerosCSV: 5, maxNumero: 80, incluirZero: false },
             lotofacil: { nome: 'Lotofácil', icone: '🍀', numerosCSV: 15, maxNumero: 25, incluirZero: false },
             lotomania: { nome: 'Lotomania', icone: '🎪', numerosCSV: 20, maxNumero: 99, incluirZero: true, observacao: 'Sorteia 20 números entre 00 e 99' },
             duplasena: { nome: 'Dupla Sena', icone: '🎲', numerosCSV: 6, maxNumero: 50, incluirZero: false },
-            timemania: { nome: 'Timemania', icone: '⚽', numerosCSV: 7, maxNumero: 80, incluirZero: false, temTime: true },
+            timemania: { nome: 'Timemania', icone: '⚽', numerosCSV: 7, maxNumero: 80, incluirZero: false, temElementoExtra: true, nomeElemento: 'Time do Coração' },
             milionaria: { nome: '+Milionária', icone: '💎', numerosCSV: 6, maxNumero: 50, incluirZero: false },
             loteca: { nome: 'Loteca', icone: '⚽', numerosCSV: 14, maxNumero: 3, incluirZero: true },
-            diadesorte: { nome: 'Dia de Sorte', icone: '📅', numerosCSV: 7, maxNumero: 31, incluirZero: false },
+            diadesorte: { nome: 'Dia de Sorte', icone: '📅', numerosCSV: 7, maxNumero: 31, incluirZero: false, temElementoExtra: true, nomeElemento: 'Mês de Sorte' },
             supersete: { nome: 'Super Sete', icone: '🌟', numerosCSV: 7, maxNumero: 9, incluirZero: true }
         };
         
         // ============================================
-        // VERIFICAR USUÁRIO PRO
+        // VERIFICAR USUÁRIO PRO (via API segura)
         // ============================================
-        firebase.auth().onAuthStateChanged(async (user) => {
-            if (user) {
-                try {
-                    const { data } = await window.supabaseClient
-                        .from('usuarios')
-                        .select('is_pro')
-                        .eq('uid', user.uid)
-                        .single();
-                    isUserPro = data?.is_pro || false;
-                    console.log('📊 Estatísticas - Usuário PRO:', isUserPro);
-                } catch(e) { 
-                    isUserPro = false;
-                    console.log('📊 Estatísticas - Usuário não encontrado');
-                }
-            } else {
+        async function verificarStatusPro() {
+            try {
+                // 🔒 Chama endpoint seguro que verifica o usuário via cookie/session
+                const response = await fetch('/api/auth/status');
+                const data = await response.json();
+                isUserPro = data.isPro || false;
+                console.log('📊 Usuário PRO:', isUserPro);
+            } catch (error) {
+                console.log('📊 Usuário não autenticado ou erro:', error);
                 isUserPro = false;
-                console.log('📊 Estatísticas - Nenhum usuário logado');
             }
-            await carregarEstatisticas();
-        });
+        }
         
         // ============================================
         // FUNÇÕES DE FORMATAÇÃO
@@ -227,11 +210,79 @@
             const container = document.getElementById('estatisticasContent');
             const config = LOTERIAS_STATS[loteriaAtualStats];
             
-            // Usa os novos campos: maisSorteados e menosSorteados
+            // ============================================
+            // LOTECA - Renderização Especial
+            // ============================================
+            if (loteriaAtualStats === 'loteca' && data.loteca) {
+                const proWarning = !isUserPro ? `
+                    <div class="pro-overlay" style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; margin-bottom: 20px;">
+                        <span class="pro-badge-stats">⭐ PLANO PRO ⭐</span>
+                        <p style="margin-top: 10px; font-size: 13px;">Faça login com uma conta PRO para visualizar todos os números e estatísticas completas!</p>
+                        <button onclick="window.location.href='index.html'" style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; padding: 8px 20px; border-radius: 30px; color: #1e293b; font-weight: 600; cursor: pointer; margin-top: 10px;">⭐ IR PARA O SISTEMA</button>
+                    </div>
+                ` : '';
+                
+                const { frequenciaGlobal, frequenciaPorJogo } = data.loteca;
+                
+                let html = `
+                    ${proWarning}
+                    <div class="stats-cards-grid">
+                        <div class="stats-card">
+                            <h4>📊 FREQUÊNCIA GLOBAL</h4>
+                            <div class="stats-list">
+                                ${frequenciaGlobal.map(item => `
+                                    <div class="stats-item">
+                                        <span class="${isUserPro ? 'numero' : 'numero-pro'}">${isUserPro ? item.resultado : '⭐⭐ PRO ⭐⭐'}</span>
+                                        <span class="quantidade">${item.quantidade} vez(es)</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <h4 style="color: var(--text-secondary); margin-bottom: 15px;">📊 FREQUÊNCIA POR JOGO</h4>
+                        <div class="loteca-stats-grid">
+                            ${frequenciaPorJogo.map(jogo => `
+                                <div class="loteca-jogo-card">
+                                    <h5>⚽ Jogo ${jogo.jogo}</h5>
+                                    <div class="loteca-bar">
+                                        <div class="casa" style="width: ${(jogo.casa / jogo.total * 100) || 0}%;"></div>
+                                        <div class="empate" style="width: ${(jogo.empate / jogo.total * 100) || 0}%;"></div>
+                                        <div class="fora" style="width: ${(jogo.fora / jogo.total * 100) || 0}%;"></div>
+                                    </div>
+                                    <div class="loteca-legend">
+                                        <span>🏠 Casa: ${jogo.casa}</span>
+                                        <span>🤝 Empate: ${jogo.empate}</span>
+                                        <span>✈️ Fora: ${jogo.fora}</span>
+                                        <span>📊 Total: ${jogo.total}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px; padding: 15px; background: rgba(56, 189, 248, 0.1); border-radius: 12px; text-align: center;">
+                        <div style="font-size: 13px; color: var(--text-secondary);">
+                            📊 Baseado em <strong>${data.filteredDraws || data.totalDraws || 0}</strong> concursos | 
+                            🎯 ${config.numerosCSV} jogos por concurso
+                        </div>
+                    </div>
+                `;
+                
+                container.innerHTML = html;
+                return;
+            }
+            
+            // ============================================
+            // TIMEMANIA e DIA DE SORTE - Com elementos extras
+            // ============================================
             const maisSorteados = data.maisSorteados || [];
             const menosSorteados = data.menosSorteados || [];
             const duplas = data.duplas || [];
             const triplas = data.triplas || [];
+            const elementosExtras = data.elementosExtras || [];
+            const temElementoExtra = config.temElementoExtra || false;
             
             if (maisSorteados.length === 0 && menosSorteados.length === 0) {
                 container.innerHTML = `
@@ -253,6 +304,25 @@
             ` : '';
             
             const observacaoHtml = config.observacao ? `<div class="stats-note">ℹ️ ${config.observacao}</div>` : '';
+            
+            let elementosExtrasHtml = '';
+            if (temElementoExtra && elementosExtras.length > 0) {
+                const icone = loteriaAtualStats === 'timemania' ? '⚽' : '📅';
+                const titulo = config.nomeElemento || 'Elemento Extra';
+                elementosExtrasHtml = `
+                    <div class="stats-card">
+                        <h4>${icone} ${titulo}s MAIS SORTEADOS</h4>
+                        <div class="stats-list">
+                            ${elementosExtras.map(item => `
+                                <div class="stats-item">
+                                    <span class="${isUserPro ? 'numero' : 'numero-pro'}">${isUserPro ? item.nome : '⭐⭐ PRO ⭐⭐'}</span>
+                                    <span class="quantidade">${item.quantidade} vez(es)</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
             
             const html = `
                 ${proWarning}
@@ -321,13 +391,14 @@
                             `}
                         </div>
                     </div>
+                    ${elementosExtrasHtml}
                 </div>
                 
                 <div style="margin-top: 20px; padding: 15px; background: rgba(56, 189, 248, 0.1); border-radius: 12px; text-align: center;">
                     <div style="font-size: 13px; color: var(--text-secondary);">
                         📊 Baseado em <strong>${data.filteredDraws || data.totalDraws || 0}</strong> concursos | 
                         🎯 ${config.numerosCSV} números por concurso
-                        ${config.temTime ? ' | ⚽ Inclui análise de times' : ''}
+                        ${temElementoExtra ? ` | ${config.nomeElemento || 'Elemento Extra'} incluído` : ''}
                     </div>
                 </div>
             `;
@@ -355,7 +426,7 @@
                      onclick="selecionarLoteriaStats('${id}')" 
                      id="card-stats-${id}">
                     <h3>${c.icone} ${c.nome}</h3>
-                    <p class="rules">${c.numerosCSV} números • 1 a ${c.maxNumero}${c.temTime ? ' + Time' : ''}</p>
+                    <p class="rules">${c.numerosCSV} números • 1 a ${c.maxNumero}${c.temElementoExtra ? ` + ${c.nomeElemento || 'Extra'}` : ''}</p>
                 </div>
             `).join('');
         }
@@ -363,7 +434,7 @@
         // ============================================
         // INICIALIZAÇÃO
         // ============================================
-        function init() {
+        async function init() {
             carregarGrid();
             
             document.querySelectorAll('.periodo-btn').forEach(btn => {
@@ -374,6 +445,12 @@
                     await carregarEstatisticas();
                 });
             });
+            
+            // Verifica status do usuário PRO
+            await verificarStatusPro();
+            
+            // Carrega estatísticas iniciais
+            await carregarEstatisticas();
         }
         
         window.selecionarLoteriaStats = selecionarLoteriaStats;
