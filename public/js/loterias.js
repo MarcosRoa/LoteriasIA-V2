@@ -6,7 +6,7 @@
 // ============================================
 
 // ============================================
-// LOTERIAS.js - Gerenciamento de loterias (VERSÃO DEFINITIVA CORRIGIDA) 16/06/2026
+// LOTERIAS.js - Gerenciamento de loterias (VERSÃO DEFINITIVA CORRIGIDA) 25/06/2026
 // ============================================
 
 // ============================================
