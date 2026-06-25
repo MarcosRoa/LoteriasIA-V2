@@ -1,4 +1,4 @@
-// api/user/status.ts 24//06/2026
+// api/user/status.ts 25//06/2026
 // api/user/status.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
@@ -86,6 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // 🔥 Nome do usuário (fallback para email se nome for null)
         const nomeUsuario = user.nome || user.email?.split('@')[0] || 'Usuário';
         
+        // 🔥 CORREÇÃO: Retorna o UID do corpo da requisição
         return res.status(200).json({
             success: true,
             isPro: isPro,
@@ -93,7 +94,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             proExpiresAt: proExpiresAt,
             daysLeft: daysLeft,
             user: {
-                uid: user.uid,
+                uid: uid, // 🔥 Usa o UID da requisição
                 nome: nomeUsuario,
                 email: user.email,
                 foto: user.foto_url || null
