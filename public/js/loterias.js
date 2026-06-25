@@ -189,7 +189,7 @@ const setPeriodoDebounced = debounce((p) => {
     iaTreinada = false;
     aiModel = null;
     renderizarConteudo(loteriaAtual);
-    if (dadosAtuais.length >= 10) setTimeout(() => window.treinarIAComFiltrosAtuais(), 1000);
+    if (dadosAtuais.length >= 10) setTimeout(() => window.treinarIAComFiltrosAtuais(), 500);
     if (typeof window.atualizarVisualizacaoConfiguracoes === 'function') {
         window.atualizarVisualizacaoConfiguracoes();
     }
