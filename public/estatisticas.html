@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     
-    <!-- ✅ Firebase SDK (obrigatório para auth) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
     
@@ -94,6 +94,10 @@
             font-size: 11px;
             font-weight: 700;
         }
+        .user-info-bar .info-item .user-name {
+            font-weight: 600;
+            color: #38bdf8;
+        }
         @media (max-width: 768px) { 
             .stats-cards-grid { grid-template-columns: 1fr; } 
             .lottery-grid-stats { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
@@ -114,12 +118,12 @@
     </div>
 
     <div class="stats-container">
-        <!-- 🔒 Barra de informações do usuário -->
+        <!-- Barra de informações do usuário -->
         <div class="user-info-bar" id="userInfoBar">
             <div class="info-item">
                 <span>👤</span>
                 <span class="label">Usuário:</span>
-                <span class="value" id="userEmail">Não autenticado</span>
+                <span class="user-name" id="userNameDisplay">Carregando...</span>
             </div>
             <div class="info-item">
                 <span>⭐</span>
@@ -168,7 +172,7 @@
 
     <script>
         // ============================================
-        // 🔒 CONFIGURAÇÃO DO FIREBASE (SEGURA)
+        // CONFIGURAÇÃO DO FIREBASE
         // ============================================
         const firebaseConfig = {
             apiKey: "AIzaSyCA_FoID7Ch8LkcwK5TbQSK23lU7BxQMuE",
@@ -196,11 +200,12 @@
         // ============================================
         const API_URL = 'https://loterias-ia.vercel.app/api';
         let userData = {
+            nome: 'Carregando...',
+            email: '',
+            uid: '',
             isPro: false,
             credits: 0,
-            proExpiresAt: null,
-            email: null,
-            uid: null
+            proExpiresAt: null
         };
         let loteriaAtualStats = 'megasena';
         let periodoSelecionadoStats = 'all';
@@ -223,87 +228,125 @@
         };
         
         // ============================================
-        // 🔒 VERIFICAR USUÁRIO PRO (COM AS 3 MELHORIAS)
+        // BUSCAR DADOS DO USUÁRIO (MESMO PADRÃO DO SISTEMA)
         // ============================================
-        function verificarUsuarioPro() {
+        async function buscarDadosUsuario(uid) {
+            try {
+                const response = await fetch(`${API_URL}/user/status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uid: uid })
+                });
+                
+                const data = await response.json();
+                console.log('📊 Resposta do /api/user/status:', data);
+                
+                if (data.success) {
+                    return {
+                        nome: data.user?.nome || data.user?.email?.split('@')[0] || 'Usuário',
+                        email: data.user?.email || '',
+                        isPro: data.isPro || false,
+                        credits: data.credits || 0,
+                        proExpiresAt: data.proExpiresAt || null
+                    };
+                }
+                
+                return null;
+            } catch (error) {
+                console.error('❌ Erro ao buscar dados do usuário:', error);
+                return null;
+            }
+        }
+        
+        // ============================================
+        // VERIFICAR USUÁRIO (MESMO PADRÃO DO SISTEMA)
+        // ============================================
+        function verificarUsuario() {
             firebase.auth().onAuthStateChanged(async (user) => {
+                console.log('🔥 Auth state changed:', user?.email || 'null');
+                
                 if (user) {
                     try {
-                        userData.uid = user.uid;
-                        //userData.email = user.email;
+                        // 🔥 Busca os dados do backend (mesmo padrão do sistema)
+                        const dados = await buscarDadosUsuario(user.uid);
                         
-                        // 🔒 Busca os dados do usuário via backend
-                        const response = await fetch(`${API_URL}/user/status`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ uid: user.uid })
-                        });
-                        
-                        const data = await response.json();
-                        
-                        // CORREÇÃO 1: Verifica success
-                        if (data.success) {
-                            // CORREÇÃO 2: Usa todos os dados retornados
-                            userData.isPro = data.isPro || false;
-                            userData.credits = data.credits || 0;
-                            userData.proExpiresAt = data.proExpiresAt || null;
-                            console.log('📊 Dados do usuário:', userData);
+                        if (dados) {
+                            userData.nome = dados.nome;
+                            userData.email = dados.email;
+                            userData.isPro = dados.isPro;
+                            userData.credits = dados.credits;
+                            userData.proExpiresAt = dados.proExpiresAt;
+                            userData.uid = user.uid;
+                            console.log('✅ Dados carregados do backend:', userData.nome);
                         } else {
-                            // Usuário não encontrado no Supabase
-                            console.log('📊 Usuário não encontrado no banco:', data.error);
+                            // Fallback: usa dados do Firebase
+                            userData.nome = user.displayName || user.email?.split('@')[0] || 'Usuário';
+                            userData.email = user.email || '';
+                            userData.uid = user.uid;
                             userData.isPro = false;
                             userData.credits = 0;
-                            userData.proExpiresAt = null;
+                            console.log('⚠️ Fallback: usando dados do Firebase:', userData.nome);
                         }
                         
                     } catch(e) {
                         console.error('❌ Erro ao verificar usuário:', e);
+                        userData.nome = user.displayName || user.email?.split('@')[0] || 'Usuário';
                         userData.isPro = false;
                         userData.credits = 0;
-                        userData.proExpiresAt = null;
                     }
                 } else {
-                    console.log('📊 Nenhum usuário logado');
+                    userData.nome = 'Não autenticado';
                     userData.isPro = false;
                     userData.credits = 0;
-                    userData.proExpiresAt = null;
-                    userData.email = null;
-                    userData.uid = null;
+                    userData.email = '';
+                    userData.uid = '';
+                    console.log('👤 Nenhum usuário logado');
                 }
                 
-                // Atualiza a UI com os dados do usuário
                 atualizarUserInfo();
-                
-                // Recarrega as estatísticas com o status PRO atualizado
                 await carregarEstatisticas();
             });
         }
         
         // ============================================
-        // ATUALIZAR INFORMAÇÕES DO USUÁRIO NA UI
+        // ATUALIZAR UI (MESMO PADRÃO DO SISTEMA)
         // ============================================
         function atualizarUserInfo() {
-            document.getElementById('userEmail').textContent = userData.email || 'Não autenticado';
-            document.getElementById('userCredits').textContent = userData.credits || 0;
+            // 🔥 Mostra o NOME (mesmo padrão do front-end)
+            const nameDisplay = document.getElementById('userNameDisplay');
+            if (nameDisplay) {
+                nameDisplay.textContent = userData.nome || 'Usuário';
+            }
+            
+            const creditsDisplay = document.getElementById('userCredits');
+            if (creditsDisplay) {
+                creditsDisplay.textContent = userData.credits || 0;
+            }
             
             const planBadge = document.getElementById('userPlanBadge');
-            if (userData.isPro) {
-                planBadge.textContent = '⭐ PRO';
-                planBadge.className = 'badge-pro';
-                
-                // Mostra a data de expiração
-                const expiresContainer = document.getElementById('proExpiresContainer');
-                expiresContainer.style.display = 'flex';
-                if (userData.proExpiresAt) {
-                    const date = new Date(userData.proExpiresAt);
-                    document.getElementById('userProExpires').textContent = date.toLocaleDateString('pt-BR');
+            if (planBadge) {
+                if (userData.isPro) {
+                    planBadge.textContent = '⭐ PRO';
+                    planBadge.className = 'badge-pro';
                 } else {
-                    document.getElementById('userProExpires').textContent = 'Indefinido';
+                    planBadge.textContent = 'FREE';
+                    planBadge.className = 'badge-free';
                 }
-            } else {
-                planBadge.textContent = 'FREE';
-                planBadge.className = 'badge-free';
-                document.getElementById('proExpiresContainer').style.display = 'none';
+            }
+            
+            // Mostra data de expiração se for PRO
+            const expiresContainer = document.getElementById('proExpiresContainer');
+            if (expiresContainer) {
+                if (userData.isPro && userData.proExpiresAt) {
+                    expiresContainer.style.display = 'flex';
+                    const date = new Date(userData.proExpiresAt);
+                    const expiresDisplay = document.getElementById('userProExpires');
+                    if (expiresDisplay) {
+                        expiresDisplay.textContent = date.toLocaleDateString('pt-BR');
+                    }
+                } else {
+                    expiresContainer.style.display = 'none';
+                }
             }
         }
         
@@ -624,13 +667,15 @@
                 });
             });
             
-            // ✅ Verifica usuário PRO via Firebase
-            verificarUsuarioPro();
+            // ✅ Verifica usuário (mesmo padrão do sistema)
+            verificarUsuario();
         }
         
+        // Exportar funções para o window
         window.selecionarLoteriaStats = selecionarLoteriaStats;
         window.carregarEstatisticas = carregarEstatisticas;
         
+        // Iniciar
         init();
     </script>
 </body>
