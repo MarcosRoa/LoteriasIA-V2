@@ -337,13 +337,15 @@ function processarCSV(loteria, texto, nome) {
             if (typeof window.renderizarConteudo === 'function') {
                 window.renderizarConteudo(loteria);
             }
-            if (dados.length >= 10) {
-                setTimeout(() => {
-                    if (typeof window.treinarIAComFiltrosAtuais === 'function') {
-                        window.treinarIAComFiltrosAtuais();
-                    }
-                }, 500);
+            
+            // ✅ MANTENHA ISSO
+            if (dados.length > 0) {
+                window.cacheDados[loteria] = { dados, carregado: true, nomeArquivo: nome };
+                window.cacheDatas[loteria] = { datas };
+                // ... resto do código de salvamento
+                // SEM chamada automática da IA
             }
+            
         }
         
         if (typeof window.mostrarToast === 'function') {
