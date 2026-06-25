@@ -1,13 +1,4 @@
-// ============================================
-// LOTERIAS.js - Gerenciamento de loterias (FASE 18 - CACHE OTIMIZADO)
-// ============================================
-// ============================================
-// LOTERIAS.js - Gerenciamento de loterias (FASE 18 - CACHE OTIMIZADO + LOTECA)
-// ============================================
-
-// ============================================
-// LOTERIAS.js - Gerenciamento de loterias (VERSÃO DEFINITIVA CORRIGIDA) 16/06/2026
-// ============================================
+// js/loterias.js - VERSÃO CORRIGIDA PARA LOTOMANIA
 
 // ============================================
 // VARIÁVEIS LOCAIS
@@ -21,59 +12,21 @@ let isTraining = false;
 let iaTreinada = false;
 let aiModel = null;
 let filtrosTreinamento = null;
+let cacheCSV = {};
+let cacheProcessamento = {};
+let debounceTimeout = null;
 
-// Cache persistente em memória
-const cacheProcessamento = {};
-
-// 🔧 MELHORIA 3: Debounces separados
-let debouncePeriodo = null;
-let debounceDispersao = null;
-
-// ============================================
-// FUNÇÃO DE DEBOUNCE (GENÉRICA)
-// ============================================
 function debounce(func, wait) {
-    return function executedFunction(...args) {
-        // Cada chamada cria seu próprio timeout
-        const timeoutId = setTimeout(() => {
-            func(...args);
-        }, wait);
-        return timeoutId;
-    };
+    if (debounceTimeout) clearTimeout(debounceTimeout);
+    debounceTimeout = setTimeout(() => { func(); debounceTimeout = null; }, wait);
 }
 
 // ============================================
-// FUNÇÃO AUXILIAR - CONVERTER MÊS TEXTO PARA NÚMERO
-// ============================================
-function converterMesTextoParaNumero(texto) {
-    if (!texto) return null;
-    
-    const meses = {
-        'JANEIRO': 1, 'JAN': 1,
-        'FEVEREIRO': 2, 'FEV': 2,
-        'MARÇO': 3, 'MAR': 3,
-        'ABRIL': 4, 'ABR': 4,
-        'MAIO': 5,
-        'JUNHO': 6, 'JUN': 6,
-        'JULHO': 7, 'JUL': 7,
-        'AGOSTO': 8, 'AGO': 8,
-        'SETEMBRO': 9, 'SET': 9,
-        'OUTUBRO': 10, 'OUT': 10,
-        'NOVEMBRO': 11, 'NOV': 11,
-        'DEZEMBRO': 12, 'DEZ': 12
-    };
-    
-    const chave = texto.toUpperCase().trim();
-    return meses[chave] || null;
-}
-
-// ============================================
-// FUNÇÕES DE DATA E FILTRO (COM CACHE)
+// FUNÇÕES DE DATA E FILTRO
 // ============================================
 function getDataCortePorAnos(anos) {
     const datas = window.cacheDatas[loteriaAtual]?.datas || [];
     let ultimaData = null;
-    
     if (datas.length > 0) {
         for (let i = datas.length - 1; i >= 0; i--) {
             const dataStr = datas[i];
@@ -81,15 +34,11 @@ function getDataCortePorAnos(anos) {
                 const partes = dataStr.split('/');
                 if (partes.length === 3) {
                     const dataConcurso = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
-                    if (!isNaN(dataConcurso.getTime())) {
-                        ultimaData = dataConcurso;
-                        break;
-                    }
+                    if (!isNaN(dataConcurso.getTime())) { ultimaData = dataConcurso; break; }
                 }
             }
         }
     }
-    
     const dataReferencia = ultimaData || new Date();
     return new Date(dataReferencia.getFullYear() - anos, dataReferencia.getMonth(), dataReferencia.getDate());
 }
@@ -97,7 +46,6 @@ function getDataCortePorAnos(anos) {
 function filtrarDadosPorData(anos) {
     const cacheKey = `${loteriaAtual}_${anos}`;
     if (cacheProcessamento[cacheKey]) return [...cacheProcessamento[cacheKey]];
-    
     if (!window.cacheDatas[loteriaAtual]?.datas?.length) return dadosAtuais;
     const dataCorte = getDataCortePorAnos(anos);
     const dadosFiltrados = [];
@@ -111,25 +59,20 @@ function filtrarDadosPorData(anos) {
             } else { dadosFiltrados.push(dadosAtuais[i]); }
         } else { dadosFiltrados.push(dadosAtuais[i]); }
     }
-    
     cacheProcessamento[cacheKey] = dadosFiltrados;
     return dadosFiltrados;
 }
 
 function filtrarDados() {
     if (periodoSelecionado === 'all') return [...dadosAtuais];
-    if (periodoSelecionado === 1) return filtrarDadosPorData(1);
-    if (periodoSelecionado === 3) return filtrarDadosPorData(3);
-    if (periodoSelecionado === 5) return filtrarDadosPorData(5);
-    if (periodoSelecionado === 7) return filtrarDadosPorData(7);
-    if (periodoSelecionado === 9) return filtrarDadosPorData(9);
+    if ([1,3,5,7,9].includes(periodoSelecionado)) {
+        return filtrarDadosPorData(periodoSelecionado);
+    }
     return [...dadosAtuais];
 }
 
 function getPeriodoTexto() {
-    if (periodoSelecionado === 'all') {
-        return `Todos os concursos (${dadosAtuais.length} concursos)`;
-    }
+    if (periodoSelecionado === 'all') return `Todos os concursos (${dadosAtuais.length} concursos)`;
     const dadosFiltrados = filtrarDados();
     return `${periodoSelecionado} ano(s) (${dadosFiltrados.length} concursos)`;
 }
@@ -138,23 +81,14 @@ function getDatasPeriodo() {
     const dadosFiltrados = filtrarDados();
     const datasFiltradas = window.cacheDatas[loteriaAtual]?.datas || [];
     if (datasFiltradas.length === 0 || dadosFiltrados.length === 0) return { inicio: 'N/A', fim: 'N/A' };
-    
-    // 🔧 MELHORIA 2: Usar Set para busca O(1)
-    const dadosFiltradosSet = new Set(dadosFiltrados);
-    let primeiraData = null;
-    let ultimaData = null;
-    
+    let primeiraData = null, ultimaData = null;
     for (let i = 0; i < dadosAtuais.length; i++) {
         const dataStr = window.cacheDatas[loteriaAtual]?.datas[i];
-        if (dataStr && dadosFiltradosSet.has(dadosAtuais[i])) {
-            const partes = dataStr.split('/');
-            if (partes.length === 3) {
-                if (!primeiraData) primeiraData = dataStr;
-                ultimaData = dataStr;
-            }
+        if (dataStr && dadosFiltrados.includes(dadosAtuais[i])) {
+            if (!primeiraData) primeiraData = dataStr;
+            ultimaData = dataStr;
         }
     }
-    
     return { inicio: primeiraData || 'N/A', fim: ultimaData || 'N/A' };
 }
 
@@ -165,76 +99,52 @@ function getFiltrosAtivos() {
     const qtdJogos = document.getElementById('qtdJogos')?.value || 1;
     const dadosFiltrados = filtrarDados();
     const modoBolaoAtivo = document.getElementById('modoBolaoCheckbox')?.checked || false;
-    const qtdNumerosBolao = document.getElementById('qtdNumerosBolao')?.value || config.jogoSimples;
-    
+    const qtdNumerosBolao = document.getElementById('qtdNumerosBolao')?.value || config?.jogoSimples;
     let filtros = [
-        { label: 'Loteria', valor: `${config.icone} ${config.nome}` },
+        { label: 'Loteria', valor: `${config?.icone || '🎯'} ${config?.nome || loteriaAtual}` },
         { label: 'Período', valor: periodoTexto },
-        { label: 'Modo IA', valor: window.getModoTexto(modo) },
+        { label: 'Modo IA', valor: window.getModoTexto ? window.getModoTexto(modo) : modo },
         { label: 'Quantidade', valor: `${qtdJogos} jogos` },
         { label: 'Base dados', valor: `${dadosFiltrados.length} concursos` }
     ];
-    if (modoBolaoAtivo && config.permiteBolao && window.isUserPro) {
+    if (modoBolaoAtivo && config?.permiteBolao && window.isUserPro) {
         filtros.push({ label: 'Modo Bolão', valor: `${qtdNumerosBolao} números por jogo` });
     }
-    if (config.temDispersao) filtros.push({ label: 'Dispersão', valor: `${dispersaoAtual} concursos` });
+    if (config?.temDispersao) filtros.push({ label: 'Dispersão', valor: `${dispersaoAtual} concursos` });
     return filtros;
 }
 
-// ============================================
-// SET PERIODO - COM DEBOUNCE SEPARADO
-// ============================================
-const setPeriodoDebounced = debounce((p) => {
-    periodoSelecionado = p;
+const setPeriodoDebounced = debounce(() => {
     iaTreinada = false;
     aiModel = null;
     renderizarConteudo(loteriaAtual);
     if (dadosAtuais.length >= 10) setTimeout(() => window.treinarIAComFiltrosAtuais(), 500);
-    if (typeof window.atualizarVisualizacaoConfiguracoes === 'function') {
-        window.atualizarVisualizacaoConfiguracoes();
-    }
+    if (typeof window.atualizarVisualizacaoConfiguracoes === 'function') window.atualizarVisualizacaoConfiguracoes();
 }, 100);
 
 function setPeriodo(p) {
-    // 🔧 MELHORIA 3: Debounce separado para período
-    if (debouncePeriodo) clearTimeout(debouncePeriodo);
-    debouncePeriodo = setTimeout(() => {
-        setPeriodoDebounced(p);
-        debouncePeriodo = null;
-    }, 100);
+    periodoSelecionado = p;
+    setPeriodoDebounced();
 }
 
-// ============================================
-// ATUALIZAR DISPERSAO - COM DEBOUNCE SEPARADO
-// ============================================
-const atualizarDispersaoDebounced = debounce((v) => {
-    dispersaoAtual = parseInt(v);
-    document.getElementById('dispersaoValor') && (document.getElementById('dispersaoValor').textContent = `${v} concursos`);
-    iaTreinada = false;
-    aiModel = null;
-    if (typeof window.atualizarVisualizacaoConfiguracoes === 'function') {
-        window.atualizarVisualizacaoConfiguracoes();
-    }
+const atualizarDispersaoDebounced = debounce(() => {
+    if (typeof window.atualizarVisualizacaoConfiguracoes === 'function') window.atualizarVisualizacaoConfiguracoes();
 }, 100);
 
 function atualizarDispersao(v) {
-    // 🔧 MELHORIA 3: Debounce separado para dispersão
-    if (debounceDispersao) clearTimeout(debounceDispersao);
-    debounceDispersao = setTimeout(() => {
-        atualizarDispersaoDebounced(v);
-        debounceDispersao = null;
-    }, 100);
+    dispersaoAtual = parseInt(v);
+    document.getElementById('dispersaoValor') && (document.getElementById('dispersaoValor').textContent = `${v} concursos`);
+    atualizarDispersaoDebounced();
 }
 
 // ============================================
-// FUNÇÕES DO MODO BOLÃO
+// MODO BOLÃO
 // ============================================
 function toggleModoBolao() {
     const checkbox = document.getElementById('modoBolaoCheckbox');
     const bolaoContainer = document.getElementById('bolaoContainer');
     const config = window.LOTERIAS[loteriaAtual];
-    
-    if (checkbox && checkbox.checked && window.isUserPro && config.permiteBolao) {
+    if (checkbox?.checked && window.isUserPro && config?.permiteBolao) {
         if (bolaoContainer) bolaoContainer.style.display = 'block';
         const qtdInput = document.getElementById('qtdNumerosBolao');
         if (qtdInput) {
@@ -246,17 +156,12 @@ function toggleModoBolao() {
     } else {
         if (bolaoContainer) bolaoContainer.style.display = 'none';
     }
-    
-    if (typeof window.atualizarVisualizacaoConfiguracoes === 'function') {
-        window.atualizarVisualizacaoConfiguracoes();
-    }
+    if (typeof window.atualizarVisualizacaoConfiguracoes === 'function') window.atualizarVisualizacaoConfiguracoes();
 }
 
 function atualizarQuantidadeNumerosBolao(valor) {
     document.getElementById('qtdNumerosValue') && (document.getElementById('qtdNumerosValue').innerText = valor);
-    if (typeof window.atualizarVisualizacaoConfiguracoes === 'function') {
-        window.atualizarVisualizacaoConfiguracoes();
-    }
+    if (typeof window.atualizarVisualizacaoConfiguracoes === 'function') window.atualizarVisualizacaoConfiguracoes();
 }
 
 // ============================================
@@ -279,16 +184,26 @@ function atualizarAnimacaoTreinamento(status) {
 }
 
 // ============================================
-// PROCESSAR CSV - PARSER DEFINITIVO CORRIGIDO
+// PROCESSAR CSV (CORRIGIDO PARA LOTOMANIA)
 // ============================================
 function processarCSV(loteria, texto, nome) {
     const config = window.LOTERIAS[loteria];
+    if (!config) {
+        console.error(`❌ Configuração não encontrada para: ${loteria}`);
+        return;
+    }
+    
     const linhas = texto.split('\n').filter(l => l.trim() && !l.startsWith('Data'));
     
-    if (linhas.length < 2) return;
+    console.log(`📊 Processando ${config.nome} - ${linhas.length} linhas`);
     
-    // Força separador ';' para Loteca
-    let sep = (loteria === 'loteca') ? ';' : (linhas[0].includes(';') ? ';' : ',');
+    if (linhas.length < 2) {
+        console.log(`⚠️ Poucas linhas: ${linhas.length}`);
+        return;
+    }
+    
+    const sep = linhas[0].includes(';') ? ';' : ',';
+    console.log(`📊 Separador: "${sep}"`);
     
     const dados = [];
     const dadosExtras = [];
@@ -307,8 +222,14 @@ function processarCSV(loteria, texto, nome) {
         return null;
     }
     
-    // 🔧 MELHORIA 1: Definir valor mínimo baseado em incluiZero
-    const minimo = config.incluiZero ? 0 : 1;
+    const isLotomania = loteria === 'lotomania';
+    const isTimemania = loteria === 'timemania';
+    const isDiaDeSorte = loteria === 'diadesorte';
+    const isLoteca = loteria === 'loteca';
+    
+    const numerosEsperados = isLotomania ? 20 : config.numeros;
+    
+    console.log(`📊 ${config.nome}: esperando ${numerosEsperados} números por linha`);
     
     for (let i = 0; i < linhas.length; i++) {
         const linha = linhas[i];
@@ -316,11 +237,14 @@ function processarCSV(loteria, texto, nome) {
         
         let colunas = linha.split(sep);
         
-        while (colunas.length > 0 && (colunas[colunas.length - 1].trim() === '' || colunas[colunas.length - 1].trim().includes(';'))) {
+        while (colunas.length > 0 && (colunas[colunas.length - 1].trim() === '')) {
             colunas.pop();
         }
         
-        if (colunas.length < 2) continue;
+        if (colunas.length < 2) {
+            console.log(`⚠️ Linha ${i}: poucas colunas (${colunas.length})`);
+            continue;
+        }
         
         let data = null;
         let dataIndex = -1;
@@ -333,36 +257,20 @@ function processarCSV(loteria, texto, nome) {
             }
         }
         
-        if (!data) continue;
-        
+        if (!data) {
+            console.log(`⚠️ Linha ${i}: data não encontrada`);
+            continue;
+        }
         datas.push(data);
         
         const numeros = [];
         let timeCoracao = null;
-        let mesSorte = null;
         
         for (let j = dataIndex + 1; j < colunas.length; j++) {
             let valor = colunas[j]?.trim();
             if (valor === '' || valor === undefined) continue;
             
-            // ============================================
-            // LOTECA - Converte strings para números
-            // ============================================
-            if (loteria === 'loteca') {
-                if (valor === 'Coluna 1') {
-                    numeros.push(1);
-                } else if (valor === 'Coluna do meio') {
-                    numeros.push(0);
-                } else if (valor === 'Coluna 2') {
-                    numeros.push(2);
-                }
-                continue;
-            }
-            
-            // ============================================
-            // TIMEMANIA - Captura o time do coração
-            // ============================================
-            if (loteria === 'timemania') {
+            if (isTimemania) {
                 const numTeste = parseInt(valor);
                 if (isNaN(numTeste) || valor.includes('/') || /[A-Za-zÀ-ú]/.test(valor)) {
                     timeCoracao = valor;
@@ -370,35 +278,6 @@ function processarCSV(loteria, texto, nome) {
                 }
             }
             
-            // ============================================
-            // DIA DE SORTE - Captura o mês da sorte
-            // ============================================
-            if (loteria === 'diadesorte') {
-                // Se já temos 7 números, o próximo valor é o mês
-                if (numeros.length >= config.numeros) {
-                    const numTeste = parseInt(valor);
-                    let mes = null;
-                    
-                    if (!isNaN(numTeste) && numTeste >= 1 && numTeste <= 12) {
-                        // É um número (ex: 2, 12, 4)
-                        mes = numTeste;
-                    } else {
-                        // É texto (ex: "MARÇO", "JANEIRO") - converte
-                        mes = converterMesTextoParaNumero(valor);
-                    }
-                    
-                    if (mes !== null) {
-                        // 🔧 CORREÇÃO: Adiciona o mês DIRETAMENTE ao array de números
-                        numeros.push(mes);
-                        mesSorte = mes;
-                    }
-                    continue;
-                }
-            }
-            
-            // ============================================
-            // DEMAIS LOTERIAS - Processamento numérico
-            // ============================================
             let num = parseInt(valor);
             if (isNaN(num)) {
                 const numStr = valor.toString().trim();
@@ -409,96 +288,80 @@ function processarCSV(loteria, texto, nome) {
                 }
             }
             
-            // 🔧 MELHORIA 1: Validar com o mínimo correto
-            if (num >= minimo && num <= config.maxNumero) {
+            const min = config.incluirZero ? 0 : 1;
+            if (num >= min && num <= config.maxNumero) {
                 numeros.push(num);
             }
         }
         
-        // ============================================
-        // VALIDAÇÃO ESPECIAL PARA LOTECA
-        // ============================================
-        if (loteria === 'loteca') {
-            if (numeros.length === config.numeros) {
-                dados.push([...numeros]);  // Mantém ordem original!
+        const numerosParaJogo = numeros.slice(0, numerosEsperados);
+        
+        if (numerosParaJogo.length >= numerosEsperados) {
+            const numerosOrdenados = [...numerosParaJogo].sort((a, b) => a - b);
+            dados.push(numerosOrdenados);
+            
+            if (isTimemania && timeCoracao) {
+                dadosExtras.push(timeCoracao);
+            } else {
                 dadosExtras.push(null);
             }
+            
+            if (i % 500 === 0) {
+                console.log(`📊 Processados ${i} concursos...`);
+            }
         } else {
-            // DEMAIS LOTERIAS - Ordena os números
-            if (numeros.length >= config.numeros) {
-                // Para Dia de Sorte, verificar se tem 8 elementos (7 números + 1 mês)
-                if (loteria === 'diadesorte') {
-                    // Se tem 8 elementos, o último é o mês
-                    if (numeros.length === 8) {
-                        const numerosJogo = numeros.slice(0, 7).sort((a, b) => a - b);
-                        const mes = numeros[7];
-                        // Adiciona o mês como 8º elemento
-                        numerosJogo.push(mes);
-                        dados.push(numerosJogo);
-                        dadosExtras.push(mesSorte || null);
-                    } else if (numeros.length >= 7) {
-                        // Fallback: se não tiver mês, só os números
-                        const numerosOrdenados = numeros.slice(0, 7).sort((a, b) => a - b);
-                        dados.push(numerosOrdenados);
-                        dadosExtras.push(null);
-                    }
-                } else {
-                    // Para outras loterias (Mega, Quina, etc.)
-                    const numerosOrdenados = numeros.slice(0, config.numeros).sort((a, b) => a - b);
-                    dados.push(numerosOrdenados);
-                    
-                    // Salva os dados extras conforme a loteria
-                    if (loteria === 'timemania') {
-                        dadosExtras.push(timeCoracao || null);
-                    } else {
-                        dadosExtras.push(null);
-                    }
-                }
+            if (i < 5) {
+                console.log(`⚠️ Linha ${i}: ${numerosParaJogo.length} números encontrados (esperado ${numerosEsperados})`);
+                console.log(`   Colunas: ${colunas.slice(0, 10).join('; ')}...`);
             }
         }
     }
     
     if (dados.length > 0) {
-        // Inicializar caches
-        if (!window.cacheDados) window.cacheDados = {};
-        if (!window.cacheDatas) window.cacheDatas = {};
-        if (!window.cacheDadosExtras) window.cacheDadosExtras = {};
+        console.log(`✅ ${config.nome}: ${dados.length} concursos carregados`);
         
         window.cacheDados[loteria] = { dados, carregado: true, nomeArquivo: nome };
         window.cacheDatas[loteria] = { datas };
+        window.cacheDadosExtras = window.cacheDadosExtras || {};
         window.cacheDadosExtras[loteria] = dadosExtras;
         
-        // Limpar cache de processamento
         Object.keys(cacheProcessamento).forEach(key => {
             if (key.startsWith(loteria)) delete cacheProcessamento[key];
         });
         
-        if (loteriaAtual === loteria) { 
-            dadosAtuais = [...dados]; 
-            if (
-                loteria === 'timemania' ||
-                loteria === 'loteca' ||
-                loteria === 'diadesorte'
-            ) {
-                dadosExtrasAtuais = [...dadosExtras];
+        if (window.loteriaAtual && window.loteriaAtual() === loteria) {
+            window.dadosAtuais = [...dados];
+            if (isTimemania) {
+                window.dadosExtrasAtuais = [...dadosExtras];
             }
-            renderizarConteudo(loteria); 
-            if (dados.length >= 10) setTimeout(() => window.treinarIAComFiltrosAtuais(), 500); 
+            if (typeof window.renderizarConteudo === 'function') {
+                window.renderizarConteudo(loteria);
+            }
+            if (dados.length >= 10) {
+                setTimeout(() => {
+                    if (typeof window.treinarIAComFiltrosAtuais === 'function') {
+                        window.treinarIAComFiltrosAtuais();
+                    }
+                }, 500);
+            }
         }
         
-        let msgExtras = '';
-        if (loteria === 'timemania') {
-            msgExtras = ` (${dadosExtras.filter(t => t !== null).length} times)`;
-        } else if (loteria === 'diadesorte') {
-            msgExtras = ` (${dadosExtras.filter(t => t !== null).length} meses)`;
+        if (typeof window.mostrarToast === 'function') {
+            window.mostrarToast(`${config.nome}: ${dados.length} concursos carregados!`, 'success');
         }
-        window.mostrarToast(`${config.nome}: ${dados.length} concursos carregados!${msgExtras}`, 'success');
     } else {
-        console.warn(`Nenhum dado válido encontrado para ${loteria}`);
-        window.mostrarToast(`Erro ao carregar ${config.nome}: formato inválido`, 'error');
+        console.warn(`❌ Nenhum dado válido encontrado para ${loteria}`);
+        console.log(`📄 Total de linhas processadas: ${linhas.length}`);
+        console.log(`📄 Primeira linha: "${linhas[0]}"`);
+        if (typeof window.mostrarToast === 'function') {
+            window.mostrarToast(`Erro ao carregar ${config.nome}: formato inválido`, 'error');
+        }
     }
 }
 
+// ============================================
+// IMPORTAR ARQUIVO
+// ============================================
 function importarArquivo(input, loteria) {
     const file = input.files[0];
     if (!file) return;
@@ -514,13 +377,14 @@ function importarArquivo(input, loteria) {
 function carregarGridLoterias() {
     const grid = document.getElementById('lotteryGrid');
     if (!grid) return;
-    grid.innerHTML = Object.entries(window.LOTERIAS).map(([id, c]) => `
-        <div class="lottery-card ${id==='megasena'?'active':''}" onclick="window.selecionarLoteria('${id}')" id="card-${id}">
+    grid.innerHTML = Object.entries(window.LOTERIAS).map(([id, c]) => {
+        const extra = c.temMes ? ' + Mês' : c.temTime ? ' + Time' : c.temTrevos ? ' + Trevos' : '';
+        return `<div class="lottery-card ${id==='megasena'?'active':''}" onclick="window.selecionarLoteria('${id}')" id="card-${id}">
             <div class="ia-status nao-treinado" id="status-${id}"></div>
             <h3>${c.icone} ${c.nome}</h3>
-            <p class="rules">${c.numeros} números • ${c.incluiZero ? '0 a' : '1 a'} ${c.maxNumero}${c.temMes ? ' + Mês' : ''}${c.temTime ? ' + Time' : ''}${c.temTrevos ? ' + Trevos' : ''}${c.incluiZero ? ' • Inclui 0' : ''}</p>
-        </div>
-    `).join('');
+            <p class="rules">${c.numeros} números • 1 a ${c.maxNumero}${extra}</p>
+        </div>`;
+    }).join('');
 }
 
 // ============================================
@@ -540,19 +404,16 @@ async function selecionarLoteria(loteria) {
     limparResultados();
     
     loteriaAtual = loteria;
-    iaTreinada = false; 
+    iaTreinada = false;
     aiModel = null;
     const config = window.LOTERIAS[loteria];
-    if (config && config.temDispersao) dispersaoAtual = config.dispersaoPadrao;
+    if (config?.temDispersao) dispersaoAtual = config.dispersaoPadrao || 15;
     document.querySelectorAll('.lottery-card').forEach(c => c.classList.remove('active'));
     document.getElementById(`card-${loteria}`)?.classList.add('active');
     
-    if (!window.cacheDados) window.cacheDados = {};
-    if (!window.cacheDadosExtras) window.cacheDadosExtras = {};
-    
-    if (window.cacheDados[loteria] && window.cacheDados[loteria].carregado) {
+    if (window.cacheDados[loteria]?.carregado) {
         dadosAtuais = [...window.cacheDados[loteria].dados];
-        if (window.cacheDadosExtras[loteria]) {
+        if (window.cacheDadosExtras && window.cacheDadosExtras[loteria]) {
             dadosExtrasAtuais = [...window.cacheDadosExtras[loteria]];
         }
         renderizarConteudo(loteria);
@@ -563,28 +424,51 @@ async function selecionarLoteria(loteria) {
     }
     
     dadosAtuais = [];
-    try { 
+    try {
         const r = await fetch(`/csv/${loteria}.csv`);
-        if (r.ok) processarCSV(loteria, await r.text(), `csv/${loteria}.csv`); 
-        else console.log(`Arquivo csv/${loteria}.csv não encontrado`);
-    } catch(e) { console.log(`Erro ao carregar csv/${loteria}.csv:`, e); }
+        if (r.ok) {
+            processarCSV(loteria, await r.text(), `csv/${loteria}.csv`);
+        } else {
+            console.log(`Arquivo csv/${loteria}.csv não encontrado`);
+        }
+    } catch(e) {
+        console.log(`Erro ao carregar csv/${loteria}.csv:`, e);
+    }
 }
 
 // ============================================
-// RENDERIZAR CONTEÚDO DA LOTERIA
+// RENDERIZAR CONTEÚDO
 // ============================================
 function renderizarConteudo(loteria) {
     const config = window.LOTERIAS[loteria];
     const div = document.getElementById('conteudoLoteria');
     if (!div) return;
-    const cache = window.cacheDados[loteria] || { carregado: false, dados: [] };
+    const cache = window.cacheDados[loteria];
     const dadosCount = dadosAtuais.length;
     const dadosFiltradosCount = filtrarDados().length;
     const datasPeriodo = getDatasPeriodo();
     
-    let html = `<div class="card"><h3 style="color:${config ? config.cor : '#fff'};">${config ? config.icone : '🎲'} ${config ? config.nome : loteria} - IA V.6.1 PRO</h3>`;
-    if (!cache.carregado) html += `<div class="mensagem-erro"><strong>⚠️ Nenhum dado!</strong><br>📁 Upload do CSV (pasta /csv/)</div>`;
-    html += `<div style="display:flex;gap:15px;flex-wrap:wrap;margin:15px 0;"><h4>📁 ${dadosCount} concursos</h4><span id="trainingStatus" class="status-badge ${iaTreinada?'status-ready':'status-error'}">${iaTreinada?'✓ Treinada':'Pendente'}</span><button class="btn btn-upload" onclick="document.getElementById('uploadManual').click()">📁 Upload CSV</button><input type="file" id="uploadManual" accept=".csv" onchange="importarArquivo(this,'${loteria}')" style="display:none;"></div>`;
+    let controlesExtras = '';
+    if (config?.temDispersao) {
+        const min = config.dispersaoMin || 5;
+        const max = config.dispersaoMax || 25;
+        controlesExtras = `<div class="dispersao-slider">
+            <label class="config-label">🎯 Dispersão</label>
+            <input type="range" id="dispersaoSlider" min="${min}" max="${max}" value="${dispersaoAtual}" oninput="window.atualizarDispersao(this.value)">
+            <div class="dispersao-valor">Bloquear números recentes: <strong id="dispersaoValor">${dispersaoAtual} concursos</strong></div>
+        </div>`;
+    }
+    
+    let html = `<div class="card"><h3 style="color:${config?.cor || '#8b5cf6'};">${config?.icone || '🎯'} ${config?.nome || loteria} - IA V.6.1 PRO</h3>`;
+    if (!cache?.carregado) {
+        html += `<div class="mensagem-erro"><strong>⚠️ Nenhum dado!</strong><br>📁 Upload do CSV (pasta /csv/)</div>`;
+    }
+    html += `<div style="display:flex;gap:15px;flex-wrap:wrap;margin:15px 0;">
+        <h4>📁 ${dadosCount} concursos</h4>
+        <span id="trainingStatus" class="status-badge ${iaTreinada?'status-ready':'status-error'}">${iaTreinada?'✓ Treinada':'Pendente'}</span>
+        <button class="btn btn-upload" onclick="document.getElementById('uploadManual').click()">📁 Upload CSV</button>
+        <input type="file" id="uploadManual" accept=".csv" onchange="importarArquivo(this,'${loteria}')" style="display:none;">
+    </div>`;
     html += `<div class="stats-grid"><div class="stat-card">Concursos: ${dadosCount}</div><div class="stat-card">Período: ${dadosFiltradosCount}</div><div class="stat-card">Engine: 🧠 V.6.1 PRO</div></div></div>`;
     
     html += `<div class="card"><h4>📅 Período (Baseado em data real)</h4><div class="filtros">
@@ -618,9 +502,14 @@ function renderizarConteudo(loteria) {
         animacaoHtml = `<div id="iaTrainingAnimation" style="display: none;"></div>`;
     }
     
-    html += `<div class="training-section"><h4>🧠 Treinamento da IA</h4><div style="display:flex;gap:15px;flex-wrap:wrap;"><span id="trainingStatus2" class="status-badge ${iaTreinada?'status-ready':'status-error'}">${iaTreinada?'Treinado ✓':'Não Treinado'}</span><button class="btn btn-treinar" onclick="window.treinarIAComFiltrosAtuais()">🚀 Treinar IA</button><button class="btn btn-backtest" onclick="window.executarBacktesting()">🔬 Backtest</button><button class="btn btn-relatorio" onclick="window.mostrarRelatorioPadroes()">📋 Relatório</button></div><div class="training-progress"><div class="training-progress-bar" id="trainingProgressBar" style="width:${iaTreinada?'100%':'0%'};"></div></div><div class="training-log" id="trainingLog">${iaTreinada?'✅ IA pronta!':'⏳ Clique em Treinar'}</div>${animacaoHtml}</div>`;
+    html += `<div class="training-section"><h4>🧠 Treinamento da IA</h4><div style="display:flex;gap:15px;flex-wrap:wrap;">
+        <span id="trainingStatus2" class="status-badge ${iaTreinada?'status-ready':'status-error'}">${iaTreinada?'Treinado ✓':'Não Treinado'}</span>
+        <button class="btn btn-treinar" onclick="window.treinarIAComFiltrosAtuais()">🚀 Treinar IA</button>
+        <button class="btn btn-backtest" onclick="window.executarBacktesting()">🔬 Backtest</button>
+        <button class="btn btn-relatorio" onclick="window.mostrarRelatorioPadroes()">📋 Relatório</button>
+    </div><div class="training-progress"><div class="training-progress-bar" id="trainingProgressBar" style="width:${iaTreinada?'100%':'0%'};"></div></div>
+    <div class="training-log" id="trainingLog">${iaTreinada?'✅ IA pronta!':'⏳ Clique em Treinar'}</div>${animacaoHtml}</div>`;
     
-    // Configurações
     html += `<div id="configVisualizacao" style="background: rgba(56, 189, 248, 0.1); border-radius: 12px; padding: 12px; margin: 15px 0; border-left: 4px solid #38bdf8;">
         <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">📋 CONFIGURAÇÕES ATUAIS:</div>
         <div id="configTags" style="display: flex; flex-wrap: wrap; gap: 8px;">
@@ -628,7 +517,6 @@ function renderizarConteudo(loteria) {
         </div>
     </div>`;
     
-    // Card de Configurar e Gerar Jogos
     html += `<div class="card"><h4>🎲 Configurar e Gerar Jogos</h4>
     <div class="config-card-grid">
         <div>
@@ -646,15 +534,17 @@ function renderizarConteudo(loteria) {
             </select>
         </div>`;
     
-    if (config && config.temDispersao) {
+    if (config?.temDispersao) {
+        const min = config.dispersaoMin || 5;
+        const max = config.dispersaoMax || 25;
         html += `<div>
             <label class="config-label">🎯 Dispersão</label>
-            <input type="range" id="dispersaoSlider" min="${config.dispersaoMin}" max="${config.dispersaoMax}" value="${dispersaoAtual}" oninput="window.atualizarDispersao(this.value); window.atualizarVisualizacaoConfiguracoes?.()">
+            <input type="range" id="dispersaoSlider" min="${min}" max="${max}" value="${dispersaoAtual}" oninput="window.atualizarDispersao(this.value); window.atualizarVisualizacaoConfiguracoes?.()">
             <div class="dispersao-valor">Bloquear números recentes: <strong id="dispersaoValor">${dispersaoAtual} concursos</strong></div>
         </div>`;
     }
     
-    if (config && config.permiteBolao) {
+    if (config?.permiteBolao) {
         html += `<div>
             <label class="config-label">⭐ MODO BOLÃO (PRO)</label>
             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -667,7 +557,7 @@ function renderizarConteudo(loteria) {
     
     html += `</div>`;
     
-    if (config && config.permiteBolao) {
+    if (config?.permiteBolao) {
         html += `<div id="bolaoContainer" style="display: none; margin-top: 15px; padding: 15px; background: rgba(139, 92, 246, 0.1); border-radius: 12px; border-left: 4px solid #8b5cf6;">
             <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
                 <div style="flex: 2; min-width: 200px;">
@@ -684,14 +574,12 @@ function renderizarConteudo(loteria) {
         </div>`;
     }
     
-    html += `<button class="btn btn-primary" onclick="window.gerarJogos()" style="background:${config ? config.cor : '#38bdf8'}; margin-top: 20px; width: 100%; max-width: 300px; display: block; margin-left: auto; margin-right: auto;">${config ? config.icone : '🎲'} GERAR JOGOS (R$ 3,00/jogo)</button>
+    html += `<button class="btn btn-primary" onclick="window.gerarJogos()" style="background:${config?.cor || '#8b5cf6'}; margin-top: 20px; width: 100%; max-width: 300px; display: block; margin-left: auto; margin-right: auto;">${config?.icone || '🎯'} GERAR JOGOS (R$ 3,00/jogo)</button>
     <div id="backtestResultados" style="margin-top:15px;"></div>
     <div id="resultados" style="margin-top:20px;"></div>
     </div>`;
     
-    if (window.REGRAS_OFICIAIS && window.REGRAS_OFICIAIS[loteria]) {
-        html += `<div class="regras-oficiais"><h4>📜 Regras</h4><p>${window.REGRAS_OFICIAIS[loteria]}</p></div>`;
-    }
+    html += `<div class="regras-oficiais"><h4>📜 Regras</h4><p>${window.REGRAS_OFICIAIS?.[loteria] || 'Regras não disponíveis'}</p></div>`;
     
     html += `
     <div class="footer-buttons">
@@ -736,14 +624,10 @@ window.filtrosTreinamento = () => filtrosTreinamento;
 window.dispersaoAtual = () => dispersaoAtual;
 window.periodoSelecionado = () => periodoSelecionado;
 
-// 🔧 MELHORIA 4: Exportar dadosExtrasAtuais
-window.dadosExtrasAtuais = () => dadosExtrasAtuais;
-
 window.setIaTreinada = (val) => { iaTreinada = val; };
 window.setAiModel = (model) => { aiModel = model; };
 window.setFiltrosTreinamento = (filtros) => { filtrosTreinamento = filtros; };
 window.setIsTraining = (val) => { isTraining = val; };
 window.setDadosAtuais = (dados) => { dadosAtuais = dados; };
-window.setDadosExtrasAtuais = (dados) => { dadosExtrasAtuais = dados; };
 
-console.log('✅ LOTERIAS.js carregado (VERSÃO DEFINITIVA CORRIGIDA)');
+console.log('✅ LOTERIAS.js carregado (V2.0)');
