@@ -12,7 +12,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
     
     <style>
-        /* Estilos existentes... */
         .stats-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
         .lottery-grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px; }
         .lottery-card-stats { background: var(--bg-secondary); padding: 15px; border-radius: var(--radius); border: 2px solid var(--border); cursor: pointer; transition: all 0.3s; text-align: center; }
@@ -48,7 +47,58 @@
         .loteca-bar .empate { background: #f59e0b; height: 100%; border-radius: 3px; }
         .loteca-bar .fora { background: #ef4444; height: 100%; border-radius: 3px; }
         .loteca-legend { display: flex; gap: 15px; font-size: 11px; color: var(--text-secondary); margin-top: 6px; flex-wrap: wrap; }
-        @media (max-width: 768px) { .stats-cards-grid { grid-template-columns: 1fr; } .lottery-grid-stats { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); } }
+        .user-info-bar {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: var(--bg-card);
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            border: 1px solid var(--border);
+        }
+        .user-info-bar .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .user-info-bar .info-item .label {
+            font-weight: 300;
+        }
+        .user-info-bar .info-item .value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .user-info-bar .info-item .value.pro {
+            color: #f59e0b;
+        }
+        .user-info-bar .info-item .value.free {
+            color: #94a3b8;
+        }
+        .user-info-bar .info-item .badge-pro {
+            background: linear-gradient(135deg, #f59e0b, #eab308);
+            color: #1e293b;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .user-info-bar .info-item .badge-free {
+            background: #334155;
+            color: #94a3b8;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        @media (max-width: 768px) { 
+            .stats-cards-grid { grid-template-columns: 1fr; } 
+            .lottery-grid-stats { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+            .user-info-bar { flex-direction: column; align-items: stretch; gap: 10px; }
+        }
     </style>
 </head>
 <body>
@@ -64,6 +114,35 @@
     </div>
 
     <div class="stats-container">
+        <!-- 🔒 Barra de informações do usuário -->
+        <div class="user-info-bar" id="userInfoBar">
+            <div class="info-item">
+                <span>👤</span>
+                <span class="label">Usuário:</span>
+                <span class="value" id="userEmail">Não autenticado</span>
+            </div>
+            <div class="info-item">
+                <span>⭐</span>
+                <span class="label">Plano:</span>
+                <span id="userPlanBadge" class="badge-free">FREE</span>
+            </div>
+            <div class="info-item">
+                <span>💳</span>
+                <span class="label">Créditos:</span>
+                <span class="value" id="userCredits">0</span>
+            </div>
+            <div class="info-item" id="proExpiresContainer" style="display:none;">
+                <span>📅</span>
+                <span class="label">Expira em:</span>
+                <span class="value" id="userProExpires">-</span>
+            </div>
+            <div class="info-item" style="margin-left: auto;">
+                <button onclick="window.location.href='index.html'" style="background: #8b5cf6; border: none; padding: 6px 16px; border-radius: 20px; color: white; font-weight: 600; cursor: pointer; font-size: 12px;">
+                    🔑 Sistema
+                </button>
+            </div>
+        </div>
+
         <div class="lottery-grid-stats" id="lotteryGridStats"></div>
         
         <div class="card">
@@ -89,39 +168,43 @@
 
     <script>
         // ============================================
+        // 🔒 CONFIGURAÇÃO DO FIREBASE (SEGURA)
+        // ============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCA_FoID7Ch8LkcwK5TbQSK23lU7BxQMuE",
+            authDomain: "loteriasia.firebaseapp.com",
+            projectId: "loteriasia",
+            storageBucket: "loteriasia.firebasestorage.app",
+            messagingSenderId: "124650527048",
+            appId: "1:124650527048:web:bc335922cb9e1586c3fb7d"
+        };
+        
+        // ============================================
+        // INICIALIZAR FIREBASE
+        // ============================================
+        if (!firebase.apps || firebase.apps.length === 0) {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                console.log('✅ Firebase inicializado com sucesso');
+            } catch (error) {
+                console.error('❌ Erro ao inicializar Firebase:', error);
+            }
+        }
+        
+        // ============================================
         // CONFIGURAÇÕES
         // ============================================
-        const API_URL = 'https://loterias-ia.vercel.app/api/statistics';
-        
-        // 🔒 Configuração do Firebase - AGORA VINDO DO BACKEND
-        // A página busca a configuração do backend, não tem chaves expostas
-        let firebaseConfig = null;
-        let isUserPro = false;
+        const API_URL = 'https://loterias-ia.vercel.app/api';
+        let userData = {
+            isPro: false,
+            credits: 0,
+            proExpiresAt: null,
+            email: null,
+            uid: null
+        };
         let loteriaAtualStats = 'megasena';
         let periodoSelecionadoStats = 'all';
         let dadosAtuaisStats = null;
-        
-        // ============================================
-        // 🔒 BUSCAR CONFIGURAÇÃO DO FIREBASE DO BACKEND
-        // ============================================
-        async function carregarConfigFirebase() {
-            try {
-                const response = await fetch('/api/config/firebase');
-                const data = await response.json();
-                firebaseConfig = data;
-                
-                // Inicializa Firebase com a configuração do backend
-                if (!firebase.apps || firebase.apps.length === 0) {
-                    firebase.initializeApp(firebaseConfig);
-                }
-                
-                console.log('✅ Firebase configurado com segurança');
-                return true;
-            } catch (error) {
-                console.error('❌ Erro ao carregar configuração do Firebase:', error);
-                return false;
-            }
-        }
         
         // ============================================
         // CONFIGURAÇÕES DAS LOTERIAS
@@ -140,61 +223,118 @@
         };
         
         // ============================================
-        // VERIFICAR USUÁRIO PRO (via Firebase)
+        // 🔒 VERIFICAR USUÁRIO PRO (COM AS 3 MELHORIAS)
         // ============================================
         function verificarUsuarioPro() {
             firebase.auth().onAuthStateChanged(async (user) => {
                 if (user) {
                     try {
-                        // 🔒 Busca o status PRO via API segura
-                        const response = await fetch('/api/user/status', {
+                        userData.uid = user.uid;
+                        userData.email = user.email;
+                        
+                        // 🔒 Busca os dados do usuário via backend
+                        const response = await fetch(`${API_URL}/user/status`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ uid: user.uid })
                         });
+                        
                         const data = await response.json();
-                        isUserPro = data.isPro || false;
-                        console.log('📊 Usuário PRO:', isUserPro);
+                        
+                        // CORREÇÃO 1: Verifica success
+                        if (data.success) {
+                            // CORREÇÃO 2: Usa todos os dados retornados
+                            userData.isPro = data.isPro || false;
+                            userData.credits = data.credits || 0;
+                            userData.proExpiresAt = data.proExpiresAt || null;
+                            console.log('📊 Dados do usuário:', userData);
+                        } else {
+                            // Usuário não encontrado no Supabase
+                            console.log('📊 Usuário não encontrado no banco:', data.error);
+                            userData.isPro = false;
+                            userData.credits = 0;
+                            userData.proExpiresAt = null;
+                        }
+                        
                     } catch(e) {
-                        isUserPro = false;
-                        console.log('📊 Usuário não encontrado');
+                        console.error('❌ Erro ao verificar usuário:', e);
+                        userData.isPro = false;
+                        userData.credits = 0;
+                        userData.proExpiresAt = null;
                     }
                 } else {
-                    isUserPro = false;
                     console.log('📊 Nenhum usuário logado');
+                    userData.isPro = false;
+                    userData.credits = 0;
+                    userData.proExpiresAt = null;
+                    userData.email = null;
+                    userData.uid = null;
                 }
+                
+                // Atualiza a UI com os dados do usuário
+                atualizarUserInfo();
+                
+                // Recarrega as estatísticas com o status PRO atualizado
                 await carregarEstatisticas();
             });
+        }
+        
+        // ============================================
+        // ATUALIZAR INFORMAÇÕES DO USUÁRIO NA UI
+        // ============================================
+        function atualizarUserInfo() {
+            document.getElementById('userEmail').textContent = userData.email || 'Não autenticado';
+            document.getElementById('userCredits').textContent = userData.credits || 0;
+            
+            const planBadge = document.getElementById('userPlanBadge');
+            if (userData.isPro) {
+                planBadge.textContent = '⭐ PRO';
+                planBadge.className = 'badge-pro';
+                
+                // Mostra a data de expiração
+                const expiresContainer = document.getElementById('proExpiresContainer');
+                expiresContainer.style.display = 'flex';
+                if (userData.proExpiresAt) {
+                    const date = new Date(userData.proExpiresAt);
+                    document.getElementById('userProExpires').textContent = date.toLocaleDateString('pt-BR');
+                } else {
+                    document.getElementById('userProExpires').textContent = 'Indefinido';
+                }
+            } else {
+                planBadge.textContent = 'FREE';
+                planBadge.className = 'badge-free';
+                document.getElementById('proExpiresContainer').style.display = 'none';
+            }
         }
         
         // ============================================
         // FUNÇÕES DE FORMATAÇÃO
         // ============================================
         function formatarNumero(numero, incluirZero) {
-            if (!isUserPro) return '<span class="numero-pro" title="🔒 Disponível no Plano PRO">⭐⭐ PRO ⭐⭐</span>';
+            if (!userData.isPro) return '<span class="numero-pro" title="🔒 Disponível no Plano PRO">⭐⭐ PRO ⭐⭐</span>';
             if (numero === 0 && incluirZero) return '00';
             return String(numero).padStart(2, '0');
         }
         
         function formatarDupla(dupla, incluirZero) {
-            if (!isUserPro) return '(⭐⭐, ⭐⭐)';
+            if (!userData.isPro) return '(⭐⭐, ⭐⭐)';
             return `(${formatarNumero(dupla[0], incluirZero)}, ${formatarNumero(dupla[1], incluirZero)})`;
         }
         
         function formatarTripla(tripla, incluirZero) {
-            if (!isUserPro) return '(⭐⭐, ⭐⭐, ⭐⭐)';
+            if (!userData.isPro) return '(⭐⭐, ⭐⭐, ⭐⭐)';
             return `(${formatarNumero(tripla[0], incluirZero)}, ${formatarNumero(tripla[1], incluirZero)}, ${formatarNumero(tripla[2], incluirZero)})`;
         }
         
         // ============================================
-        // CARREGAR ESTATÍSTICAS
+        // CARREGAR ESTATÍSTICAS DA API
         // ============================================
         async function carregarEstatisticas() {
             const container = document.getElementById('estatisticasContent');
             container.innerHTML = '<div class="loading-stats">📊 Carregando estatísticas...</div>';
             
             try {
-                const url = `${API_URL}?lottery=${loteriaAtualStats}&period=${periodoSelecionadoStats}`;
+                const url = `${API_URL}/statistics?lottery=${loteriaAtualStats}&period=${periodoSelecionadoStats}`;
                 console.log(`📥 Buscando estatísticas: ${url}`);
                 
                 const response = await fetch(url);
@@ -248,9 +388,11 @@
             const container = document.getElementById('estatisticasContent');
             const config = LOTERIAS_STATS[loteriaAtualStats];
             
-            // LOTECA
+            // ============================================
+            // LOTECA - Renderização Especial
+            // ============================================
             if (loteriaAtualStats === 'loteca' && data.loteca) {
-                const proWarning = !isUserPro ? `
+                const proWarning = !userData.isPro ? `
                     <div class="pro-overlay" style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; margin-bottom: 20px;">
                         <span class="pro-badge-stats">⭐ PLANO PRO ⭐</span>
                         <p style="margin-top: 10px; font-size: 13px;">Faça login com uma conta PRO para visualizar todos os números e estatísticas completas!</p>
@@ -268,7 +410,7 @@
                             <div class="stats-list">
                                 ${frequenciaGlobal.map(item => `
                                     <div class="stats-item">
-                                        <span class="${isUserPro ? 'numero' : 'numero-pro'}">${isUserPro ? item.resultado : '⭐⭐ PRO ⭐⭐'}</span>
+                                        <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${userData.isPro ? item.resultado : '⭐⭐ PRO ⭐⭐'}</span>
                                         <span class="quantidade">${item.quantidade} vez(es)</span>
                                     </div>
                                 `).join('')}
@@ -310,7 +452,9 @@
                 return;
             }
             
-            // TIMEMANIA e DIA DE SORTE
+            // ============================================
+            // TIMEMANIA e DIA DE SORTE - Com elementos extras
+            // ============================================
             const maisSorteados = data.maisSorteados || [];
             const menosSorteados = data.menosSorteados || [];
             const duplas = data.duplas || [];
@@ -329,7 +473,7 @@
                 return;
             }
             
-            const proWarning = !isUserPro ? `
+            const proWarning = !userData.isPro ? `
                 <div class="pro-overlay" style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; margin-bottom: 20px;">
                     <span class="pro-badge-stats">⭐ PLANO PRO ⭐</span>
                     <p style="margin-top: 10px; font-size: 13px;">Faça login com uma conta PRO para visualizar todos os números e estatísticas completas!</p>
@@ -349,7 +493,7 @@
                         <div class="stats-list">
                             ${elementosExtras.map(item => `
                                 <div class="stats-item">
-                                    <span class="${isUserPro ? 'numero' : 'numero-pro'}">${isUserPro ? item.nome : '⭐⭐ PRO ⭐⭐'}</span>
+                                    <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${userData.isPro ? item.nome : '⭐⭐ PRO ⭐⭐'}</span>
                                     <span class="quantidade">${item.quantidade} vez(es)</span>
                                 </div>
                             `).join('')}
@@ -367,7 +511,7 @@
                         <div class="stats-list">
                             ${maisSorteados.length > 0 ? maisSorteados.map(item => `
                                 <div class="stats-item">
-                                    <span class="${isUserPro ? 'numero' : 'numero-pro'}">${formatarNumero(item.numero, config.incluirZero)}</span>
+                                    <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarNumero(item.numero, config.incluirZero)}</span>
                                     <span class="quantidade">${item.quantidade} vez(es)</span>
                                 </div>
                             `).join('') : `
@@ -383,7 +527,7 @@
                         <div class="stats-list">
                             ${menosSorteados.length > 0 ? menosSorteados.map(item => `
                                 <div class="stats-item">
-                                    <span class="${isUserPro ? 'numero' : 'numero-pro'}">${formatarNumero(item.numero, config.incluirZero)}</span>
+                                    <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarNumero(item.numero, config.incluirZero)}</span>
                                     <span class="quantidade">${item.quantidade} vez(es)</span>
                                 </div>
                             `).join('') : `
@@ -399,7 +543,7 @@
                         <div class="stats-list">
                             ${duplas.length > 0 ? duplas.map(item => `
                                 <div class="stats-item">
-                                    <span class="${isUserPro ? 'numero' : 'numero-pro'}">${formatarDupla(item.dupla, config.incluirZero)}</span>
+                                    <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarDupla(item.dupla, config.incluirZero)}</span>
                                     <span class="quantidade">${item.quantidade} vez(es)</span>
                                 </div>
                             `).join('') : `
@@ -415,7 +559,7 @@
                         <div class="stats-list">
                             ${triplas.length > 0 ? triplas.map(item => `
                                 <div class="stats-item">
-                                    <span class="${isUserPro ? 'numero' : 'numero-pro'}">${formatarTripla(item.tripla, config.incluirZero)}</span>
+                                    <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarTripla(item.tripla, config.incluirZero)}</span>
                                     <span class="quantidade">${item.quantidade} vez(es)</span>
                                 </div>
                             `).join('') : `
@@ -468,7 +612,7 @@
         // ============================================
         // INICIALIZAÇÃO
         // ============================================
-        async function init() {
+        function init() {
             carregarGrid();
             
             document.querySelectorAll('.periodo-btn').forEach(btn => {
@@ -480,17 +624,8 @@
                 });
             });
             
-            // 🔒 Carrega configuração do Firebase do backend
-            const configLoaded = await carregarConfigFirebase();
-            
-            if (configLoaded) {
-                // ✅ Verifica usuário PRO
-                verificarUsuarioPro();
-            } else {
-                // ⚠️ Fallback: usuário como FREE
-                isUserPro = false;
-                await carregarEstatisticas();
-            }
+            // ✅ Verifica usuário PRO via Firebase
+            verificarUsuarioPro();
         }
         
         window.selecionarLoteriaStats = selecionarLoteriaStats;
