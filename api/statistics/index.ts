@@ -1,4 +1,4 @@
-// api/statistics/index.ts 24/06/26
+// api/statistics/index.ts 25/06/26
 // api/statistics/index.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
@@ -23,31 +23,83 @@ const LOTTERY_CONFIGS: Record<string, {
     nomeElemento?: string;
     tipoElemento?: 'time' | 'mes';
 }> = {
-    megasena: { maxNumero: 60, numerosPadrao: 6, incluirZero: false, nome: 'Mega-Sena' },
-    quina: { maxNumero: 80, numerosPadrao: 5, incluirZero: false, nome: 'Quina' },
-    lotofacil: { maxNumero: 25, numerosPadrao: 15, incluirZero: false, nome: 'Lotofácil' },
-    lotomania: { maxNumero: 99, numerosPadrao: 20, incluirZero: true, nome: 'Lotomania' },
-    duplasena: { maxNumero: 50, numerosPadrao: 6, incluirZero: false, nome: 'Dupla Sena' },
-    timemania: { maxNumero: 80, numerosPadrao: 7, incluirZero: false, nome: 'Timemania', temElementoExtra: true, nomeElemento: 'Time do Coração', tipoElemento: 'time' },
-    milionaria: { maxNumero: 50, numerosPadrao: 6, incluirZero: false, nome: '+Milionária' },
-    loteca: { maxNumero: 3, numerosPadrao: 14, incluirZero: true, nome: 'Loteca' },
-    diadesorte: { maxNumero: 31, numerosPadrao: 7, incluirZero: false, nome: 'Dia de Sorte', temElementoExtra: true, nomeElemento: 'Mês de Sorte', tipoElemento: 'mes' },
-    supersete: { maxNumero: 9, numerosPadrao: 7, incluirZero: true, nome: 'Super Sete' }
+    megasena: { 
+        maxNumero: 60, 
+        numerosPadrao: 6, 
+        incluirZero: false,
+        nome: 'Mega-Sena' 
+    },
+    quina: { 
+        maxNumero: 80, 
+        numerosPadrao: 5, 
+        incluirZero: false,
+        nome: 'Quina' 
+    },
+    lotofacil: { 
+        maxNumero: 25, 
+        numerosPadrao: 15, 
+        incluirZero: false,
+        nome: 'Lotofácil' 
+    },
+    lotomania: { 
+        maxNumero: 99, 
+        numerosPadrao: 20, 
+        incluirZero: true,
+        nome: 'Lotomania' 
+    },
+    duplasena: { 
+        maxNumero: 50, 
+        numerosPadrao: 6, 
+        incluirZero: false,
+        nome: 'Dupla Sena' 
+    },
+    timemania: { 
+        maxNumero: 80, 
+        numerosPadrao: 7, 
+        incluirZero: false,
+        nome: 'Timemania',
+        temElementoExtra: true,
+        nomeElemento: 'Time do Coração',
+        tipoElemento: 'time'
+    },
+    milionaria: { 
+        maxNumero: 50, 
+        numerosPadrao: 6, 
+        incluirZero: false,
+        nome: '+Milionária' 
+    },
+    loteca: { 
+        maxNumero: 3, 
+        numerosPadrao: 14, 
+        incluirZero: true,
+        nome: 'Loteca' 
+    },
+    diadesorte: { 
+        maxNumero: 31, 
+        numerosPadrao: 7, 
+        incluirZero: false,
+        nome: 'Dia de Sorte',
+        temElementoExtra: true,
+        nomeElemento: 'Mês de Sorte',
+        tipoElemento: 'mes'
+    },
+    supersete: { 
+        maxNumero: 9, 
+        numerosPadrao: 7, 
+        incluirZero: true,
+        nome: 'Super Sete' 
+    }
 };
 
 // ============================================
-// PROCESSAR CSV (CORRIGIDO PARA LOTECA)
+// PROCESSAR CSV
 // ============================================
 function processarCSV(texto: string, config: any): { 
     dados: number[][]; 
     datas: string[]; 
     elementosExtras: (number | string)[] 
 } {
-    // 🔥 CORREÇÃO: Remove linhas vazias e espaços extras
-    const linhas = texto.split('\n')
-        .map(l => l.trim())
-        .filter(l => l.length > 0);
-    
+    const linhas = texto.split('\n').filter(l => l.trim() && !l.startsWith('Data'));
     const dados: number[][] = [];
     const datas: string[] = [];
     const elementosExtras: (number | string)[] = [];
@@ -57,69 +109,64 @@ function processarCSV(texto: string, config: any): {
         return { dados, datas, elementosExtras };
     }
     
-    // 🔥 CORREÇÃO: Detecta o separador
-    const primeiraLinha = linhas[0];
-    const sep = primeiraLinha.includes(';') ? ';' : ',';
+    const sep = linhas[0]?.includes(';') ? ';' : ',';
     console.log(`📊 Processando ${config.nome} com separador: "${sep}"`);
     
-    // 🔥 CORREÇÃO: Detecta colunas (removendo espaços)
-    const colunasHeader = primeiraLinha.split(sep).map(c => c.trim());
-    console.log(`📊 Colunas detectadas (${colunasHeader.length}):`, colunasHeader);
-    
-    let dataIndex = -1;
+    // 🔥 Detecta as colunas
+    const header = linhas[0];
+    const colunasHeader = header.split(sep);
     let extraColumnIndex = -1;
+    let dataIndex = -1;
+    let extraColumnName = '';
     
-    // 🔥 CORREÇÃO: Procura coluna de data (aceita qualquer variação)
     for (let j = 0; j < colunasHeader.length; j++) {
-        const colName = colunasHeader[j].toLowerCase();
+        const colName = colunasHeader[j].trim().toLowerCase();
         
-        // Procura "data" ou "sorteio" (qualquer variação)
-        if (colName.includes('data') || colName.includes('sorteio') || colName.includes('apura')) {
+        // Detecta coluna de data
+        if (colName.includes('data') || colName.includes('sorteio')) {
             dataIndex = j;
-            console.log(`📅 Coluna de Data: "${colunasHeader[j]}" (índice ${j})`);
+            console.log(`📅 Coluna de Data detectada: "${colunasHeader[j].trim()}" (índice ${j})`);
         }
         
-        // Procura coluna extra (mês ou time)
+        // Detecta coluna de elemento extra (Mês ou Time)
         if (colName.includes('mes') || colName.includes('mês') || colName.includes('time')) {
             extraColumnIndex = j;
-            console.log(`📊 Coluna Extra: "${colunasHeader[j]}" (índice ${j})`);
+            extraColumnName = colunasHeader[j].trim();
+            console.log(`📊 Coluna Extra detectada: "${extraColumnName}" (índice ${j})`);
         }
     }
     
-    // 🔥 CORREÇÃO: Se não encontrou "data", usa a primeira coluna
+    // Se não encontrou "Data", tenta a primeira coluna
     if (dataIndex === -1) {
         dataIndex = 0;
-        console.log(`⚠️ Coluna de Data não encontrada, usando primeira coluna: "${colunasHeader[0]}"`);
+        console.log(`⚠️ Coluna de Data não detectada, usando primeira coluna`);
     }
     
-    // 🔥 CORREÇÃO: Se não encontrou coluna extra, usa a última
+    // Se não encontrou a coluna extra, tenta a última coluna
     if (extraColumnIndex === -1) {
         extraColumnIndex = colunasHeader.length - 1;
-        console.log(`⚠️ Coluna Extra não encontrada, usando última: "${colunasHeader[extraColumnIndex]}"`);
+        extraColumnName = colunasHeader[extraColumnIndex]?.trim() || 'Extra';
+        console.log(`⚠️ Coluna extra não detectada, usando última: "${extraColumnName}"`);
     }
     
     const isDiaDeSorte = config.nome === 'Dia de Sorte';
     const isTimemania = config.nome === 'Timemania';
     const isLoteca = config.nome === 'Loteca';
     
-    // 🔥 CORREÇÃO: Começa da linha 1 (pula o cabeçalho)
     for (let i = 1; i < linhas.length; i++) {
         const linha = linhas[i];
-        if (!linha) continue;
+        if (!linha.trim()) continue;
         
-        let colunas = linha.split(sep).map(c => c.trim());
+        let colunas = linha.split(sep);
         
-        // 🔥 CORREÇÃO: Remove colunas vazias no final
-        while (colunas.length > 0 && colunas[colunas.length - 1] === '') {
+        while (colunas.length > 0 && colunas[colunas.length - 1].trim() === '') {
             colunas.pop();
         }
         
         if (colunas.length < 2) continue;
         
-        // 🔥 CORREÇÃO: Pega a data
-        const dataStr = colunas[dataIndex] || '';
-        if (!dataStr) continue;
-        
+        // 🔥 Pega a data
+        let dataStr = colunas[dataIndex]?.trim() || '';
         let dataFormatada = dataStr;
         if (dataStr.includes('-')) {
             const [a, m, d] = dataStr.split('-');
@@ -127,87 +174,54 @@ function processarCSV(texto: string, config: any): {
         }
         datas.push(dataFormatada);
         
-        // Pega o elemento extra (se houver)
+        // 🔥 Pega o elemento extra
         let elementoExtra: number | string | null = null;
+        
         if (extraColumnIndex < colunas.length) {
-            const valor = colunas[extraColumnIndex] || '';
+            const valor = colunas[extraColumnIndex]?.trim() || '';
+            
             if (isDiaDeSorte) {
+                // Dia de Sorte: o valor já é um número (1-12)
                 const num = parseInt(valor);
                 if (!isNaN(num) && num >= 1 && num <= 12) {
                     elementoExtra = num;
+                    if (i < 5) console.log(`📅 Mês capturado: ${num} (${MESES_NOME[num]})`);
                 }
-            } else if (isTimemania && valor && isNaN(parseInt(valor))) {
-                elementoExtra = valor;
+            } else if (isTimemania) {
+                // Timemania: o valor é o nome do time
+                if (valor && valor.length > 0 && isNaN(parseInt(valor))) {
+                    elementoExtra = valor;
+                    if (i < 5) console.log(`⚽ Time capturado: "${valor}"`);
+                }
             }
         }
         
-        // 🔥 LOTECA: Extrai os 14 jogos
+        // 🔥 Extrai os números
         const numeros: number[] = [];
-        if (isLoteca) {
-            // 🔥 CORREÇÃO: Pega apenas as colunas que são jogos (ignora data e extras)
-            for (let j = 0; j < colunas.length; j++) {
-                if (j === dataIndex || j === extraColumnIndex) continue;
-                
-                const valor = colunas[j] || '';
-                if (valor === '') continue;
-                
+        for (let j = 0; j < colunas.length; j++) {
+            if (j === dataIndex || j === extraColumnIndex) continue;
+            
+            let valor = colunas[j]?.trim();
+            if (valor === '' || valor === undefined) continue;
+            
+            // 🔥 LOTECA: Converte "Coluna X" para números
+            if (isLoteca) {
                 let num: number | null = null;
-                const valorLower = valor.toLowerCase().trim();
-                
-                // 🔥 CORREÇÃO: Mapeia os valores do CSV
-                if (valorLower.includes('coluna 1') || 
-                    valorLower === '1' || 
-                    valorLower === 'coluna1' ||
-                    valorLower === 'casa') {
-                    num = 0; // Vitória do mandante (1)
-                } else if (valorLower.includes('coluna do meio') || 
-                           valorLower.includes('meio') || 
-                           valorLower === 'x' || 
-                           valorLower === '0' ||
-                           valorLower === 'empate') {
-                    num = 1; // Empate (X)
-                } else if (valorLower.includes('coluna 2') || 
-                           valorLower === '2' || 
-                           valorLower === 'coluna2' ||
-                           valorLower === 'fora') {
-                    num = 2; // Vitória do visitante (2)
-                } else {
-                    // Tenta extrair número
+                if (valor.includes('Coluna 1') || valor === '1') num = 0;
+                else if (valor.includes('Coluna do meio') || valor.includes('Meio') || valor === 'X') num = 1;
+                else if (valor.includes('Coluna 2') || valor === '2') num = 2;
+                else {
                     const match = valor.match(/\d+/);
-                    if (match) {
-                        const extracted = parseInt(match[0]);
-                        if (extracted >= 0 && extracted <= 3) {
-                            num = extracted;
-                        }
-                    }
+                    if (match) num = parseInt(match[0]);
                 }
                 
                 if (num !== null && num >= 0 && num <= 3) {
                     numeros.push(num);
                 }
+                continue;
             }
             
-            // 🔥 CORREÇÃO: Verifica se tem 14 números
-            if (numeros.length >= 14) {
-                const numerosSorteados = numeros.slice(0, 14);
-                const numerosOrdenados = [...numerosSorteados].sort((a, b) => a - b);
-                dados.push(numerosOrdenados);
-            } else {
-                // 🔥 LOG: Mostra quantos números foram encontrados
-                if (i < 5) {
-                    console.log(`⚠️ Linha ${i}: ${numeros.length} números encontrados (esperado 14)`);
-                }
-            }
-            continue;
-        }
-        
-        // 🔥 OUTRAS LOTERIAS: Processamento normal
-        for (let j = 0; j < colunas.length; j++) {
-            if (j === dataIndex || j === extraColumnIndex) continue;
-            
-            const valor = colunas[j] || '';
-            if (valor === '') continue;
-            
+            // Outras loterias: converte para número
             let num = parseInt(valor);
             if (isNaN(num)) {
                 const match = valor.match(/\d+/);
@@ -221,12 +235,19 @@ function processarCSV(texto: string, config: any): {
             }
         }
         
-        // Salva elemento extra
+        // 🔥 Salva o elemento extra
         if (config.temElementoExtra && elementoExtra !== null) {
             elementosExtras.push(elementoExtra);
+        } else if (config.temElementoExtra) {
+            // Fallback
+            if (isDiaDeSorte) {
+                elementosExtras.push(0);
+            } else if (isTimemania) {
+                elementosExtras.push('Desconhecido');
+            }
         }
         
-        // Salva os números
+        // 🔥 Salva os números
         if (numeros.length >= config.numerosPadrao) {
             const numerosSorteados = numeros.slice(0, config.numerosPadrao);
             const numerosOrdenados = [...numerosSorteados].sort((a, b) => a - b);
@@ -258,13 +279,13 @@ function obterUltimaData(datas: string[]): Date | null {
 }
 
 // ============================================
-// FILTRO POR PERÍODO
+// FILTRO POR PERÍODO COM DATAS (CORRIGIDO)
 // ============================================
 function filtrarPorPeriodoComDatas(
     dados: number[][], 
     datas: string[],
     elementosExtras: (number | string)[],
-    period: string | number
+    period: string | number | string[]
 ): { 
     dadosFiltrados: number[][]; 
     datasFiltradas: string[];
@@ -272,7 +293,15 @@ function filtrarPorPeriodoComDatas(
     dataInicio: string; 
     dataFim: string 
 } {
-    if (period === 'all' || dados.length === 0 || datas.length === 0) {
+    // 🔥 CORREÇÃO: Normaliza o período
+    let periodValue: string | number;
+    if (Array.isArray(period)) {
+        periodValue = period[0] || 'all';
+    } else {
+        periodValue = period;
+    }
+    
+    if (periodValue === 'all' || dados.length === 0 || datas.length === 0) {
         return {
             dadosFiltrados: dados,
             datasFiltradas: datas,
@@ -282,7 +311,7 @@ function filtrarPorPeriodoComDatas(
         };
     }
     
-    const anos = typeof period === 'number' ? period : parseInt(period as string);
+    const anos = typeof periodValue === 'number' ? periodValue : parseInt(periodValue as string);
     if (isNaN(anos) || anos <= 0) {
         return {
             dadosFiltrados: dados,
@@ -353,7 +382,9 @@ function calcularFrequenciaNumeros(dados: number[][], maxNumero: number, incluir
     
     dados.forEach(jogo => {
         jogo.forEach(numero => {
-            if (numero >= 0 && numero < limite) freq[numero]++;
+            if (numero >= 0 && numero < limite) {
+                freq[numero]++;
+            }
         });
     });
     
@@ -367,6 +398,7 @@ function calcularFrequenciaNumeros(dados: number[][], maxNumero: number, incluir
 
 function calcularDuplasMaisSorteadas(dados: number[][]) {
     const duplas = new Map<string, number>();
+    
     dados.forEach(jogo => {
         for (let i = 0; i < jogo.length; i++) {
             for (let j = i + 1; j < jogo.length; j++) {
@@ -375,6 +407,7 @@ function calcularDuplasMaisSorteadas(dados: number[][]) {
             }
         }
     });
+    
     const resultados = Array.from(duplas.entries()).map(([key, quantidade]) => {
         const [num1, num2] = key.split(',').map(Number);
         return { dupla: [num1, num2], quantidade };
@@ -385,6 +418,7 @@ function calcularDuplasMaisSorteadas(dados: number[][]) {
 
 function calcularTriplasMaisSorteadas(dados: number[][]) {
     const triplas = new Map<string, number>();
+    
     dados.forEach(jogo => {
         for (let i = 0; i < jogo.length; i++) {
             for (let j = i + 1; j < jogo.length; j++) {
@@ -396,6 +430,7 @@ function calcularTriplasMaisSorteadas(dados: number[][]) {
             }
         }
     });
+    
     const resultados = Array.from(triplas.entries()).map(([key, quantidade]) => {
         const [num1, num2, num3] = key.split(',').map(Number);
         return { tripla: [num1, num2, num3], quantidade };
@@ -405,7 +440,7 @@ function calcularTriplasMaisSorteadas(dados: number[][]) {
 }
 
 // ============================================
-// CALCULAR ELEMENTOS EXTRAS
+// CALCULAR ELEMENTOS EXTRAS (Times/Meses)
 // ============================================
 function calcularElementosExtras(
     elementos: (number | string)[],
@@ -553,8 +588,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
         
+        // 🔥 CORREÇÃO: Passa period como string
         const { dadosFiltrados, datasFiltradas, elementosExtrasFiltrados, dataInicio, dataFim } = 
-            filtrarPorPeriodoComDatas(dados, datas, elementosExtras, period);
+            filtrarPorPeriodoComDatas(dados, datas, elementosExtras, period as string);
         
         const filteredDraws = dadosFiltrados.length;
         
