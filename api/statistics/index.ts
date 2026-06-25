@@ -3,6 +3,41 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // ============================================
+// MAPEAMENTO DE MESES
+// ============================================
+const MESES_MAP: Record<string, number> = {
+    'janeiro': 1, 'fevereiro': 2, 'março': 3, 'abril': 4,
+    'maio': 5, 'junho': 6, 'julho': 7, 'agosto': 8,
+    'setembro': 9, 'outubro': 10, 'novembro': 11, 'dezembro': 12
+};
+
+const MESES_NOME: Record<number, string> = {
+    1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
+    5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto',
+    9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
+};
+
+// Função para converter nome do mês para número
+function mesParaNumero(nome: string): number | null {
+    const nomeLower = nome.toLowerCase().trim();
+    // Remove acentos para comparação
+    const semAcentos = nomeLower
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    
+    // Tenta encontrar no mapa
+    for (const [key, value] of Object.entries(MESES_MAP)) {
+        const keySemAcentos = key
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+        if (semAcentos === keySemAcentos || semAcentos === key) {
+            return value;
+        }
+    }
+    return null;
+}
+
+// ============================================
 // CONFIGURAÇÕES DAS LOTERIAS
 // ============================================
 const LOTTERY_CONFIGS: Record<string, { 
@@ -88,12 +123,12 @@ const LOTTERY_CONFIGS: Record<string, {
 function processarCSV(texto: string, config: any): { 
     dados: number[][]; 
     datas: string[]; 
-    elementosExtras: string[] 
+    elementosExtras: number[]  // 🔥 Agora são números
 } {
     const linhas = texto.split('\n').filter(l => l.trim() && !l.startsWith('Data'));
     const dados: number[][] = [];
     const datas: string[] = [];
-    const elementosExtras: string[] = [];
+    const elementosExtras: number[] = [];  // 🔥 Números (1-12 para meses)
     
     if (linhas.length === 0) {
         console.log(`⚠️ Nenhuma linha encontrada no CSV para ${config.nome}`);
@@ -137,7 +172,7 @@ function processarCSV(texto: string, config: any): {
         
         // Extrai números e elementos extras
         const numeros: number[] = [];
-        let elementoExtra: string | null = null;
+        let elementoExtraNumero: number | null = null;
         const isTimemania = config.nome === 'Timemania';
         const isDiaDeSorte = config.nome === 'Dia de Sorte';
         const isLoteca = config.nome === 'Loteca';
@@ -148,24 +183,29 @@ function processarCSV(texto: string, config: any): {
             
             // 🔥 TIMEMANIA: Captura Time do Coração (string)
             if (isTimemania && isNaN(parseInt(valor))) {
-                elementoExtra = valor;
+                elementoExtraNumero = 0; // Placeholder, será tratado como string depois
                 continue;
             }
             
-            // 🔥 DIA DE SORTE: Captura Mês de Sorte (string)
+            // 🔥 DIA DE SORTE: Captura Mês de Sorte e converte para número
             if (isDiaDeSorte && isNaN(parseInt(valor))) {
-                elementoExtra = valor;
+                const mesNum = mesParaNumero(valor);
+                if (mesNum !== null) {
+                    elementoExtraNumero = mesNum;  // 🔥 Armazena como número (1-12)
+                    console.log(`📅 Mês capturado: "${valor}" -> ${mesNum} (${MESES_NOME[mesNum]})`);
+                } else {
+                    console.log(`⚠️ Mês não reconhecido: "${valor}"`);
+                }
                 continue;
             }
             
-            // 🔥 LOTECA: Converte "Coluna 1" -> 0, "Coluna do meio" -> 1, "Coluna 2" -> 2
+            // 🔥 LOTECA: Converte "Coluna X" para números
             if (isLoteca) {
                 let num: number | null = null;
                 if (valor.includes('Coluna 1')) num = 0;
                 else if (valor.includes('Coluna do meio') || valor.includes('Meio')) num = 1;
                 else if (valor.includes('Coluna 2')) num = 2;
                 else {
-                    // Tenta extrair número
                     const match = valor.match(/\d+/);
                     if (match) num = parseInt(match[0]);
                 }
@@ -191,10 +231,10 @@ function processarCSV(texto: string, config: any): {
         }
         
         // Para Timemania e Dia de Sorte: salva o elemento extra
-        if (config.temElementoExtra && elementoExtra) {
-            elementosExtras.push(elementoExtra);
+        if (config.temElementoExtra && elementoExtraNumero !== null) {
+            elementosExtras.push(elementoExtraNumero);
         } else if (config.temElementoExtra) {
-            elementosExtras.push('Não informado');
+            elementosExtras.push(0); // Placeholder
         }
         
         // Para Loteca: já temos os números convertidos
@@ -240,21 +280,20 @@ function obterUltimaData(datas: string[]): Date | null {
 }
 
 // ============================================
-// CORREÇÃO 2: ADICIONAR DATAS DO PERÍODO
+// FILTRO POR PERÍODO COM DATAS
 // ============================================
 function filtrarPorPeriodoComDatas(
     dados: number[][], 
     datas: string[],
-    elementosExtras: string[],
+    elementosExtras: number[],
     period: string | number
 ): { 
     dadosFiltrados: number[][]; 
     datasFiltradas: string[];
-    elementosExtrasFiltrados: string[];
+    elementosExtrasFiltrados: number[];
     dataInicio: string; 
     dataFim: string 
 } {
-    // Se for "all", retorna todos os dados
     if (period === 'all' || dados.length === 0 || datas.length === 0) {
         return {
             dadosFiltrados: dados,
@@ -296,7 +335,7 @@ function filtrarPorPeriodoComDatas(
     
     const dadosFiltrados: number[][] = [];
     const datasFiltradas: string[] = [];
-    const elementosExtrasFiltrados: string[] = [];
+    const elementosExtrasFiltrados: number[] = [];
     
     for (let i = 0; i < dados.length; i++) {
         const dataStr = datas[i];
@@ -394,35 +433,41 @@ function calcularTriplasMaisSorteadas(dados: number[][]) {
 }
 
 // ============================================
-// 🔥 NOVO: CALCULAR ELEMENTOS EXTRAS (Times/Meses)
+// 🔥 CALCULAR ELEMENTOS EXTRAS (Times/Meses)
 // ============================================
-function calcularElementosExtras(elementos: string[], tipo: 'time' | 'mes'): { nome: string; quantidade: number }[] {
-    const freq = new Map<string, number>();
+function calcularElementosExtras(
+    elementos: number[], 
+    tipo: 'time' | 'mes'
+): { nome: string; quantidade: number; id: number }[] {
+    const freq = new Map<number, number>();
     
     elementos.forEach(el => {
-        if (el && el !== 'Não informado') {
+        if (el > 0) {  // Ignora placeholders (0)
             freq.set(el, (freq.get(el) || 0) + 1);
         }
     });
     
-    const resultados = Array.from(freq.entries()).map(([nome, quantidade]) => ({
-        nome,
-        quantidade
-    }));
+    const resultados = Array.from(freq.entries()).map(([id, quantidade]) => {
+        let nome: string;
+        if (tipo === 'mes') {
+            nome = MESES_NOME[id] || `Mês ${id}`;
+        } else {
+            nome = `Time ${id}`; // Placeholder para times (será tratado depois)
+        }
+        return { nome, quantidade, id };
+    });
     
     resultados.sort((a, b) => b.quantidade - a.quantidade);
     return resultados.slice(0, 20);
 }
 
 // ============================================
-// 🔥 NOVO: CALCULAR ESTATÍSTICAS DA LOTECA
+// CALCULAR ESTATÍSTICAS DA LOTECA
 // ============================================
 function calcularEstatisticasLoteca(dados: number[][]) {
-    // Frequência global (0, 1, 2)
     const freqGlobal = [0, 0, 0];
     const freqPorJogo: { casa: number; empate: number; fora: number }[] = [];
     
-    // Inicializa freqPorJogo
     if (dados.length > 0) {
         for (let i = 0; i < dados[0].length; i++) {
             freqPorJogo.push({ casa: 0, empate: 0, fora: 0 });
@@ -431,7 +476,6 @@ function calcularEstatisticasLoteca(dados: number[][]) {
     
     dados.forEach(jogo => {
         jogo.forEach((resultado, index) => {
-            // 0 = Casa, 1 = Empate, 2 = Fora
             if (resultado === 0) {
                 freqGlobal[0]++;
                 if (freqPorJogo[index]) freqPorJogo[index].casa++;
@@ -465,7 +509,6 @@ function calcularEstatisticasLoteca(dados: number[][]) {
 // HANDLER PRINCIPAL
 // ============================================
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -518,11 +561,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         
         const csvText = await response.text();
         
-        // Log das primeiras linhas para debug
         const primeirasLinhas = csvText.split('\n').slice(0, 3).join('\n');
         console.log(`📄 Primeiras linhas do CSV (${lottery}):`, primeirasLinhas);
         
-        // Processa o CSV
         const { dados, datas, elementosExtras } = processarCSV(csvText, config);
         const totalDraws = dados.length;
         
@@ -544,7 +585,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
         
-        // Filtra por período com datas
         const { dadosFiltrados, datasFiltradas, elementosExtrasFiltrados, dataInicio, dataFim } = 
             filtrarPorPeriodoComDatas(dados, datas, elementosExtras, period);
         
@@ -572,11 +612,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // CÁLCULOS ESPECÍFICOS POR LOTERIA
         // ============================================
         
-        // 🔥 LOTECA: Estatísticas especiais
+        // 🔥 LOTECA
         if (config.nome === 'Loteca') {
             const estatisticasLoteca = calcularEstatisticasLoteca(dadosFiltrados);
-            
-            // Para Loteca, a frequência de números é a frequência global
             const frequencia = calcularFrequenciaNumeros(dadosFiltrados, config.maxNumero, config.incluirZero);
             const maisSorteados = frequencia.slice(0, 20);
             const menosSorteados = [...frequencia]
@@ -600,7 +638,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
         
-        // 🔥 TIMEMANIA e DIA DE SORTE: Com elementos extras
+        // 🔥 TIMEMANIA e DIA DE SORTE
         if (config.temElementoExtra) {
             const frequencia = calcularFrequenciaNumeros(dadosFiltrados, config.maxNumero, config.incluirZero);
             const duplas = calcularDuplasMaisSorteadas(dadosFiltrados);
@@ -611,11 +649,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 .sort((a, b) => a.quantidade - b.quantidade)
                 .slice(0, 20);
             
-            // Calcula elementos extras (Times ou Meses)
+            // 🔥 Calcula elementos extras e converte para nomes
             const elementosExtrasCalculados = calcularElementosExtras(
                 elementosExtrasFiltrados,
                 config.tipoElemento || 'time'
             );
+            
+            // 🔥 Para Timemania, precisamos de um tratamento especial para os times
+            // Por enquanto, retorna os IDs (será melhorado depois)
             
             return res.status(200).json({
                 success: true,
@@ -635,7 +676,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
         
-        // 🔥 OUTRAS LOTERIAS: Processamento normal
+        // 🔥 OUTRAS LOTERIAS
         const frequencia = calcularFrequenciaNumeros(dadosFiltrados, config.maxNumero, config.incluirZero);
         const duplas = calcularDuplasMaisSorteadas(dadosFiltrados);
         const triplas = calcularTriplasMaisSorteadas(dadosFiltrados);
