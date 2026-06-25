@@ -8,11 +8,10 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Email fixo PRO (mantido do seu código)
+// Email fixo PRO
 const PRO_FIXED_EMAIL = 'mresquadriasaluminio@gmail.com';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -38,14 +37,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 isPro: false,
                 credits: 0,
                 proExpiresAt: null,
-                daysLeft: 0
+                daysLeft: 0,
+                user: null
             });
         }
         
         // 🔒 Busca todos os dados do usuário
         const { data: user, error } = await supabase
             .from('usuarios')
-            .select('is_pro, creditos, pro_expires_at, email')
+            .select('is_pro, creditos, pro_expires_at, email, nome, foto')
             .eq('uid', uid)
             .maybeSingle();
         
@@ -57,7 +57,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 isPro: false,
                 credits: 0,
                 proExpiresAt: null,
-                daysLeft: 0
+                daysLeft: 0,
+                user: null
             });
         }
         
@@ -79,13 +80,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             daysLeft = Math.max(0, Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
         }
         
-        // ✅ Retorna com todos os dados (CORREÇÕES 1, 2 e 3)
+        // 🔥 Retorna com NOME em vez de EMAIL
         return res.status(200).json({
             success: true,
             isPro: isPro,
             credits: user.creditos || 0,
             proExpiresAt: proExpiresAt,
-            daysLeft: daysLeft
+            daysLeft: daysLeft,
+            user: {
+                uid: user.uid,
+                nome: user.nome || user.email?.split('@')[0] || 'Usuário',
+                email: user.email,
+                foto: user.foto || null
+            }
         });
         
     } catch (error: any) {
@@ -96,7 +103,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             isPro: false,
             credits: 0,
             proExpiresAt: null,
-            daysLeft: 0
+            daysLeft: 0,
+            user: null
         });
     }
 }
