@@ -45,7 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // 🔒 Busca todos os dados do usuário
         const { data: user, error } = await supabase
             .from('usuarios')
-            .select('is_pro, creditos, pro_expires_at, email, nome, foto')
+            .select('is_pro, creditos, pro_expires_at, email, nome, foto_url')
             .eq('uid', uid)
             .maybeSingle();
         
@@ -66,21 +66,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         let proExpiresAt = user.pro_expires_at || null;
         let daysLeft = 0;
         
-        // 🔥 Verifica se é o email fixo PRO
+        // 🔥 Verifica se é o email fixo PRO (força PRO)
         if (user.email === PRO_FIXED_EMAIL) {
             isPro = true;
+            // Se não tiver data de expiração, coloca 365 dias
+            if (!proExpiresAt) {
+                proExpiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+            }
             daysLeft = 365;
-            proExpiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
         }
         
-        // Calcula dias restantes
+        // Calcula dias restantes (se tiver data de expiração)
         if (isPro && proExpiresAt) {
             const expiresAt = new Date(proExpiresAt);
             const now = new Date();
             daysLeft = Math.max(0, Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
         }
         
-        // 🔥 Retorna com NOME em vez de EMAIL
+        // 🔥 Nome do usuário (fallback para email se nome for null)
+        const nomeUsuario = user.nome || user.email?.split('@')[0] || 'Usuário';
+        
         return res.status(200).json({
             success: true,
             isPro: isPro,
@@ -89,9 +94,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             daysLeft: daysLeft,
             user: {
                 uid: user.uid,
-                nome: user.nome || user.email?.split('@')[0] || 'Usuário',
+                nome: nomeUsuario,
                 email: user.email,
-                foto: user.foto || null
+                foto: user.foto_url || null
             }
         });
         
