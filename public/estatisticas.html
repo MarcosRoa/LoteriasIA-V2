@@ -7,7 +7,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     
+    <!-- ✅ Firebase SDK (obrigatório para auth) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    
     <style>
+        /* Estilos existentes... */
         .stats-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
         .lottery-grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px; }
         .lottery-card-stats { background: var(--bg-secondary); padding: 15px; border-radius: var(--radius); border: 2px solid var(--border); cursor: pointer; transition: all 0.3s; text-align: center; }
@@ -86,19 +91,40 @@
         // ============================================
         // CONFIGURAÇÕES
         // ============================================
-        // 🔒 SEGURO: API chamada via backend, sem chaves expostas
         const API_URL = 'https://loterias-ia.vercel.app/api/statistics';
         
-        // ✅ A autenticação agora é feita via backend
-        // O front-end apenas verifica o status do usuário via cookie/session
-        
+        // 🔒 Configuração do Firebase - AGORA VINDO DO BACKEND
+        // A página busca a configuração do backend, não tem chaves expostas
+        let firebaseConfig = null;
         let isUserPro = false;
         let loteriaAtualStats = 'megasena';
         let periodoSelecionadoStats = 'all';
         let dadosAtuaisStats = null;
         
         // ============================================
-        // CONFIGURAÇÕES DAS LOTERIAS (Apenas para exibição)
+        // 🔒 BUSCAR CONFIGURAÇÃO DO FIREBASE DO BACKEND
+        // ============================================
+        async function carregarConfigFirebase() {
+            try {
+                const response = await fetch('/api/config/firebase');
+                const data = await response.json();
+                firebaseConfig = data;
+                
+                // Inicializa Firebase com a configuração do backend
+                if (!firebase.apps || firebase.apps.length === 0) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                
+                console.log('✅ Firebase configurado com segurança');
+                return true;
+            } catch (error) {
+                console.error('❌ Erro ao carregar configuração do Firebase:', error);
+                return false;
+            }
+        }
+        
+        // ============================================
+        // CONFIGURAÇÕES DAS LOTERIAS
         // ============================================
         const LOTERIAS_STATS = {
             megasena: { nome: 'Mega-Sena', icone: '💰', numerosCSV: 6, maxNumero: 60, incluirZero: false },
@@ -114,19 +140,31 @@
         };
         
         // ============================================
-        // VERIFICAR USUÁRIO PRO (via API segura)
+        // VERIFICAR USUÁRIO PRO (via Firebase)
         // ============================================
-        async function verificarStatusPro() {
-            try {
-                // 🔒 Chama endpoint seguro que verifica o usuário via cookie/session
-                const response = await fetch('/api/auth/status');
-                const data = await response.json();
-                isUserPro = data.isPro || false;
-                console.log('📊 Usuário PRO:', isUserPro);
-            } catch (error) {
-                console.log('📊 Usuário não autenticado ou erro:', error);
-                isUserPro = false;
-            }
+        function verificarUsuarioPro() {
+            firebase.auth().onAuthStateChanged(async (user) => {
+                if (user) {
+                    try {
+                        // 🔒 Busca o status PRO via API segura
+                        const response = await fetch('/api/user/status', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ uid: user.uid })
+                        });
+                        const data = await response.json();
+                        isUserPro = data.isPro || false;
+                        console.log('📊 Usuário PRO:', isUserPro);
+                    } catch(e) {
+                        isUserPro = false;
+                        console.log('📊 Usuário não encontrado');
+                    }
+                } else {
+                    isUserPro = false;
+                    console.log('📊 Nenhum usuário logado');
+                }
+                await carregarEstatisticas();
+            });
         }
         
         // ============================================
@@ -149,7 +187,7 @@
         }
         
         // ============================================
-        // CARREGAR ESTATÍSTICAS DA API
+        // CARREGAR ESTATÍSTICAS
         // ============================================
         async function carregarEstatisticas() {
             const container = document.getElementById('estatisticasContent');
@@ -210,9 +248,7 @@
             const container = document.getElementById('estatisticasContent');
             const config = LOTERIAS_STATS[loteriaAtualStats];
             
-            // ============================================
-            // LOTECA - Renderização Especial
-            // ============================================
+            // LOTECA
             if (loteriaAtualStats === 'loteca' && data.loteca) {
                 const proWarning = !isUserPro ? `
                     <div class="pro-overlay" style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; margin-bottom: 20px;">
@@ -274,9 +310,7 @@
                 return;
             }
             
-            // ============================================
-            // TIMEMANIA e DIA DE SORTE - Com elementos extras
-            // ============================================
+            // TIMEMANIA e DIA DE SORTE
             const maisSorteados = data.maisSorteados || [];
             const menosSorteados = data.menosSorteados || [];
             const duplas = data.duplas || [];
@@ -446,11 +480,17 @@
                 });
             });
             
-            // Verifica status do usuário PRO
-            await verificarStatusPro();
+            // 🔒 Carrega configuração do Firebase do backend
+            const configLoaded = await carregarConfigFirebase();
             
-            // Carrega estatísticas iniciais
-            await carregarEstatisticas();
+            if (configLoaded) {
+                // ✅ Verifica usuário PRO
+                verificarUsuarioPro();
+            } else {
+                // ⚠️ Fallback: usuário como FREE
+                isUserPro = false;
+                await carregarEstatisticas();
+            }
         }
         
         window.selecionarLoteriaStats = selecionarLoteriaStats;
