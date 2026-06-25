@@ -3,39 +3,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // ============================================
-// MAPEAMENTO DE MESES
+// MAPEAMENTO DE MESES (Número -> Nome)
 // ============================================
-const MESES_MAP: Record<string, number> = {
-    'janeiro': 1, 'fevereiro': 2, 'março': 3, 'abril': 4,
-    'maio': 5, 'junho': 6, 'julho': 7, 'agosto': 8,
-    'setembro': 9, 'outubro': 10, 'novembro': 11, 'dezembro': 12
-};
-
 const MESES_NOME: Record<number, string> = {
     1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
     5: 'Maio', 6: 'Junho', 7: 'Julho', 8: 'Agosto',
     9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
 };
-
-// Função para converter nome do mês para número
-function mesParaNumero(nome: string): number | null {
-    const nomeLower = nome.toLowerCase().trim();
-    // Remove acentos para comparação
-    const semAcentos = nomeLower
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
-    
-    // Tenta encontrar no mapa
-    for (const [key, value] of Object.entries(MESES_MAP)) {
-        const keySemAcentos = key
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '');
-        if (semAcentos === keySemAcentos || semAcentos === key) {
-            return value;
-        }
-    }
-    return null;
-}
 
 // ============================================
 // CONFIGURAÇÕES DAS LOTERIAS
@@ -123,12 +97,12 @@ const LOTTERY_CONFIGS: Record<string, {
 function processarCSV(texto: string, config: any): { 
     dados: number[][]; 
     datas: string[]; 
-    elementosExtras: number[]  // 🔥 Agora são números
+    elementosExtras: (number | string)[] 
 } {
     const linhas = texto.split('\n').filter(l => l.trim() && !l.startsWith('Data'));
     const dados: number[][] = [];
     const datas: string[] = [];
-    const elementosExtras: number[] = [];  // 🔥 Números (1-12 para meses)
+    const elementosExtras: (number | string)[] = [];
     
     if (linhas.length === 0) {
         console.log(`⚠️ Nenhuma linha encontrada no CSV para ${config.nome}`);
@@ -138,7 +112,49 @@ function processarCSV(texto: string, config: any): {
     const sep = linhas[0]?.includes(';') ? ';' : ',';
     console.log(`📊 Processando ${config.nome} com separador: "${sep}"`);
     
-    for (const linha of linhas) {
+    // 🔥 Detecta as colunas
+    const header = linhas[0];
+    const colunasHeader = header.split(sep);
+    let extraColumnIndex = -1;
+    let dataIndex = -1;
+    let extraColumnName = '';
+    
+    for (let j = 0; j < colunasHeader.length; j++) {
+        const colName = colunasHeader[j].trim().toLowerCase();
+        
+        // Detecta coluna de data
+        if (colName.includes('data') || colName.includes('sorteio')) {
+            dataIndex = j;
+            console.log(`📅 Coluna de Data detectada: "${colunasHeader[j].trim()}" (índice ${j})`);
+        }
+        
+        // Detecta coluna de elemento extra (Mês ou Time)
+        if (colName.includes('mes') || colName.includes('mês') || colName.includes('time')) {
+            extraColumnIndex = j;
+            extraColumnName = colunasHeader[j].trim();
+            console.log(`📊 Coluna Extra detectada: "${extraColumnName}" (índice ${j})`);
+        }
+    }
+    
+    // Se não encontrou "Data", tenta a primeira coluna
+    if (dataIndex === -1) {
+        dataIndex = 0;
+        console.log(`⚠️ Coluna de Data não detectada, usando primeira coluna`);
+    }
+    
+    // Se não encontrou a coluna extra, tenta a última coluna
+    if (extraColumnIndex === -1) {
+        extraColumnIndex = colunasHeader.length - 1;
+        extraColumnName = colunasHeader[extraColumnIndex]?.trim() || 'Extra';
+        console.log(`⚠️ Coluna extra não detectada, usando última: "${extraColumnName}"`);
+    }
+    
+    const isDiaDeSorte = config.nome === 'Dia de Sorte';
+    const isTimemania = config.nome === 'Timemania';
+    const isLoteca = config.nome === 'Loteca';
+    
+    for (let i = 1; i < linhas.length; i++) {
+        const linha = linhas[i];
         if (!linha.trim()) continue;
         
         let colunas = linha.split(sep);
@@ -149,20 +165,8 @@ function processarCSV(texto: string, config: any): {
         
         if (colunas.length < 2) continue;
         
-        // Encontra a coluna da data
-        let dataIndex = -1;
-        for (let j = 0; j < colunas.length; j++) {
-            const valor = colunas[j].trim();
-            if (/^\d{2}\/\d{2}\/\d{4}$/.test(valor) || /^\d{4}-\d{2}-\d{2}$/.test(valor)) {
-                dataIndex = j;
-                break;
-            }
-        }
-        
-        if (dataIndex === -1) continue;
-        
-        // Formata a data
-        const dataStr = colunas[dataIndex].trim();
+        // 🔥 Pega a data
+        let dataStr = colunas[dataIndex]?.trim() || '';
         let dataFormatada = dataStr;
         if (dataStr.includes('-')) {
             const [a, m, d] = dataStr.split('-');
@@ -170,41 +174,42 @@ function processarCSV(texto: string, config: any): {
         }
         datas.push(dataFormatada);
         
-        // Extrai números e elementos extras
-        const numeros: number[] = [];
-        let elementoExtraNumero: number | null = null;
-        const isTimemania = config.nome === 'Timemania';
-        const isDiaDeSorte = config.nome === 'Dia de Sorte';
-        const isLoteca = config.nome === 'Loteca';
+        // 🔥 Pega o elemento extra
+        let elementoExtra: number | string | null = null;
         
-        for (let j = dataIndex + 1; j < colunas.length; j++) {
+        if (extraColumnIndex < colunas.length) {
+            const valor = colunas[extraColumnIndex]?.trim() || '';
+            
+            if (isDiaDeSorte) {
+                // Dia de Sorte: o valor já é um número (1-12)
+                const num = parseInt(valor);
+                if (!isNaN(num) && num >= 1 && num <= 12) {
+                    elementoExtra = num;
+                    if (i < 5) console.log(`📅 Mês capturado: ${num} (${MESES_NOME[num]})`);
+                }
+            } else if (isTimemania) {
+                // Timemania: o valor é o nome do time
+                if (valor && valor.length > 0 && isNaN(parseInt(valor))) {
+                    elementoExtra = valor;
+                    if (i < 5) console.log(`⚽ Time capturado: "${valor}"`);
+                }
+            }
+        }
+        
+        // 🔥 Extrai os números
+        const numeros: number[] = [];
+        for (let j = 0; j < colunas.length; j++) {
+            if (j === dataIndex || j === extraColumnIndex) continue;
+            
             let valor = colunas[j]?.trim();
             if (valor === '' || valor === undefined) continue;
-            
-            // 🔥 TIMEMANIA: Captura Time do Coração (string)
-            if (isTimemania && isNaN(parseInt(valor))) {
-                elementoExtraNumero = 0; // Placeholder, será tratado como string depois
-                continue;
-            }
-            
-            // 🔥 DIA DE SORTE: Captura Mês de Sorte e converte para número
-            if (isDiaDeSorte && isNaN(parseInt(valor))) {
-                const mesNum = mesParaNumero(valor);
-                if (mesNum !== null) {
-                    elementoExtraNumero = mesNum;  // 🔥 Armazena como número (1-12)
-                    console.log(`📅 Mês capturado: "${valor}" -> ${mesNum} (${MESES_NOME[mesNum]})`);
-                } else {
-                    console.log(`⚠️ Mês não reconhecido: "${valor}"`);
-                }
-                continue;
-            }
             
             // 🔥 LOTECA: Converte "Coluna X" para números
             if (isLoteca) {
                 let num: number | null = null;
-                if (valor.includes('Coluna 1')) num = 0;
-                else if (valor.includes('Coluna do meio') || valor.includes('Meio')) num = 1;
-                else if (valor.includes('Coluna 2')) num = 2;
+                if (valor.includes('Coluna 1') || valor === '1') num = 0;
+                else if (valor.includes('Coluna do meio') || valor.includes('Meio') || valor === 'X') num = 1;
+                else if (valor.includes('Coluna 2') || valor === '2') num = 2;
                 else {
                     const match = valor.match(/\d+/);
                     if (match) num = parseInt(match[0]);
@@ -230,24 +235,19 @@ function processarCSV(texto: string, config: any): {
             }
         }
         
-        // Para Timemania e Dia de Sorte: salva o elemento extra
-        if (config.temElementoExtra && elementoExtraNumero !== null) {
-            elementosExtras.push(elementoExtraNumero);
+        // 🔥 Salva o elemento extra
+        if (config.temElementoExtra && elementoExtra !== null) {
+            elementosExtras.push(elementoExtra);
         } else if (config.temElementoExtra) {
-            elementosExtras.push(0); // Placeholder
-        }
-        
-        // Para Loteca: já temos os números convertidos
-        if (isLoteca) {
-            if (numeros.length >= config.numerosPadrao) {
-                const numerosSorteados = numeros.slice(0, config.numerosPadrao);
-                const numerosOrdenados = [...numerosSorteados].sort((a, b) => a - b);
-                dados.push(numerosOrdenados);
+            // Fallback
+            if (isDiaDeSorte) {
+                elementosExtras.push(0);
+            } else if (isTimemania) {
+                elementosExtras.push('Desconhecido');
             }
-            continue;
         }
         
-        // Para outras loterias: processamento normal
+        // 🔥 Salva os números
         if (numeros.length >= config.numerosPadrao) {
             const numerosSorteados = numeros.slice(0, config.numerosPadrao);
             const numerosOrdenados = [...numerosSorteados].sort((a, b) => a - b);
@@ -262,7 +262,7 @@ function processarCSV(texto: string, config: any): {
 }
 
 // ============================================
-// CORREÇÃO 3: MELHORAR SELEÇÃO DA ÚLTIMA DATA
+// FUNÇÃO PARA OBTER ÚLTIMA DATA
 // ============================================
 function obterUltimaData(datas: string[]): Date | null {
     const datasValidas = datas
@@ -285,12 +285,12 @@ function obterUltimaData(datas: string[]): Date | null {
 function filtrarPorPeriodoComDatas(
     dados: number[][], 
     datas: string[],
-    elementosExtras: number[],
+    elementosExtras: (number | string)[],
     period: string | number
 ): { 
     dadosFiltrados: number[][]; 
     datasFiltradas: string[];
-    elementosExtrasFiltrados: number[];
+    elementosExtrasFiltrados: (number | string)[];
     dataInicio: string; 
     dataFim: string 
 } {
@@ -335,7 +335,7 @@ function filtrarPorPeriodoComDatas(
     
     const dadosFiltrados: number[][] = [];
     const datasFiltradas: string[] = [];
-    const elementosExtrasFiltrados: number[] = [];
+    const elementosExtrasFiltrados: (number | string)[] = [];
     
     for (let i = 0; i < dados.length; i++) {
         const dataStr = datas[i];
@@ -433,29 +433,40 @@ function calcularTriplasMaisSorteadas(dados: number[][]) {
 }
 
 // ============================================
-// 🔥 CALCULAR ELEMENTOS EXTRAS (Times/Meses)
+// CALCULAR ELEMENTOS EXTRAS (Times/Meses)
 // ============================================
 function calcularElementosExtras(
-    elementos: number[], 
+    elementos: (number | string)[],
     tipo: 'time' | 'mes'
-): { nome: string; quantidade: number; id: number }[] {
-    const freq = new Map<number, number>();
+): { nome: string; quantidade: number; id?: number }[] {
+    const freq = new Map<string, number>();
+    const idMap = new Map<string, number>();
     
     elementos.forEach(el => {
-        if (el > 0) {  // Ignora placeholders (0)
-            freq.set(el, (freq.get(el) || 0) + 1);
+        if (el === null || el === undefined) return;
+        if (el === 0 || el === 'Desconhecido' || el === '') return;
+        
+        let nome: string;
+        let id: number | undefined;
+        
+        if (tipo === 'mes' && typeof el === 'number') {
+            nome = `${MESES_NOME[el]} (${el})`;
+            id = el;
+        } else {
+            nome = String(el);
+        }
+        
+        freq.set(nome, (freq.get(nome) || 0) + 1);
+        if (id !== undefined) {
+            idMap.set(nome, id);
         }
     });
     
-    const resultados = Array.from(freq.entries()).map(([id, quantidade]) => {
-        let nome: string;
-        if (tipo === 'mes') {
-            nome = MESES_NOME[id] || `Mês ${id}`;
-        } else {
-            nome = `Time ${id}`; // Placeholder para times (será tratado depois)
-        }
-        return { nome, quantidade, id };
-    });
+    const resultados = Array.from(freq.entries()).map(([nome, quantidade]) => ({
+        nome,
+        quantidade,
+        id: idMap.get(nome)
+    }));
     
     resultados.sort((a, b) => b.quantidade - a.quantidade);
     return resultados.slice(0, 20);
@@ -649,14 +660,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 .sort((a, b) => a.quantidade - b.quantidade)
                 .slice(0, 20);
             
-            // 🔥 Calcula elementos extras e converte para nomes
+            // 🔥 Calcula elementos extras
             const elementosExtrasCalculados = calcularElementosExtras(
                 elementosExtrasFiltrados,
                 config.tipoElemento || 'time'
             );
-            
-            // 🔥 Para Timemania, precisamos de um tratamento especial para os times
-            // Por enquanto, retorna os IDs (será melhorado depois)
             
             return res.status(200).json({
                 success: true,
