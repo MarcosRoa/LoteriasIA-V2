@@ -8,6 +8,10 @@
 // ============================================
 // LOTERIAS.js - Gerenciamento de loterias (VERSÃO DEFINITIVA CORRIGIDA) 25/06/2026
 // ============================================
+// js/loterias.js - VERSÃO COMPLETA CORRIGIDA
+// ============================================
+// LOTERIAS.js - Gerenciamento de loterias (VERSÃO DEFINITIVA CORRIGIDA)
+// ============================================
 
 // ============================================
 // VARIÁVEIS LOCAIS
@@ -25,7 +29,7 @@ let filtrosTreinamento = null;
 // Cache persistente em memória
 const cacheProcessamento = {};
 
-// 🔧 MELHORIA 3: Debounces separados
+// Debounces separados
 let debouncePeriodo = null;
 let debounceDispersao = null;
 
@@ -34,7 +38,6 @@ let debounceDispersao = null;
 // ============================================
 function debounce(func, wait) {
     return function executedFunction(...args) {
-        // Cada chamada cria seu próprio timeout
         const timeoutId = setTimeout(() => {
             func(...args);
         }, wait);
@@ -139,7 +142,6 @@ function getDatasPeriodo() {
     const datasFiltradas = window.cacheDatas[loteriaAtual]?.datas || [];
     if (datasFiltradas.length === 0 || dadosFiltrados.length === 0) return { inicio: 'N/A', fim: 'N/A' };
     
-    // 🔧 MELHORIA 2: Usar Set para busca O(1)
     const dadosFiltradosSet = new Set(dadosFiltrados);
     let primeiraData = null;
     let ultimaData = null;
@@ -196,7 +198,6 @@ const setPeriodoDebounced = debounce((p) => {
 }, 100);
 
 function setPeriodo(p) {
-    // 🔧 MELHORIA 3: Debounce separado para período
     if (debouncePeriodo) clearTimeout(debouncePeriodo);
     debouncePeriodo = setTimeout(() => {
         setPeriodoDebounced(p);
@@ -218,7 +219,6 @@ const atualizarDispersaoDebounced = debounce((v) => {
 }, 100);
 
 function atualizarDispersao(v) {
-    // 🔧 MELHORIA 3: Debounce separado para dispersão
     if (debounceDispersao) clearTimeout(debounceDispersao);
     debounceDispersao = setTimeout(() => {
         atualizarDispersaoDebounced(v);
@@ -287,7 +287,6 @@ function processarCSV(loteria, texto, nome) {
     
     if (linhas.length < 2) return;
     
-    // Força separador ';' para Loteca
     let sep = (loteria === 'loteca') ? ';' : (linhas[0].includes(';') ? ';' : ',');
     
     const dados = [];
@@ -307,7 +306,6 @@ function processarCSV(loteria, texto, nome) {
         return null;
     }
     
-    // 🔧 MELHORIA 1: Definir valor mínimo baseado em incluiZero
     const minimo = config.incluiZero ? 0 : 1;
     
     for (let i = 0; i < linhas.length; i++) {
@@ -334,8 +332,6 @@ function processarCSV(loteria, texto, nome) {
         }
         
         if (!data) continue;
-        
-        datas.push(data);
         
         const numeros = [];
         let timeCoracao = null;
@@ -374,21 +370,17 @@ function processarCSV(loteria, texto, nome) {
             // DIA DE SORTE - Captura o mês da sorte
             // ============================================
             if (loteria === 'diadesorte') {
-                // Se já temos 7 números, o próximo valor é o mês
                 if (numeros.length >= config.numeros) {
                     const numTeste = parseInt(valor);
                     let mes = null;
                     
                     if (!isNaN(numTeste) && numTeste >= 1 && numTeste <= 12) {
-                        // É um número (ex: 2, 12, 4)
                         mes = numTeste;
                     } else {
-                        // É texto (ex: "MARÇO", "JANEIRO") - converte
                         mes = converterMesTextoParaNumero(valor);
                     }
                     
                     if (mes !== null) {
-                        // 🔧 CORREÇÃO: Adiciona o mês DIRETAMENTE ao array de números
                         numeros.push(mes);
                         mesSorte = mes;
                     }
@@ -409,7 +401,6 @@ function processarCSV(loteria, texto, nome) {
                 }
             }
             
-            // 🔧 MELHORIA 1: Validar com o mínimo correto
             if (num >= minimo && num <= config.maxNumero) {
                 numeros.push(num);
             }
@@ -420,46 +411,59 @@ function processarCSV(loteria, texto, nome) {
         // ============================================
         if (loteria === 'loteca') {
             if (numeros.length === config.numeros) {
-                dados.push([...numeros]);  // Mantém ordem original!
+                dados.push([...numeros]);
                 dadosExtras.push(null);
+                // 🔥 CORREÇÃO: Só adiciona a data se o concurso for válido
+                datas.push(data);
             }
         } else {
             // DEMAIS LOTERIAS - Ordena os números
             if (numeros.length >= config.numeros) {
                 // Para Dia de Sorte, verificar se tem 8 elementos (7 números + 1 mês)
                 if (loteria === 'diadesorte') {
-                    // Se tem 8 elementos, o último é o mês
                     if (numeros.length === 8) {
                         const numerosJogo = numeros.slice(0, 7).sort((a, b) => a - b);
                         const mes = numeros[7];
-                        // Adiciona o mês como 8º elemento
                         numerosJogo.push(mes);
                         dados.push(numerosJogo);
                         dadosExtras.push(mesSorte || null);
+                        // 🔥 CORREÇÃO: Só adiciona a data se o concurso for válido
+                        datas.push(data);
                     } else if (numeros.length >= 7) {
-                        // Fallback: se não tiver mês, só os números
                         const numerosOrdenados = numeros.slice(0, 7).sort((a, b) => a - b);
                         dados.push(numerosOrdenados);
                         dadosExtras.push(null);
+                        // 🔥 CORREÇÃO: Só adiciona a data se o concurso for válido
+                        datas.push(data);
                     }
                 } else {
                     // Para outras loterias (Mega, Quina, etc.)
                     const numerosOrdenados = numeros.slice(0, config.numeros).sort((a, b) => a - b);
                     dados.push(numerosOrdenados);
                     
-                    // Salva os dados extras conforme a loteria
                     if (loteria === 'timemania') {
                         dadosExtras.push(timeCoracao || null);
                     } else {
                         dadosExtras.push(null);
                     }
+                    
+                    // 🔥 CORREÇÃO: Só adiciona a data se o concurso for válido
+                    datas.push(data);
                 }
             }
         }
     }
     
+    // 🔥 VALIDAÇÃO DE SINCRONIZAÇÃO
+    if (dados.length !== datas.length) {
+        console.error(
+            `🚨 ERRO DE SINCRONIZAÇÃO na loteria ${config.nome}!`,
+            `dados=${dados.length}`,
+            `datas=${datas.length}`
+        );
+    }
+    
     if (dados.length > 0) {
-        // Inicializar caches
         if (!window.cacheDados) window.cacheDados = {};
         if (!window.cacheDatas) window.cacheDatas = {};
         if (!window.cacheDadosExtras) window.cacheDadosExtras = {};
@@ -468,7 +472,6 @@ function processarCSV(loteria, texto, nome) {
         window.cacheDatas[loteria] = { datas };
         window.cacheDadosExtras[loteria] = dadosExtras;
         
-        // Limpar cache de processamento
         Object.keys(cacheProcessamento).forEach(key => {
             if (key.startsWith(loteria)) delete cacheProcessamento[key];
         });
@@ -620,7 +623,6 @@ function renderizarConteudo(loteria) {
     
     html += `<div class="training-section"><h4>🧠 Treinamento da IA</h4><div style="display:flex;gap:15px;flex-wrap:wrap;"><span id="trainingStatus2" class="status-badge ${iaTreinada?'status-ready':'status-error'}">${iaTreinada?'Treinado ✓':'Não Treinado'}</span><button class="btn btn-treinar" onclick="window.treinarIAComFiltrosAtuais()">🚀 Treinar IA</button><button class="btn btn-backtest" onclick="window.executarBacktesting()">🔬 Backtest</button><button class="btn btn-relatorio" onclick="window.mostrarRelatorioPadroes()">📋 Relatório</button></div><div class="training-progress"><div class="training-progress-bar" id="trainingProgressBar" style="width:${iaTreinada?'100%':'0%'};"></div></div><div class="training-log" id="trainingLog">${iaTreinada?'✅ IA pronta!':'⏳ Clique em Treinar'}</div>${animacaoHtml}</div>`;
     
-    // Configurações
     html += `<div id="configVisualizacao" style="background: rgba(56, 189, 248, 0.1); border-radius: 12px; padding: 12px; margin: 15px 0; border-left: 4px solid #38bdf8;">
         <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">📋 CONFIGURAÇÕES ATUAIS:</div>
         <div id="configTags" style="display: flex; flex-wrap: wrap; gap: 8px;">
@@ -628,7 +630,6 @@ function renderizarConteudo(loteria) {
         </div>
     </div>`;
     
-    // Card de Configurar e Gerar Jogos
     html += `<div class="card"><h4>🎲 Configurar e Gerar Jogos</h4>
     <div class="config-card-grid">
         <div>
@@ -735,8 +736,6 @@ window.aiModel = () => aiModel;
 window.filtrosTreinamento = () => filtrosTreinamento;
 window.dispersaoAtual = () => dispersaoAtual;
 window.periodoSelecionado = () => periodoSelecionado;
-
-// 🔧 MELHORIA 4: Exportar dadosExtrasAtuais
 window.dadosExtrasAtuais = () => dadosExtrasAtuais;
 
 window.setIaTreinada = (val) => { iaTreinada = val; };
