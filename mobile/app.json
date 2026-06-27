@@ -5,18 +5,29 @@
     "scheme": "loteriasia",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+
+    "userInterfaceStyle": "dark",
+
     "web": {
       "bundler": "metro"
     },
+
     "extra": {
       "eas": {
         "projectId": "cb127715-6e96-450c-ab9b-0ce467d4e0d4"
       }
     },
+
     "owner": "marcosroa",
+
     "android": {
       "package": "com.marcosroa.loteriasiamobile"
+    },
+
+    "splash": {
+      "backgroundColor": "#0f172a",
+      //"image": "./assets/images/logo.png",
+      //"resizeMode": "contain"
     }
   }
 }
