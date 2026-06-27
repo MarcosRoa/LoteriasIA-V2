@@ -1,3 +1,4 @@
+// src/components/TransformerLogo.tsx 26/06/2026
 import React, { useRef } from 'react';
 import { TouchableOpacity, StyleSheet, Vibration } from 'react-native';
 import Animated, {
