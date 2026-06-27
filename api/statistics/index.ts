@@ -1,4 +1,4 @@
-// api/statistics/index.ts 25/06/26
+// api/statistics/index.ts 27/06/26
 // api/statistics/index.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
@@ -22,6 +22,7 @@ const LOTTERY_CONFIGS: Record<string, {
     temElementoExtra?: boolean;
     nomeElemento?: string;
     tipoElemento?: 'time' | 'mes';
+    isSuperSete?: boolean;
 }> = {
     megasena: { 
         maxNumero: 60, 
@@ -87,48 +88,49 @@ const LOTTERY_CONFIGS: Record<string, {
         maxNumero: 9, 
         numerosPadrao: 7, 
         incluirZero: true,
-        nome: 'Super Sete' 
+        nome: 'Super Sete',
+        isSuperSete: true  // 🔥 FLAG PARA SUPER SETE
     }
 };
 
 // ============================================
-// PROCESSAR CSV
+// PROCESSAR CSV - VERSÃO CORRIGIDA PARA SUPER SETE
 // ============================================
 function processarCSV(texto: string, config: any): { 
     dados: number[][]; 
     datas: string[]; 
-    elementosExtras: (number | string)[] 
+    elementosExtras: (number | string)[];
+    dadosBrutos: number[][];  // 🔥 NOVO: mantém a ordem original das colunas
 } {
     const linhas = texto.split('\n').filter(l => l.trim() && !l.startsWith('Data'));
     const dados: number[][] = [];
+    const dadosBrutos: number[][] = [];  // 🔥 Guarda os números na ordem original
     const datas: string[] = [];
     const elementosExtras: (number | string)[] = [];
     
     if (linhas.length === 0) {
         console.log(`⚠️ Nenhuma linha encontrada no CSV para ${config.nome}`);
-        return { dados, datas, elementosExtras };
+        return { dados, datas, elementosExtras, dadosBrutos };
     }
     
     const sep = linhas[0]?.includes(';') ? ';' : ',';
     console.log(`📊 Processando ${config.nome} com separador: "${sep}"`);
     
-    // 🔥 Detecta as colunas
     const header = linhas[0];
     const colunasHeader = header.split(sep);
     let extraColumnIndex = -1;
     let dataIndex = -1;
     let extraColumnName = '';
+    let isSuperSete = config.isSuperSete || false;
     
     for (let j = 0; j < colunasHeader.length; j++) {
         const colName = colunasHeader[j].trim().toLowerCase();
         
-        // Detecta coluna de data
         if (colName.includes('data') || colName.includes('sorteio')) {
             dataIndex = j;
             console.log(`📅 Coluna de Data detectada: "${colunasHeader[j].trim()}" (índice ${j})`);
         }
         
-        // Detecta coluna de elemento extra (Mês ou Time)
         if (colName.includes('mes') || colName.includes('mês') || colName.includes('time')) {
             extraColumnIndex = j;
             extraColumnName = colunasHeader[j].trim();
@@ -136,13 +138,11 @@ function processarCSV(texto: string, config: any): {
         }
     }
     
-    // Se não encontrou "Data", tenta a primeira coluna
     if (dataIndex === -1) {
         dataIndex = 0;
         console.log(`⚠️ Coluna de Data não detectada, usando primeira coluna`);
     }
     
-    // Se não encontrou a coluna extra, tenta a última coluna
     if (extraColumnIndex === -1) {
         extraColumnIndex = colunasHeader.length - 1;
         extraColumnName = colunasHeader[extraColumnIndex]?.trim() || 'Extra';
@@ -165,7 +165,6 @@ function processarCSV(texto: string, config: any): {
         
         if (colunas.length < 2) continue;
         
-        // 🔥 Pega a data
         let dataStr = colunas[dataIndex]?.trim() || '';
         let dataFormatada = dataStr;
         if (dataStr.includes('-')) {
@@ -174,21 +173,18 @@ function processarCSV(texto: string, config: any): {
         }
         datas.push(dataFormatada);
         
-        // 🔥 Pega o elemento extra
         let elementoExtra: number | string | null = null;
         
         if (extraColumnIndex < colunas.length) {
             const valor = colunas[extraColumnIndex]?.trim() || '';
             
             if (isDiaDeSorte) {
-                // Dia de Sorte: o valor já é um número (1-12)
                 const num = parseInt(valor);
                 if (!isNaN(num) && num >= 1 && num <= 12) {
                     elementoExtra = num;
                     if (i < 5) console.log(`📅 Mês capturado: ${num} (${MESES_NOME[num]})`);
                 }
             } else if (isTimemania) {
-                // Timemania: o valor é o nome do time
                 if (valor && valor.length > 0 && isNaN(parseInt(valor))) {
                     elementoExtra = valor;
                     if (i < 5) console.log(`⚽ Time capturado: "${valor}"`);
@@ -196,15 +192,15 @@ function processarCSV(texto: string, config: any): {
             }
         }
         
-        // 🔥 Extrai os números
         const numeros: number[] = [];
+        const numerosBrutos: number[] = [];  // 🔥 Guarda na ordem original (para Super Sete)
+        
         for (let j = 0; j < colunas.length; j++) {
             if (j === dataIndex || j === extraColumnIndex) continue;
             
             let valor = colunas[j]?.trim();
             if (valor === '' || valor === undefined) continue;
             
-            // 🔥 LOTECA: Converte "Coluna X" para números
             if (isLoteca) {
                 let num: number | null = null;
                 if (valor.includes('Coluna 1') || valor === '1') num = 0;
@@ -217,11 +213,11 @@ function processarCSV(texto: string, config: any): {
                 
                 if (num !== null && num >= 0 && num <= 3) {
                     numeros.push(num);
+                    numerosBrutos.push(num);
                 }
                 continue;
             }
             
-            // Outras loterias: converte para número
             let num = parseInt(valor);
             if (isNaN(num)) {
                 const match = valor.match(/\d+/);
@@ -232,14 +228,13 @@ function processarCSV(texto: string, config: any): {
             const min = config.incluirZero ? 0 : 1;
             if (num >= min && num <= config.maxNumero) {
                 numeros.push(num);
+                numerosBrutos.push(num);
             }
         }
         
-        // 🔥 Salva o elemento extra
         if (config.temElementoExtra && elementoExtra !== null) {
             elementosExtras.push(elementoExtra);
         } else if (config.temElementoExtra) {
-            // Fallback
             if (isDiaDeSorte) {
                 elementosExtras.push(0);
             } else if (isTimemania) {
@@ -247,18 +242,26 @@ function processarCSV(texto: string, config: any): {
             }
         }
         
-        // 🔥 Salva os números
         if (numeros.length >= config.numerosPadrao) {
             const numerosSorteados = numeros.slice(0, config.numerosPadrao);
             const numerosOrdenados = [...numerosSorteados].sort((a, b) => a - b);
             dados.push(numerosOrdenados);
+            
+            // 🔥 Para Super Sete, guarda os números na ordem original (por coluna)
+            if (isSuperSete) {
+                const numerosBrutosFiltrados = numerosBrutos.slice(0, config.numerosPadrao);
+                dadosBrutos.push(numerosBrutosFiltrados);
+            }
         }
     }
     
     console.log(`✅ Processado ${dados.length} concursos para ${config.nome}`);
     console.log(`📊 Elementos extras capturados: ${elementosExtras.length}`);
+    if (isSuperSete) {
+        console.log(`📊 Dados brutos para Super Sete: ${dadosBrutos.length}`);
+    }
     
-    return { dados, datas, elementosExtras };
+    return { dados, datas, elementosExtras, dadosBrutos };
 }
 
 // ============================================
@@ -279,21 +282,22 @@ function obterUltimaData(datas: string[]): Date | null {
 }
 
 // ============================================
-// FILTRO POR PERÍODO COM DATAS (CORRIGIDO)
+// FILTRO POR PERÍODO
 // ============================================
 function filtrarPorPeriodoComDatas(
     dados: number[][], 
     datas: string[],
     elementosExtras: (number | string)[],
+    dadosBrutos: number[][],
     period: string | number | string[]
 ): { 
     dadosFiltrados: number[][]; 
     datasFiltradas: string[];
     elementosExtrasFiltrados: (number | string)[];
+    dadosBrutosFiltrados: number[][];
     dataInicio: string; 
     dataFim: string 
 } {
-    // 🔥 CORREÇÃO: Normaliza o período
     let periodValue: string | number;
     if (Array.isArray(period)) {
         periodValue = period[0] || 'all';
@@ -306,6 +310,7 @@ function filtrarPorPeriodoComDatas(
             dadosFiltrados: dados,
             datasFiltradas: datas,
             elementosExtrasFiltrados: elementosExtras,
+            dadosBrutosFiltrados: dadosBrutos,
             dataInicio: datas.length > 0 ? datas[0] : '',
             dataFim: datas.length > 0 ? datas[datas.length - 1] : ''
         };
@@ -317,6 +322,7 @@ function filtrarPorPeriodoComDatas(
             dadosFiltrados: dados,
             datasFiltradas: datas,
             elementosExtrasFiltrados: elementosExtras,
+            dadosBrutosFiltrados: dadosBrutos,
             dataInicio: datas.length > 0 ? datas[0] : '',
             dataFim: datas.length > 0 ? datas[datas.length - 1] : ''
         };
@@ -328,6 +334,7 @@ function filtrarPorPeriodoComDatas(
             dadosFiltrados: dados,
             datasFiltradas: datas,
             elementosExtrasFiltrados: elementosExtras,
+            dadosBrutosFiltrados: dadosBrutos,
             dataInicio: datas.length > 0 ? datas[0] : '',
             dataFim: datas.length > 0 ? datas[datas.length - 1] : ''
         };
@@ -343,6 +350,7 @@ function filtrarPorPeriodoComDatas(
     const dadosFiltrados: number[][] = [];
     const datasFiltradas: string[] = [];
     const elementosExtrasFiltrados: (number | string)[] = [];
+    const dadosBrutosFiltrados: number[][] = [];
     
     for (let i = 0; i < dados.length; i++) {
         const dataStr = datas[i];
@@ -361,6 +369,9 @@ function filtrarPorPeriodoComDatas(
             if (elementosExtras && i < elementosExtras.length) {
                 elementosExtrasFiltrados.push(elementosExtras[i]);
             }
+            if (dadosBrutos && i < dadosBrutos.length) {
+                dadosBrutosFiltrados.push(dadosBrutos[i]);
+            }
         }
     }
     
@@ -368,6 +379,7 @@ function filtrarPorPeriodoComDatas(
         dadosFiltrados,
         datasFiltradas,
         elementosExtrasFiltrados,
+        dadosBrutosFiltrados,
         dataInicio: datasFiltradas.length > 0 ? datasFiltradas[0] : '',
         dataFim: datasFiltradas.length > 0 ? datasFiltradas[datasFiltradas.length - 1] : ''
     };
@@ -439,9 +451,6 @@ function calcularTriplasMaisSorteadas(dados: number[][]) {
     return resultados;
 }
 
-// ============================================
-// CALCULAR ELEMENTOS EXTRAS (Times/Meses)
-// ============================================
 function calcularElementosExtras(
     elementos: (number | string)[],
     tipo: 'time' | 'mes'
@@ -477,9 +486,6 @@ function calcularElementosExtras(
     return resultados.slice(0, 20);
 }
 
-// ============================================
-// CALCULAR ESTATÍSTICAS DA LOTECA
-// ============================================
 function calcularEstatisticasLoteca(dados: number[][]) {
     const freqGlobal = [0, 0, 0];
     const freqPorJogo: { casa: number; empate: number; fora: number }[] = [];
@@ -562,12 +568,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 menosSorteados: [],
                 duplas: [],
                 triplas: [],
-                elementosExtras: []
+                elementosExtras: [],
+                columns: []  // 🔥 PARA SUPER SETE
             });
         }
         
         const csvText = await response.text();
-        const { dados, datas, elementosExtras } = processarCSV(csvText, config);
+        const { dados, datas, elementosExtras, dadosBrutos } = processarCSV(csvText, config);
         const totalDraws = dados.length;
         
         if (totalDraws === 0) {
@@ -584,13 +591,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 menosSorteados: [],
                 duplas: [],
                 triplas: [],
-                elementosExtras: []
+                elementosExtras: [],
+                columns: []
             });
         }
         
-        // 🔥 CORREÇÃO: Passa period como string
-        const { dadosFiltrados, datasFiltradas, elementosExtrasFiltrados, dataInicio, dataFim } = 
-            filtrarPorPeriodoComDatas(dados, datas, elementosExtras, period as string);
+        const { dadosFiltrados, datasFiltradas, elementosExtrasFiltrados, dadosBrutosFiltrados, dataInicio, dataFim } = 
+            filtrarPorPeriodoComDatas(dados, datas, elementosExtras, dadosBrutos, period as string);
         
         const filteredDraws = dadosFiltrados.length;
         
@@ -608,7 +615,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 menosSorteados: [],
                 duplas: [],
                 triplas: [],
-                elementosExtras: []
+                elementosExtras: [],
+                columns: []
             });
         }
         
@@ -632,6 +640,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 duplas: [],
                 triplas: [],
                 elementosExtras: [],
+                columns: [],
                 loteca: estatisticasLoteca
             });
         }
@@ -664,7 +673,55 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 triplas: triplas.slice(0, 20),
                 elementosExtras: elementosExtrasCalculados,
                 tipoElemento: config.tipoElemento || 'time',
-                nomeElemento: config.nomeElemento || 'Elemento Extra'
+                nomeElemento: config.nomeElemento || 'Elemento Extra',
+                columns: []
+            });
+        }
+        
+        // 🔥 SUPER SETE - TRATAMENTO ESPECIAL
+        if (config.isSuperSete) {
+            // 🔥 Separa os números por coluna
+            const columns: number[][] = [[], [], [], [], [], [], []];
+            
+            // Usa dadosBrutosFiltrados (que mantém a ordem original)
+            const dadosParaColunas = dadosBrutosFiltrados.length > 0 ? dadosBrutosFiltrados : dadosFiltrados;
+            
+            dadosParaColunas.forEach(jogo => {
+                // Cada jogo tem 7 números (colunas)
+                for (let i = 0; i < Math.min(jogo.length, 7); i++) {
+                    if (i < columns.length) {
+                        columns[i].push(jogo[i]);
+                    }
+                }
+            });
+            
+            // 🔥 Calcula frequência global
+            const freqGlobal = new Array(10).fill(0);
+            dadosFiltrados.forEach(jogo => {
+                jogo.forEach(num => {
+                    if (num >= 0 && num <= 9) freqGlobal[num]++;
+                });
+            });
+            
+            // 🔥 Calcula duplas e triplas
+            const duplas = calcularDuplasMaisSorteadas(dadosFiltrados);
+            const triplas = calcularTriplasMaisSorteadas(dadosFiltrados);
+            
+            return res.status(200).json({
+                success: true,
+                lottery: lottery as string,
+                period: period as string,
+                totalDraws,
+                filteredDraws,
+                dataInicio,
+                dataFim,
+                columns: columns,
+                frequenciaGlobal: freqGlobal.map((qtd, num) => ({ numero: num, quantidade: qtd })),
+                duplas: duplas.slice(0, 20),
+                triplas: triplas.slice(0, 20),
+                maisSorteados: [],
+                menosSorteados: [],
+                elementosExtras: []
             });
         }
         
@@ -688,7 +745,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             menosSorteados,
             duplas: duplas.slice(0, 20),
             triplas: triplas.slice(0, 20),
-            elementosExtras: []
+            elementosExtras: [],
+            columns: []
         });
         
     } catch (error: any) {
@@ -706,7 +764,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             menosSorteados: [],
             duplas: [],
             triplas: [],
-            elementosExtras: []
+            elementosExtras: [],
+            columns: []
         });
     }
 }
