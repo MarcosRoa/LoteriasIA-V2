@@ -1,6 +1,7 @@
 // src/components/LoginModal.tsx - VERIFIQUE ESTAS PARTES 15/06
 // src/components/LoginModal.tsx 26/06/2026
 // src/components/LoginModal.tsx 26/06/2026
+// src/components/LoginModal.tsx 27/06/2026
 // src/components/LoginModal.tsx
 import React, { useState } from 'react';
 import {
