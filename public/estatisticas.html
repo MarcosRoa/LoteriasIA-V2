@@ -425,11 +425,20 @@
         }
         
         // ============================================
-        // RENDERIZAR ESTATÍSTICAS
+        // RENDERIZAR ESTATÍSTICAS (HTML)
         // ============================================
         async function renderizarEstatisticas(data) {
             const container = document.getElementById('estatisticasContent');
             const config = LOTERIAS_STATS[loteriaAtualStats];
+            
+            // ============================================
+            // SUPER SETE - Renderização Especial
+            // ============================================
+            if (loteriaAtualStats === 'supersete') {
+                const html = renderizarSuperSete(data, config, userData, periodoSelecionadoStats);
+                container.innerHTML = html;
+                return;
+            }
             
             // ============================================
             // LOTECA - Renderização Especial
@@ -626,7 +635,7 @@
             
             container.innerHTML = html;
         }
-        
+                
         // ============================================
         // SELECIONAR LOTERIA
         // ============================================
