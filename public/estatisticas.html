@@ -12,7 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
     
     <!-- Renderizadores - CAMINHO CORRIGIDO -->
-    <script src="public/js/estatisticas.js"></script>
+    <script src="js/estatisticas.js"></script>
     
     <style>
         .stats-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
@@ -87,7 +87,7 @@
         <div class="header-content">
             <div class="header-logo">🎰</div>
             <div class="header-text">
-                <h1>🧠 Loterias V.6.1 🧠<span class="version-badge">ESTATÍSTICAS</span></h1>
+                <h1>🧠 Loterias V.6.1 <span class="version-badge">ESTATÍSTICAS</span></h1>
                 <p class="header-subtitle">Análise completa de números, duplas, tríades, times e meses</p>
             </div>
             <div class="header-logo">🎯</div>
@@ -361,8 +361,6 @@
                 // ============================================
                 // RENDERIZAR CONFORME LOTERIA
                 // ============================================
-                // VERIFICAR SE O RENDERIZADOR EXISTE NO window
-                // (carregado pelo public/js/estatisticas.js)
                 if (loteriaAtualStats === 'supersete') {
                     // Tenta usar o renderizador do arquivo carregado
                     if (typeof window.renderizarSuperSete === 'function') {
@@ -378,7 +376,7 @@
                                 <div class="error-stats">
                                     ⚠️ Função Super Sete não disponível. 
                                     <br><br>
-                                    <small>Verifique se o arquivo public/js/estatisticas.js foi carregado corretamente.</small>
+                                    <small>Verifique se o arquivo js/estatisticas.js foi carregado corretamente.</small>
                                     <br><br>
                                     <button onclick="carregarEstatisticas()" style="background: #8b5cf6; border: none; padding: 8px 20px; border-radius: 30px; color: white; font-weight: 600; cursor: pointer;">
                                         🔄 Tentar novamente
