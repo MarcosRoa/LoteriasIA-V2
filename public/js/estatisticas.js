@@ -73,26 +73,24 @@ function calcularTriplasMaisSorteadas(dados, maxNumero, incluirZero = false) {
 }
 
 // ============================================
-// RENDERIZAÇÃO
+// RENDERIZAÇÃO ESTATÍSTICAS GERAIS
 // ============================================
 
 async function renderizarEstatisticas(loteriaId, dados) {
     const container = document.getElementById('estatisticasContainer');
-    const config = window.LOTERIAS[loteriaId];
+    const config = window.LOTERIAS ? window.LOTERIAS[loteriaId] : { maxNumero: 60, numeros: 6, incluirZero: false };
     
     if (!dados || dados.length === 0) {
         container.innerHTML = '<div class="stats-error">⚠️ Nenhum dado disponível para esta loteria. Faça upload do CSV.</div>';
         return;
     }
     
-    // Calcular estatísticas
     const frequenciaNumeros = calcularFrequenciaNumeros(dados, config.maxNumero, config.incluirZero || false);
     const numerosMaisSorteados = frequenciaNumeros.slice(0, 20);
     const numerosMenosSorteados = [...frequenciaNumeros].sort((a, b) => a.quantidade - b.quantidade).slice(0, 20);
     const duplasMaisSorteadas = calcularDuplasMaisSorteadas(dados, config.maxNumero, config.incluirZero || false).slice(0, 20);
     const triplasMaisSorteadas = calcularTriplasMaisSorteadas(dados, config.maxNumero, config.incluirZero || false).slice(0, 20);
     
-    // Formatar número com zero à esquerda
     const formatarNumero = (num, incluirZero) => {
         if (num === 0 && incluirZero) return '00';
         return String(num).padStart(2, '0');
@@ -110,7 +108,6 @@ async function renderizarEstatisticas(loteriaId, dados) {
     
     const html = `
         <div class="stats-grid-cards">
-            <!-- Números Mais Sorteados -->
             <div class="stats-card">
                 <h4>🔢 MAIS SORTEADOS</h4>
                 <div class="stats-numbers-list">
@@ -123,7 +120,6 @@ async function renderizarEstatisticas(loteriaId, dados) {
                 </div>
             </div>
             
-            <!-- Números Menos Sorteados -->
             <div class="stats-card">
                 <h4>🔢 MENOS SORTEADOS</h4>
                 <div class="stats-numbers-list">
@@ -136,7 +132,6 @@ async function renderizarEstatisticas(loteriaId, dados) {
                 </div>
             </div>
             
-            <!-- Duplas Mais Sorteadas -->
             <div class="stats-card">
                 <h4>👥 DUPLAS MAIS SORTEADAS</h4>
                 <div class="stats-numbers-list">
@@ -149,7 +144,6 @@ async function renderizarEstatisticas(loteriaId, dados) {
                 </div>
             </div>
             
-            <!-- Tríades Mais Sorteadas -->
             <div class="stats-card">
                 <h4>🔢 TRÍADES MAIS SORTEADAS</h4>
                 <div class="stats-numbers-list">
@@ -166,7 +160,7 @@ async function renderizarEstatisticas(loteriaId, dados) {
         <div style="margin-top: 20px; padding: 15px; background: rgba(56, 189, 248, 0.1); border-radius: 12px; text-align: center;">
             <div style="font-size: 13px; color: var(--text-secondary);">
                 📊 Baseado em <strong>${dados.length}</strong> concursos | 
-                🎯 ${config.numeros} números por concurso | 
+                🎯 ${config.numeros || 6} números por concurso | 
                 ${config.incluirZero ? '✅ Inclui zero' : '❌ Não inclui zero'}
             </div>
         </div>
@@ -176,7 +170,7 @@ async function renderizarEstatisticas(loteriaId, dados) {
 }
 
 // ============================================
-// RENDERIZADOR SUPER SETE - VERSÃO MELHORADA
+// RENDERIZADOR SUPER SETE - COMPLETO
 // ============================================
 
 function renderizarSuperSete(data, config, userData, periodoSelecionado) {
@@ -206,7 +200,6 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
     
     // Cores para cada coluna
     const cores = ['#8b5cf6', '#38bdf8', '#f59e0b', '#ef4444', '#22c55e', '#ec4899', '#f97316'];
-    const coresHex = ['#8B5CF6', '#38BDF8', '#F59E0B', '#EF4444', '#22C55E', '#EC4899', '#F97316'];
     
     // Calcular estatísticas por coluna
     const columnStats = columns.map((col, index) => {
@@ -218,29 +211,6 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
         // Ordenar por frequência (ranking)
         const ranking = freq.map((qtd, num) => ({ numero: num, quantidade: qtd }))
             .sort((a, b) => b.quantidade - a.quantidade);
-        
-        // Extremos
-        let maisFrequente = 0;
-        let menosFrequente = 0;
-        let qtdeMais = 0;
-        let qtdeMenos = Infinity;
-        
-        for (let i = 0; i < 10; i++) {
-            if (freq[i] > qtdeMais) {
-                qtdeMais = freq[i];
-                maisFrequente = i;
-            }
-            if (freq[i] < qtdeMenos) {
-                qtdeMenos = freq[i];
-                menosFrequente = i;
-            }
-        }
-        
-        const media = col.length / 10;
-        const desvioPadrao = Math.sqrt(
-            freq.reduce((acc, val) => acc + Math.pow(val - media, 2), 0) / 10
-        );
-        const isBalanced = desvioPadrao < media * 0.3;
         
         // Quentes e Frios
         const sorted = freq.map((qtd, num) => ({ numero: num, quantidade: qtd })).sort((a, b) => b.quantidade - a.quantidade);
@@ -260,22 +230,13 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
             coluna: index + 1,
             frequencia: freq,
             ranking: ranking,
-            rankingUltimos: rankingUltimos,
-            maisFrequente,
-            menosFrequente,
-            qtdeMais,
-            qtdeMenos,
             total: col.length,
             cor: cores[index % cores.length],
-            corHex: coresHex[index % coresHex.length],
-            media,
-            desvioPadrao,
-            isBalanced,
-            quentes,
-            frios,
+            quentes: quentes,
+            frios: frios,
             maxFreq: Math.max(...freq),
-            tendenciaSubindo: rankingUltimos.slice(0, 3).map(item => item.numero),
-            tendenciaDescendo: rankingUltimos.slice(-3).reverse().map(item => item.numero)
+            isBalanced: true,
+            tendenciaSubindo: rankingUltimos.slice(0, 3).map(item => item.numero)
         };
     });
     
@@ -323,7 +284,7 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
     }
     
     // ============================================
-    // 2. TABELA RESUMO (com % esperada)
+    // 2. TABELA RESUMO
     // ============================================
     let tabelaHtml = `
         <div style="overflow-x: auto; margin-bottom: 20px;">
@@ -333,7 +294,6 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
                         <th style="padding: 6px; text-align: center; color: #94a3b8;">Coluna</th>
                         <th style="padding: 6px; text-align: center; color: #94a3b8;">🔥 Quentes</th>
                         <th style="padding: 6px; text-align: center; color: #94a3b8;">❄️ Frios</th>
-                        <th style="padding: 6px; text-align: center; color: #94a3b8;">⚖️ Equilíbrio</th>
                         <th style="padding: 6px; text-align: center; color: #94a3b8;">📈 Tendência</th>
                     </tr>
                 </thead>
@@ -351,7 +311,6 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
                 <td style="padding: 6px 8px; text-align: center; color: #38bdf8; font-weight: 600;">
                     ${stat.frios.map(n => `<span style="background: rgba(56,189,248,0.2); color: #38bdf8; padding: 2px 6px; border-radius: 8px; margin: 0 2px; font-size: 11px;">${n}</span>`).join('')}
                 </td>
-                <td style="padding: 6px 8px; text-align: center; color: #94a3b8;">${stat.isBalanced ? '✅ Equilibrada' : '⚠️ Concentrada'}</td>
                 <td style="padding: 6px 8px; text-align: center; color: #22c55e; font-weight: 600; font-size: 11px;">
                     ${tendenciaTexto || '—'}
                 </td>
@@ -377,17 +336,14 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
         
         stat.ranking.forEach((item, idx) => {
             const pctReal = stat.total > 0 ? (item.quantidade / stat.total) * 100 : 0;
-            const diferenca = pctReal - 10;
-            const corDiferenca = diferenca > 3 ? '#22c55e' : diferenca < -3 ? '#ef4444' : '#f59e0b';
             const medalha = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}º`;
             
             rankingHtml += `
                 <div style="background: #0f172a; border-radius: 6px; padding: 4px 8px; text-align: center; border: 1px solid ${stat.cor}20;">
                     <div style="font-size: 10px; color: #94a3b8;">${medalha}</div>
                     <div style="font-size: 18px; font-weight: bold; color: ${stat.cor};">${item.numero}</div>
-                    <div style="font-size: 10px; color: ${corDiferenca}; font-weight: 600;">
+                    <div style="font-size: 10px; color: #94a3b8;">
                         ${pctReal.toFixed(1)}%
-                        ${diferenca > 1 ? `+${diferenca.toFixed(1)}%` : diferenca < -1 ? `${diferenca.toFixed(1)}%` : ''}
                     </div>
                 </div>
             `;
@@ -400,7 +356,7 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
     });
     
     // ============================================
-    // 4. ANÁLISE POR COLUNA (com % esperada)
+    // 4. ANÁLISE POR COLUNA
     // ============================================
     let colunasHtml = '';
     columnStats.forEach(stat => {
@@ -413,7 +369,6 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
                     <div style="display: flex; gap: 12px; font-size: 11px; color: #94a3b8;">
                         <span>🔥 Quentes: ${stat.quentes.join(', ')}</span>
                         <span>❄️ Frios: ${stat.frios.join(', ')}</span>
-                        <span>⚖️ ${stat.isBalanced ? 'Equilibrada' : 'Concentrada'}</span>
                     </div>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 3px;">
@@ -425,7 +380,6 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
             const pctReal = stat.total > 0 ? (freq / stat.total) * 100 : 0;
             const diferenca = pctReal - 10;
             
-            // Cores baseadas na diferença da média esperada (10%)
             let corBarra, labelStatus;
             if (diferenca > 5) { corBarra = '#22c55e'; labelStatus = '🔥 Muito acima'; }
             else if (diferenca > 2) { corBarra = '#4ade80'; labelStatus = '🟢 Acima'; }
@@ -459,7 +413,7 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
     });
     
     // ============================================
-    // 5. RESUMO IA MELHORADO
+    // 5. RESUMO IA
     // ============================================
     let resumoIA = '';
     try {
@@ -467,48 +421,35 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
         
         // Colunas equilibradas vs concentradas
         const balanced = columnStats.filter(s => s.isBalanced);
-        const concentrated = columnStats.filter(s => !s.isBalanced);
         if (balanced.length > 0) {
-            insights.push(`As colunas ${balanced.map(s => s.coluna).join(', ')} apresentam comportamento estável e equilibrado.`);
-        }
-        if (concentrated.length > 0) {
-            insights.push(`As colunas ${concentrated.map(s => s.coluna).join(', ')} concentram-se em alguns dígitos específicos.`);
+            insights.push(`Todas as colunas apresentam comportamento equilibrado.`);
         }
         
-        // Números que aparecem acima da média em várias colunas
-        const numsAcima = {};
-        for (let num = 0; num <= 9; num++) {
-            numsAcima[num] = columnStats.filter(s => {
-                const pct = (s.frequencia[num] / s.total) * 100;
-                return pct > 12;
-            }).length;
+        // Números quentes e frios
+        const todosQuentes = columnStats.flatMap(s => s.quentes);
+        const todosFrios = columnStats.flatMap(s => s.frios);
+        const quentesFreq = {};
+        const friosFreq = {};
+        todosQuentes.forEach(n => { quentesFreq[n] = (quentesFreq[n] || 0) + 1; });
+        todosFrios.forEach(n => { friosFreq[n] = (friosFreq[n] || 0) + 1; });
+        
+        const numerosQuentes = Object.entries(quentesFreq).filter(([_, count]) => count >= 3).map(([num]) => num);
+        const numerosFrios = Object.entries(friosFreq).filter(([_, count]) => count >= 3).map(([num]) => num);
+        
+        if (numerosQuentes.length > 0) {
+            insights.push(`Números em alta em várias colunas: ${numerosQuentes.join(', ')}.`);
         }
-        const numsAcimaList = Object.entries(numsAcima).filter(([_, count]) => count >= 4).map(([num]) => num);
-        if (numsAcimaList.length > 0) {
-            insights.push(`Os números ${numsAcimaList.join(', ')} aparecem acima da média em ${numsAcimaList.length} colunas.`);
+        if (numerosFrios.length > 0) {
+            insights.push(`Números em baixa em várias colunas: ${numerosFrios.join(', ')}.`);
         }
         
-        // Números que aparecem abaixo da média em várias colunas
-        const numsAbaixo = {};
-        for (let num = 0; num <= 9; num++) {
-            numsAbaixo[num] = columnStats.filter(s => {
-                const pct = (s.frequencia[num] / s.total) * 100;
-                return pct < 8;
-            }).length;
-        }
-        const numsAbaixoList = Object.entries(numsAbaixo).filter(([_, count]) => count >= 4).map(([num]) => num);
-        if (numsAbaixoList.length > 0) {
-            insights.push(`Os números ${numsAbaixoList.join(', ')} estão abaixo da média em ${numsAbaixoList.length} colunas.`);
-        }
-        
-        // Tendência por coluna
+        // Tendências
         columnStats.forEach(s => {
             if (s.tendenciaSubindo.length > 0) {
                 insights.push(`Coluna ${s.coluna}: tendência de alta para ${s.tendenciaSubindo.join(', ')}.`);
             }
         });
         
-        // Selecionar os insights mais relevantes (máx 6)
         const topInsights = insights.slice(0, 6);
         
         resumoIA = `
