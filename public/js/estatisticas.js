@@ -1,5 +1,5 @@
 // ============================================
-// FUNÇÕES DE CÁLCULO
+// FUNÇÕES DE CÁLCULO (COMPARTILHADAS)
 // ============================================
 
 function calcularFrequenciaNumeros(dados, maxNumero, incluirZero = false) {
@@ -177,12 +177,9 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
     console.log('🔍 renderizarSuperSete chamada com data:', data);
     
     if (!data || !data.columns || data.columns.length === 0) {
-        console.warn('⚠️ Nenhuma coluna encontrada:', data);
         return `
             <div class="error-stats">
                 ⚠️ Nenhum dado disponível para Super Sete no período selecionado.
-                <br>
-                <small>Verifique se o backend está retornando a estrutura 'columns'.</small>
                 <br><br>
                 <button onclick="window.carregarEstatisticas()" style="background: #8b5cf6; border: none; padding: 8px 20px; border-radius: 30px; color: white; font-weight: 600; cursor: pointer;">
                     🔄 Tentar novamente
@@ -196,28 +193,21 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
     const dataInicio = data.dataInicio || '';
     const dataFim = data.dataFim || '';
     
-    console.log('📊 Columns:', columns.length, 'colunas');
-    
-    // Cores para cada coluna
     const cores = ['#8b5cf6', '#38bdf8', '#f59e0b', '#ef4444', '#22c55e', '#ec4899', '#f97316'];
     
-    // Calcular estatísticas por coluna
     const columnStats = columns.map((col, index) => {
         const freq = new Array(10).fill(0);
         col.forEach(num => {
             if (num >= 0 && num <= 9) freq[num]++;
         });
         
-        // Ordenar por frequência (ranking)
         const ranking = freq.map((qtd, num) => ({ numero: num, quantidade: qtd }))
             .sort((a, b) => b.quantidade - a.quantidade);
         
-        // Quentes e Frios
         const sorted = freq.map((qtd, num) => ({ numero: num, quantidade: qtd })).sort((a, b) => b.quantidade - a.quantidade);
         const quentes = sorted.slice(0, 3).map(item => item.numero);
         const frios = sorted.slice(-3).reverse().map(item => item.numero);
         
-        // Tendência (últimos 50 concursos)
         const ultimos = col.slice(-50);
         const freqUltimos = new Array(10).fill(0);
         ultimos.forEach(num => {
@@ -235,14 +225,11 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
             quentes: quentes,
             frios: frios,
             maxFreq: Math.max(...freq),
-            isBalanced: true,
             tendenciaSubindo: rankingUltimos.slice(0, 3).map(item => item.numero)
         };
     });
     
-    // ============================================
-    // 1. HEATMAP - Matriz de cores
-    // ============================================
+    // Heatmap
     let heatmapHtml = '';
     if (columns.length > 0) {
         const maxGlobal = Math.max(...columnStats.flatMap(s => s.frequencia));
@@ -283,9 +270,7 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
         `;
     }
     
-    // ============================================
-    // 2. TABELA RESUMO
-    // ============================================
+    // Tabela Resumo
     let tabelaHtml = `
         <div style="overflow-x: auto; margin-bottom: 20px;">
             <table style="width: 100%; border-collapse: collapse; font-size: 12px; min-width: 700px;">
@@ -320,9 +305,7 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
     
     tabelaHtml += `</tbody></table></div>`;
     
-    // ============================================
-    // 3. RANKING POR COLUNA
-    // ============================================
+    // Ranking por Coluna
     let rankingHtml = '';
     columnStats.forEach(stat => {
         rankingHtml += `
@@ -355,9 +338,7 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
         `;
     });
     
-    // ============================================
-    // 4. ANÁLISE POR COLUNA
-    // ============================================
+    // Análise por Coluna
     let colunasHtml = '';
     columnStats.forEach(stat => {
         const maxFreq = stat.maxFreq;
@@ -412,75 +393,7 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
         `;
     });
     
-    // ============================================
-    // 5. RESUMO IA
-    // ============================================
-    let resumoIA = '';
-    try {
-        const insights = [];
-        
-        // Colunas equilibradas vs concentradas
-        const balanced = columnStats.filter(s => s.isBalanced);
-        if (balanced.length > 0) {
-            insights.push(`Todas as colunas apresentam comportamento equilibrado.`);
-        }
-        
-        // Números quentes e frios
-        const todosQuentes = columnStats.flatMap(s => s.quentes);
-        const todosFrios = columnStats.flatMap(s => s.frios);
-        const quentesFreq = {};
-        const friosFreq = {};
-        todosQuentes.forEach(n => { quentesFreq[n] = (quentesFreq[n] || 0) + 1; });
-        todosFrios.forEach(n => { friosFreq[n] = (friosFreq[n] || 0) + 1; });
-        
-        const numerosQuentes = Object.entries(quentesFreq).filter(([_, count]) => count >= 3).map(([num]) => num);
-        const numerosFrios = Object.entries(friosFreq).filter(([_, count]) => count >= 3).map(([num]) => num);
-        
-        if (numerosQuentes.length > 0) {
-            insights.push(`Números em alta em várias colunas: ${numerosQuentes.join(', ')}.`);
-        }
-        if (numerosFrios.length > 0) {
-            insights.push(`Números em baixa em várias colunas: ${numerosFrios.join(', ')}.`);
-        }
-        
-        // Tendências
-        columnStats.forEach(s => {
-            if (s.tendenciaSubindo.length > 0) {
-                insights.push(`Coluna ${s.coluna}: tendência de alta para ${s.tendenciaSubindo.join(', ')}.`);
-            }
-        });
-        
-        const topInsights = insights.slice(0, 6);
-        
-        resumoIA = `
-            <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid #8b5cf6; border-radius: 8px; padding: 16px; margin-top: 20px;">
-                <h4 style="color: #8b5cf6; font-size: 14px; margin-bottom: 8px;">🤖 Resumo Inteligente</h4>
-                <ul style="margin: 0; padding-left: 20px; color: #e2e8f0; font-size: 13px; line-height: 1.8;">
-                    ${topInsights.map(insight => `<li>${insight}</li>`).join('')}
-                    <li>📊 Baseado em ${totalDraws} concursos analisados</li>
-                    <li>📅 Período: ${periodoSelecionado === 'all' ? 'Todos' : `${periodoSelecionado} anos`}</li>
-                </ul>
-            </div>
-        `;
-    } catch (e) {
-        console.warn('⚠️ Erro ao gerar resumo IA:', e);
-        resumoIA = `
-            <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid #8b5cf6; border-radius: 8px; padding: 16px; margin-top: 20px;">
-                <h4 style="color: #8b5cf6; font-size: 14px; margin-bottom: 8px;">🤖 Resumo Inteligente</h4>
-                <ul style="margin: 0; padding-left: 20px; color: #e2e8f0; font-size: 13px; line-height: 1.8;">
-                    <li>📊 Baseado em ${totalDraws} concursos analisados</li>
-                    <li>📅 Período: ${periodoSelecionado === 'all' ? 'Todos' : `${periodoSelecionado} anos`}</li>
-                    <li>🔍 Análise disponível após carregamento completo dos dados</li>
-                </ul>
-            </div>
-        `;
-    }
-    
-    // ============================================
-    // HTML FINAL
-    // ============================================
     return `
-        <!-- Resumo -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px;">
             <div style="background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
                 <div style="color: #94a3b8; font-size: 11px;">Total de concursos</div>
@@ -504,26 +417,18 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
             ` : ''}
         </div>
         
-        <!-- HEATMAP -->
         ${heatmapHtml}
-        
-        <!-- Tabela Resumo -->
         ${tabelaHtml}
         
-        <!-- Ranking por Coluna -->
         <div style="margin-top: 20px;">
             <h4 style="color: #f59e0b; font-size: 16px; margin-bottom: 15px;">🏆 Ranking por Coluna</h4>
             ${rankingHtml}
         </div>
         
-        <!-- Análise por Coluna -->
         <div style="margin-top: 20px;">
             <h4 style="color: #f59e0b; font-size: 16px; margin-bottom: 15px;">📊 Análise por Coluna</h4>
             ${colunasHtml}
         </div>
-        
-        <!-- Resumo IA -->
-        ${resumoIA}
         
         <div style="margin-top: 20px; padding: 15px; background: rgba(56, 189, 248, 0.1); border-radius: 12px; text-align: center;">
             <div style="font-size: 13px; color: var(--text-secondary);">
@@ -535,13 +440,1119 @@ function renderizarSuperSete(data, config, userData, periodoSelecionado) {
 }
 
 // ============================================
+// RENDERIZADOR +MILIONÁRIA - TELA ESPECIAL (TUDO DO CSV)
+// ============================================
+
+function renderizarMilionaria(data, config, userData, periodoSelecionado) {
+    console.log('💎 renderizarMilionaria chamada com data:', data);
+    
+    const totalDraws = data.filteredDraws || data.totalDraws || 0;
+    const dataInicio = data.dataInicio || '';
+    const dataFim = data.dataFim || '';
+    const trevos = data.trevos || { frequencia: [], pares: [], matriz: [], atraso: [], ranking: [], resumoIA: [] };
+    
+    // Dezenas
+    const maisSorteados = data.maisSorteados || [];
+    const menosSorteados = data.menosSorteados || [];
+    const duplas = data.duplas || [];
+    const triplas = data.triplas || [];
+    
+    const formatarNumero = (num, incluirZero) => {
+        if (!userData.isPro) return '<span class="numero-pro" title="🔒 Disponível no Plano PRO">⭐⭐ PRO ⭐⭐</span>';
+        if (num === 0 && incluirZero) return '00';
+        return String(num).padStart(2, '0');
+    };
+    
+    const formatarDupla = (dupla, incluirZero) => {
+        if (!userData.isPro) return '(⭐⭐, ⭐⭐)';
+        return `(${formatarNumero(dupla[0], incluirZero)}, ${formatarNumero(dupla[1], incluirZero)})`;
+    };
+    
+    const formatarTripla = (tripla, incluirZero) => {
+        if (!userData.isPro) return '(⭐⭐, ⭐⭐, ⭐⭐)';
+        return `(${formatarNumero(tripla[0], incluirZero)}, ${formatarNumero(tripla[1], incluirZero)}, ${formatarNumero(tripla[2], incluirZero)})`;
+    };
+    
+    const proWarning = !userData.isPro ? `
+        <div class="pro-overlay" style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; margin-bottom: 20px;">
+            <span class="pro-badge-stats">⭐ PLANO PRO ⭐</span>
+            <p style="margin-top: 10px; font-size: 13px;">Faça login com uma conta PRO para visualizar todos os números e estatísticas completas!</p>
+            <button onclick="window.location.href='index.html'" style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; padding: 8px 20px; border-radius: 30px; color: #1e293b; font-weight: 600; cursor: pointer; margin-top: 10px;">⭐ IR PARA O SISTEMA</button>
+        </div>
+    ` : '';
+    
+    // Dezenas
+    let dezenasHtml = `
+        <div class="stats-cards-grid">
+            <div class="stats-card">
+                <h4>🔢 MAIS SORTEADOS (Top 20)</h4>
+                <div class="stats-list">
+                    ${maisSorteados.length > 0 ? maisSorteados.map(item => `
+                        <div class="stats-item">
+                            <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarNumero(item.numero, config.incluirZero)}</span>
+                            <span class="quantidade">${item.quantidade} vez(es)</span>
+                        </div>
+                    `).join('') : `
+                        <div class="stats-item" style="justify-content: center; color: #94a3b8; padding: 20px;">
+                            Nenhum dado disponível
+                        </div>
+                    `}
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h4>🔢 MENOS SORTEADOS (Bottom 20)</h4>
+                <div class="stats-list">
+                    ${menosSorteados.length > 0 ? menosSorteados.map(item => `
+                        <div class="stats-item">
+                            <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarNumero(item.numero, config.incluirZero)}</span>
+                            <span class="quantidade">${item.quantidade} vez(es)</span>
+                        </div>
+                    `).join('') : `
+                        <div class="stats-item" style="justify-content: center; color: #94a3b8; padding: 20px;">
+                            Nenhum dado disponível
+                        </div>
+                    `}
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h4>👥 DUPLAS MAIS SORTEADAS</h4>
+                <div class="stats-list">
+                    ${duplas.length > 0 ? duplas.map(item => `
+                        <div class="stats-item">
+                            <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarDupla(item.dupla, config.incluirZero)}</span>
+                            <span class="quantidade">${item.quantidade} vez(es)</span>
+                        </div>
+                    `).join('') : `
+                        <div class="stats-item" style="justify-content: center; color: #94a3b8; padding: 20px;">
+                            Nenhuma dupla encontrada
+                        </div>
+                    `}
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h4>🔢 TRÍADES MAIS SORTEADAS</h4>
+                <div class="stats-list">
+                    ${triplas.length > 0 ? triplas.map(item => `
+                        <div class="stats-item">
+                            <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarTripla(item.tripla, config.incluirZero)}</span>
+                            <span class="quantidade">${item.quantidade} vez(es)</span>
+                        </div>
+                    `).join('') : `
+                        <div class="stats-item" style="justify-content: center; color: #94a3b8; padding: 20px;">
+                            Nenhuma tríade encontrada
+                        </div>
+                    `}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Trevos - Tabela
+    let trevosTabelaHtml = '';
+    const frequenciaTrevos = trevos.frequencia || [];
+    if (frequenciaTrevos.length > 0) {
+        const totalTrevos = frequenciaTrevos.reduce((acc, f) => acc + f.quantidade, 0);
+        const atrasoTrevos = trevos.atraso || [];
+        
+        trevosTabelaHtml = `
+            <div class="milionaria-trevos-card">
+                <h4>🍀 TREVOS - FREQUÊNCIA E ATRASO</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #334155;">
+                                <th style="padding: 8px; text-align: left; color: #94a3b8;">Trevo</th>
+                                <th style="padding: 8px; text-align: center; color: #94a3b8;">Quantidade</th>
+                                <th style="padding: 8px; text-align: center; color: #94a3b8;">%</th>
+                                <th style="padding: 8px; text-align: center; color: #94a3b8;">Atraso</th>
+                                <th style="padding: 8px; text-align: center; color: #94a3b8;">Tendência</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${frequenciaTrevos.map(f => {
+                                const atraso = atrasoTrevos.find(a => a.trevo === f.trevo);
+                                const pct = totalTrevos > 0 ? (f.quantidade / totalTrevos * 100) : 0;
+                                const media = totalTrevos / 6;
+                                const tendencia = f.quantidade > media ? '↑' : f.quantidade < media ? '↓' : '→';
+                                const corTendencia = f.quantidade > media ? '#22c55e' : f.quantidade < media ? '#ef4444' : '#f59e0b';
+                                
+                                return `
+                                    <tr style="border-bottom: 1px solid #1e293b;">
+                                        <td style="padding: 6px 8px; font-weight: 600; color: #38bdf8;">Trevo ${f.trevo}</td>
+                                        <td style="padding: 6px 8px; text-align: center; color: #f59e0b; font-weight: 600;">${f.quantidade}</td>
+                                        <td style="padding: 6px 8px; text-align: center; color: #94a3b8;">${pct.toFixed(1)}%</td>
+                                        <td style="padding: 6px 8px; text-align: center;">
+                                            <span style="color: ${atraso?.concursosAtraso > 20 ? '#ef4444' : atraso?.concursosAtraso > 10 ? '#f59e0b' : '#22c55e'}; font-weight: 600;">
+                                                ${atraso?.concursosAtraso || 0}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 6px 8px; text-align: center; color: ${corTendencia}; font-weight: 600; font-size: 18px;">
+                                            ${tendencia}
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Heatmap Trevos
+    let heatmapTrevosHtml = '';
+    if (frequenciaTrevos.length > 0) {
+        const maxFreq = Math.max(...frequenciaTrevos.map(f => f.quantidade));
+        const cores = ['#8b5cf6', '#38bdf8', '#f59e0b', '#ef4444', '#22c55e', '#ec4899'];
+        
+        heatmapTrevosHtml = `
+            <div class="milionaria-trevos-card">
+                <h4>📊 HEATMAP DOS TREVOS</h4>
+                ${frequenciaTrevos.map((f, idx) => {
+                    const pct = maxFreq > 0 ? (f.quantidade / maxFreq * 100) : 0;
+                    const cor = cores[idx % cores.length];
+                    const barColor = pct > 80 ? '#22c55e' : pct > 60 ? '#f59e0b' : '#38bdf8';
+                    return `
+                        <div class="trevo-heatmap-item">
+                            <span class="label" style="color: ${cor}; font-weight: 600;">Trevo ${f.trevo}</span>
+                            <div class="bar">
+                                <div class="fill" style="width: ${Math.max(pct, 2)}%; background: ${barColor};"></div>
+                            </div>
+                            <span class="qtd">${f.quantidade}</span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+    
+    // Ranking Trevos
+    let rankingTrevosHtml = '';
+    const rankingTrevos = trevos.ranking || [];
+    if (rankingTrevos.length > 0) {
+        const medalhas = ['🥇', '🥈', '🥉', '4º', '5º', '6º'];
+        
+        rankingTrevosHtml = `
+            <div class="milionaria-trevos-card">
+                <h4>🏆 RANKING DOS TREVOS</h4>
+                <div class="trevo-ranking-grid">
+                    ${rankingTrevos.map((item, idx) => `
+                        <div class="trevo-ranking-item">
+                            <div class="medalha">${medalhas[idx] || `${idx + 1}º`}</div>
+                            <div class="trevo-num">Trevo ${item.trevo}</div>
+                            <div class="trevo-qtd">${item.quantidade} vezes</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Pares de Trevos
+    let paresTrevosHtml = '';
+    const paresTrevos = trevos.pares || [];
+    if (paresTrevos.length > 0) {
+        paresTrevosHtml = `
+            <div class="milionaria-trevos-card">
+                <h4>🍀🍀 PARES DE TREVOS MAIS RECORRENTES</h4>
+                <div class="trevo-pares-grid">
+                    ${paresTrevos.slice(0, 10).map(item => `
+                        <div class="trevo-par-item">
+                            <span class="par">${item.par[0]}-${item.par[1]}</span>
+                            <span class="qtd">${item.quantidade} vezes</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Matriz Trevos
+    let matrizTrevosHtml = '';
+    const matriz = trevos.matriz || [];
+    if (matriz.length > 0) {
+        const maxMatriz = Math.max(...matriz.flat().filter(v => v !== null));
+        
+        matrizTrevosHtml = `
+            <div class="milionaria-trevos-card">
+                <h4>📊 MATRIZ DE FREQUÊNCIA DOS TREVOS</h4>
+                <div class="trevo-matriz">
+                    <div class="header"></div>
+                    ${[1,2,3,4,5,6].map(n => `<div class="header" style="color: #38bdf8;">${n}</div>`).join('')}
+                    ${matriz.map((row, i) => `
+                        ${[1,2,3,4,5,6].map((_, j) => {
+                            if (i === j) {
+                                return `<div class="header" style="color: #38bdf8;">${i + 1}</div><div class="cell diagonal">-</div>`;
+                            }
+                            const valor = row[j];
+                            let classe = 'cell';
+                            if (valor !== null) {
+                                const pct = maxMatriz > 0 ? (valor / maxMatriz * 100) : 0;
+                                if (pct > 70) classe += ' destaque-alta';
+                                else if (pct > 40) classe += ' destaque';
+                            }
+                            return `<div class="${classe}">${valor !== null ? valor : '-'}</div>`;
+                        }).join('')
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Mapa de Atraso
+    let atrasoTrevosHtml = '';
+    const atrasoTrevosData = trevos.atraso || [];
+    if (atrasoTrevosData.length > 0) {
+        atrasoTrevosHtml = `
+            <div class="milionaria-trevos-card">
+                <h4>⏳ MAPA DE ATRASO DOS TREVOS</h4>
+                ${atrasoTrevosData.map(item => `
+                    <div class="trevo-atraso-item">
+                        <span class="trevo">Trevo ${item.trevo}</span>
+                        <span class="atraso">${item.concursosAtraso} concursos</span>
+                        <span class="status">${item.status}</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    
+    // Resumo IA
+    let resumoIAHtml = '';
+    const resumoIA = trevos.resumoIA || [];
+    if (resumoIA.length > 0) {
+        resumoIAHtml = `
+            <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid #8b5cf6; border-radius: 8px; padding: 16px; margin-top: 20px;">
+                <h4 style="color: #8b5cf6; font-size: 14px; margin-bottom: 8px;">🤖 Resumo Inteligente</h4>
+                <ul style="margin: 0; padding-left: 20px; color: #e2e8f0; font-size: 13px; line-height: 1.8;">
+                    ${resumoIA.map(insight => `<li>${insight}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    }
+    
+    return `
+        ${proWarning}
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px;">
+            <div style="background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="color: #94a3b8; font-size: 11px;">Total de concursos</div>
+                <div style="color: #38bdf8; font-size: 20px; font-weight: bold;">${totalDraws}</div>
+            </div>
+            <div style="background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="color: #94a3b8; font-size: 11px;">📅 Data inicial</div>
+                <div style="color: #e2e8f0; font-size: 14px; font-weight: bold;">${dataInicio || 'N/A'}</div>
+            </div>
+            <div style="background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="color: #94a3b8; font-size: 11px;">📅 Data final</div>
+                <div style="color: #e2e8f0; font-size: 14px; font-weight: bold;">${dataFim || 'N/A'}</div>
+            </div>
+            <div style="background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="color: #94a3b8; font-size: 11px;">📅 Período</div>
+                <div style="color: #f59e0b; font-size: 14px; font-weight: bold;">${periodoSelecionado === 'all' ? 'Todos' : `${periodoSelecionado} anos`}</div>
+            </div>
+        </div>
+        
+        ${dezenasHtml}
+        
+        <div style="margin-top: 30px;">
+            <h3 style="color: #f59e0b; font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #f59e0b; padding-bottom: 8px;">
+                🍀 TREVOS - ESTATÍSTICAS EXCLUSIVAS
+            </h3>
+            
+            <div class="milionaria-trevos-grid">
+                ${trevosTabelaHtml}
+                ${heatmapTrevosHtml}
+                ${rankingTrevosHtml}
+                ${paresTrevosHtml}
+                ${matrizTrevosHtml}
+                ${atrasoTrevosHtml}
+            </div>
+            
+            ${resumoIAHtml}
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: rgba(56, 189, 248, 0.1); border-radius: 12px; text-align: center;">
+            <div style="font-size: 13px; color: var(--text-secondary);">
+                📊 Baseado em <strong>${totalDraws}</strong> concursos | 
+                🎯 ${config.numerosCSV} números + 2 trevos por concurso
+            </div>
+        </div>
+    `;
+}
+
+// ============================================
+// RENDERIZADOR TIMEMANIA - TELA ESPECIAL (TUDO DO CSV)
+// ============================================
+
+function renderizarTimemania(data, config, userData, periodoSelecionado) {
+    console.log('⚽ renderizarTimemania chamada com data:', data);
+    
+    const totalDraws = data.filteredDraws || data.totalDraws || 0;
+    const dataInicio = data.dataInicio || '';
+    const dataFim = data.dataFim || '';
+    const timemania = data.timemania || {};
+    const times = timemania.times || {};
+    
+    // Dezenas
+    const maisSorteados = data.maisSorteados || [];
+    const menosSorteados = data.menosSorteados || [];
+    const duplas = data.duplas || [];
+    const triplas = data.triplas || [];
+    
+    const formatarNumero = (num, incluirZero) => {
+        if (!userData.isPro) return '<span class="numero-pro" title="🔒 Disponível no Plano PRO">⭐⭐ PRO ⭐⭐</span>';
+        if (num === 0 && incluirZero) return '00';
+        return String(num).padStart(2, '0');
+    };
+    
+    const formatarDupla = (dupla, incluirZero) => {
+        if (!userData.isPro) return '(⭐⭐, ⭐⭐)';
+        return `(${formatarNumero(dupla[0], incluirZero)}, ${formatarNumero(dupla[1], incluirZero)})`;
+    };
+    
+    const formatarTripla = (tripla, incluirZero) => {
+        if (!userData.isPro) return '(⭐⭐, ⭐⭐, ⭐⭐)';
+        return `(${formatarNumero(tripla[0], incluirZero)}, ${formatarNumero(tripla[1], incluirZero)}, ${formatarNumero(tripla[2], incluirZero)})`;
+    };
+    
+    const proWarning = !userData.isPro ? `
+        <div class="pro-overlay" style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; margin-bottom: 20px;">
+            <span class="pro-badge-stats">⭐ PLANO PRO ⭐</span>
+            <p style="margin-top: 10px; font-size: 13px;">Faça login com uma conta PRO para visualizar todos os números e estatísticas completas!</p>
+            <button onclick="window.location.href='index.html'" style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; padding: 8px 20px; border-radius: 30px; color: #1e293b; font-weight: 600; cursor: pointer; margin-top: 10px;">⭐ IR PARA O SISTEMA</button>
+        </div>
+    ` : '';
+    
+    // Dezenas
+    let dezenasHtml = `
+        <div class="stats-cards-grid">
+            <div class="stats-card">
+                <h4>🔢 MAIS SORTEADOS (Top 20)</h4>
+                <div class="stats-list">
+                    ${maisSorteados.length > 0 ? maisSorteados.map(item => `
+                        <div class="stats-item">
+                            <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarNumero(item.numero, config.incluirZero)}</span>
+                            <span class="quantidade">${item.quantidade} vez(es)</span>
+                        </div>
+                    `).join('') : `
+                        <div class="stats-item" style="justify-content: center; color: #94a3b8; padding: 20px;">
+                            Nenhum dado disponível
+                        </div>
+                    `}
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h4>🔢 MENOS SORTEADOS (Bottom 20)</h4>
+                <div class="stats-list">
+                    ${menosSorteados.length > 0 ? menosSorteados.map(item => `
+                        <div class="stats-item">
+                            <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarNumero(item.numero, config.incluirZero)}</span>
+                            <span class="quantidade">${item.quantidade} vez(es)</span>
+                        </div>
+                    `).join('') : `
+                        <div class="stats-item" style="justify-content: center; color: #94a3b8; padding: 20px;">
+                            Nenhum dado disponível
+                        </div>
+                    `}
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h4>👥 DUPLAS MAIS SORTEADAS</h4>
+                <div class="stats-list">
+                    ${duplas.length > 0 ? duplas.map(item => `
+                        <div class="stats-item">
+                            <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarDupla(item.dupla, config.incluirZero)}</span>
+                            <span class="quantidade">${item.quantidade} vez(es)</span>
+                        </div>
+                    `).join('') : `
+                        <div class="stats-item" style="justify-content: center; color: #94a3b8; padding: 20px;">
+                            Nenhuma dupla encontrada
+                        </div>
+                    `}
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h4>🔢 TRÍADES MAIS SORTEADAS</h4>
+                <div class="stats-list">
+                    ${triplas.length > 0 ? triplas.map(item => `
+                        <div class="stats-item">
+                            <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarTripla(item.tripla, config.incluirZero)}</span>
+                            <span class="quantidade">${item.quantidade} vez(es)</span>
+                        </div>
+                    `).join('') : `
+                        <div class="stats-item" style="justify-content: center; color: #94a3b8; padding: 20px;">
+                            Nenhuma tríade encontrada
+                        </div>
+                    `}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Distribuição por dezenas
+    let distribuicaoHtml = '';
+    const distribuicaoDezenas = timemania.distribuicaoDezenas || [];
+    if (distribuicaoDezenas.length > 0) {
+        const maxDist = Math.max(...distribuicaoDezenas.map(d => d.quantidade));
+        
+        distribuicaoHtml = `
+            <div class="milionaria-trevos-card">
+                <h4>🎯 DISTRIBUIÇÃO POR DEZENAS</h4>
+                ${distribuicaoDezenas.map(item => {
+                    const pct = maxDist > 0 ? (item.quantidade / maxDist * 100) : 0;
+                    const cor = pct > 80 ? '#22c55e' : pct > 60 ? '#f59e0b' : '#38bdf8';
+                    return `
+                        <div class="trevo-heatmap-item">
+                            <span class="label" style="width: 60px; color: #94a3b8;">${item.label}</span>
+                            <div class="bar">
+                                <div class="fill" style="width: ${Math.max(pct, 2)}%; background: ${cor};"></div>
+                            </div>
+                            <span class="qtd">${item.quantidade}</span>
+                            <span style="font-size: 10px; color: #94a3b8; width: 40px;">${item.percentual.toFixed(1)}%</span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+    
+    // Pares × Ímpares
+    let paresImparesHtml = '';
+    const paresImpares = timemania.paresImpares || [];
+    if (paresImpares.length > 0) {
+        const maxPI = Math.max(...paresImpares.map(p => p.quantidade));
+        const coresPI = ['#38bdf8', '#f59e0b', '#22c55e', '#ef4444'];
+        
+        paresImparesHtml = `
+            <div class="milionaria-trevos-card">
+                <h4>⚖️ PARES × ÍMPARES</h4>
+                ${paresImpares.map((item, idx) => {
+                    const pct = maxPI > 0 ? (item.quantidade / maxPI * 100) : 0;
+                    const cor = coresPI[idx % coresPI.length];
+                    return `
+                        <div class="trevo-heatmap-item">
+                            <span class="label" style="width: 50px; color: ${cor}; font-weight: 600;">${item.proporcao}</span>
+                            <div class="bar">
+                                <div class="fill" style="width: ${Math.max(pct, 2)}%; background: ${cor};"></div>
+                            </div>
+                            <span class="qtd">${item.quantidade}</span>
+                            <span style="font-size: 10px; color: #94a3b8; width: 40px;">${item.percentual.toFixed(1)}%</span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+    
+    // Ranking dos Times
+    let rankingHtml = '';
+    const rankingTimes = times.ranking || [];
+    if (rankingTimes.length > 0) {
+        const medalhas = ['🥇', '🥈', '🥉', '4º', '5º', '6º', '7º', '8º', '9º', '10º'];
+        rankingHtml = `
+            <div class="milionaria-trevos-card">
+                <h4>🏆 RANKING DOS TIMES DO CORAÇÃO</h4>
+                <div class="trevo-ranking-grid">
+                    ${rankingTimes.slice(0, 10).map((item, idx) => `
+                        <div class="trevo-ranking-item">
+                            <div class="medalha">${medalhas[idx] || `${idx + 1}º`}</div>
+                            <div class="trevo-num" style="color: #f59e0b; font-size: 14px;">${item.time}</div>
+                            <div class="trevo-qtd">${item.quantidade} vezes</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Frequência dos Times
+    let frequenciaHtml = '';
+    const frequenciaTimes = times.frequencia || [];
+    if (frequenciaTimes.length > 0) {
+        const maxFreq = Math.max(...frequenciaTimes.map(f => f.quantidade));
+        const coresTimes = ['#38bdf8', '#f59e0b', '#22c55e', '#ef4444', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6', '#a855f7', '#f43f5e'];
+        
+        frequenciaHtml = `
+            <div class="milionaria-trevos-card">
+                <h4>📊 FREQUÊNCIA DOS TIMES</h4>
+                ${frequenciaTimes.slice(0, 10).map((item, idx) => {
+                    const pct = maxFreq > 0 ? (item.quantidade / maxFreq * 100) : 0;
+                    const cor = coresTimes[idx % coresTimes.length];
+                    return `
+                        <div class="trevo-heatmap-item">
+                            <span class="label" style="color: ${cor}; font-weight: 600; width: 120px;">${item.time}</span>
+                            <div class="bar">
+                                <div class="fill" style="width: ${Math.max(pct, 2)}%; background: ${cor};"></div>
+                            </div>
+                            <span class="qtd">${item.quantidade}</span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+    
+    // Times por Estado
+    let estadosHtml = '';
+    const timesPorEstado = times.porEstado || [];
+    if (timesPorEstado.length > 0) {
+        const maxEstado = Math.max(...timesPorEstado.map(e => e.quantidade));
+        const coresEstado = ['#38bdf8', '#f59e0b', '#22c55e', '#ef4444', '#8b5cf6', '#ec4899'];
+        
+        estadosHtml = `
+            <div class="milionaria-trevos-card">
+                <h4>📍 TIMES POR ESTADO</h4>
+                ${timesPorEstado.map((item, idx) => {
+                    const pct = maxEstado > 0 ? (item.quantidade / maxEstado * 100) : 0;
+                    const cor = coresEstado[idx % coresEstado.length];
+                    return `
+                        <div class="trevo-heatmap-item">
+                            <span class="label" style="color: ${cor}; font-weight: 600; width: 50px;">${item.estado}</span>
+                            <div class="bar">
+                                <div class="fill" style="width: ${Math.max(pct, 2)}%; background: ${cor};"></div>
+                            </div>
+                            <span class="qtd">${item.quantidade}</span>
+                            <span style="font-size: 10px; color: #94a3b8; width: 40px;">${item.percentual.toFixed(1)}%</span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+    
+    // Times atrasados
+    let atrasoHtml = '';
+    const timesAtraso = times.atraso || [];
+    if (timesAtraso.length > 0) {
+        atrasoHtml = `
+            <div class="milionaria-trevos-card">
+                <h4>⏳ TIMES MAIS ATRASADOS</h4>
+                ${timesAtraso.map(item => `
+                    <div class="trevo-atraso-item">
+                        <span class="trevo" style="color: #f59e0b;">${item.time}</span>
+                        <span class="atraso">${item.concursosAtraso} concursos</span>
+                        <span class="status">${item.status}</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    
+    // Tendência
+    let tendenciaHtml = '';
+    const tendenciaTimes = times.tendencia || [];
+    if (tendenciaTimes.length > 0) {
+        tendenciaHtml = `
+            <div class="milionaria-trevos-card">
+                <h4>📈 TENDÊNCIA (Últimos 30 concursos)</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px;">
+                    ${tendenciaTimes.slice(0, 8).map(item => {
+                        const seta = item.quantidade > 4 ? '⬆' : item.quantidade > 2 ? '→' : '⬇';
+                        return `
+                            <div style="background: #0f172a; border-radius: 6px; padding: 8px 12px; text-align: center; border: 1px solid var(--border);">
+                                <div style="font-size: 20px;">${seta}</div>
+                                <div style="font-weight: 600; color: #f59e0b; font-size: 13px;">${item.time}</div>
+                                <div style="font-size: 11px; color: #94a3b8;">${item.quantidade} ocorrências</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Resumo IA
+    let resumoIAHtml = '';
+    const resumoIA = timemania.resumoIA || [];
+    if (resumoIA.length > 0) {
+        resumoIAHtml = `
+            <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid #8b5cf6; border-radius: 8px; padding: 16px; margin-top: 20px;">
+                <h4 style="color: #8b5cf6; font-size: 14px; margin-bottom: 8px;">🤖 Resumo Inteligente</h4>
+                <ul style="margin: 0; padding-left: 20px; color: #e2e8f0; font-size: 13px; line-height: 1.8;">
+                    ${resumoIA.map(insight => `<li>${insight}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    }
+    
+    return `
+        ${proWarning}
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px;">
+            <div style="background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="color: #94a3b8; font-size: 11px;">Total de concursos</div>
+                <div style="color: #38bdf8; font-size: 20px; font-weight: bold;">${totalDraws}</div>
+            </div>
+            <div style="background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="color: #94a3b8; font-size: 11px;">📅 Data inicial</div>
+                <div style="color: #e2e8f0; font-size: 14px; font-weight: bold;">${dataInicio || 'N/A'}</div>
+            </div>
+            <div style="background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="color: #94a3b8; font-size: 11px;">📅 Data final</div>
+                <div style="color: #e2e8f0; font-size: 14px; font-weight: bold;">${dataFim || 'N/A'}</div>
+            </div>
+            <div style="background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="color: #94a3b8; font-size: 11px;">📅 Período</div>
+                <div style="color: #f59e0b; font-size: 14px; font-weight: bold;">${periodoSelecionado === 'all' ? 'Todos' : `${periodoSelecionado} anos`}</div>
+            </div>
+        </div>
+        
+        ${dezenasHtml}
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+            ${distribuicaoHtml}
+            ${paresImparesHtml}
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <h3 style="color: #f59e0b; font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #f59e0b; padding-bottom: 8px;">
+                ⚽ TIMES DO CORAÇÃO - ESTATÍSTICAS EXCLUSIVAS
+            </h3>
+            
+            <div class="milionaria-trevos-grid">
+                ${rankingHtml}
+                ${frequenciaHtml}
+                ${estadosHtml}
+                ${atrasoHtml}
+                ${tendenciaHtml}
+            </div>
+            
+            ${resumoIAHtml}
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: rgba(56, 189, 248, 0.1); border-radius: 12px; text-align: center;">
+            <div style="font-size: 13px; color: var(--text-secondary);">
+                📊 Baseado em <strong>${totalDraws}</strong> concursos | 
+                🎯 ${config.numerosCSV} números + 1 Time do Coração por concurso
+            </div>
+        </div>
+    `;
+}
+
+// ============================================
+// RENDERIZADOR DIA DE SORTE - COM MÊS (TUDO DO CSV)
+// ============================================
+
+function renderizarDiaDeSorte(data, config, userData, periodoSelecionado) {
+    console.log('📅 renderizarDiaDeSorte chamada com data:', data);
+    
+    const totalDraws = data.filteredDraws || data.totalDraws || 0;
+    const dataInicio = data.dataInicio || '';
+    const dataFim = data.dataFim || '';
+    const elementosExtras = data.elementosExtras || [];
+    const nomeElemento = data.nomeElemento || 'Mês de Sorte';
+    
+    // Dezenas
+    const maisSorteados = data.maisSorteados || [];
+    const menosSorteados = data.menosSorteados || [];
+    const duplas = data.duplas || [];
+    const triplas = data.triplas || [];
+    
+    const formatarNumero = (num, incluirZero) => {
+        if (!userData.isPro) return '<span class="numero-pro" title="🔒 Disponível no Plano PRO">⭐⭐ PRO ⭐⭐</span>';
+        if (num === 0 && incluirZero) return '00';
+        return String(num).padStart(2, '0');
+    };
+    
+    const formatarDupla = (dupla, incluirZero) => {
+        if (!userData.isPro) return '(⭐⭐, ⭐⭐)';
+        return `(${formatarNumero(dupla[0], incluirZero)}, ${formatarNumero(dupla[1], incluirZero)})`;
+    };
+    
+    const formatarTripla = (tripla, incluirZero) => {
+        if (!userData.isPro) return '(⭐⭐, ⭐⭐, ⭐⭐)';
+        return `(${formatarNumero(tripla[0], incluirZero)}, ${formatarNumero(tripla[1], incluirZero)}, ${formatarNumero(tripla[2], incluirZero)})`;
+    };
+    
+    const proWarning = !userData.isPro ? `
+        <div class="pro-overlay" style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; margin-bottom: 20px;">
+            <span class="pro-badge-stats">⭐ PLANO PRO ⭐</span>
+            <p style="margin-top: 10px; font-size: 13px;">Faça login com uma conta PRO para visualizar todos os números e estatísticas completas!</p>
+            <button onclick="window.location.href='index.html'" style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; padding: 8px 20px; border-radius: 30px; color: #1e293b; font-weight: 600; cursor: pointer; margin-top: 10px;">⭐ IR PARA O SISTEMA</button>
+        </div>
+    ` : '';
+    
+    // Dezenas
+    let dezenasHtml = `
+        <div class="stats-cards-grid">
+            <div class="stats-card">
+                <h4>🔢 MAIS SORTEADOS (Top 20)</h4>
+                <div class="stats-list">
+                    ${maisSorteados.length > 0 ? maisSorteados.map(item => `
+                        <div class="stats-item">
+                            <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarNumero(item.numero, config.incluirZero)}</span>
+                            <span class="quantidade">${item.quantidade} vez(es)</span>
+                        </div>
+                    `).join('') : `
+                        <div class="stats-item" style="justify-content: center; color: #94a3b8; padding: 20px;">
+                            Nenhum dado disponível
+                        </div>
+                    `}
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h4>🔢 MENOS SORTEADOS (Bottom 20)</h4>
+                <div class="stats-list">
+                    ${menosSorteados.length > 0 ? menosSorteados.map(item => `
+                        <div class="stats-item">
+                            <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarNumero(item.numero, config.incluirZero)}</span>
+                            <span class="quantidade">${item.quantidade} vez(es)</span>
+                        </div>
+                    `).join('') : `
+                        <div class="stats-item" style="justify-content: center; color: #94a3b8; padding: 20px;">
+                            Nenhum dado disponível
+                        </div>
+                    `}
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h4>👥 DUPLAS MAIS SORTEADAS</h4>
+                <div class="stats-list">
+                    ${duplas.length > 0 ? duplas.map(item => `
+                        <div class="stats-item">
+                            <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarDupla(item.dupla, config.incluirZero)}</span>
+                            <span class="quantidade">${item.quantidade} vez(es)</span>
+                        </div>
+                    `).join('') : `
+                        <div class="stats-item" style="justify-content: center; color: #94a3b8; padding: 20px;">
+                            Nenhuma dupla encontrada
+                        </div>
+                    `}
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h4>🔢 TRÍADES MAIS SORTEADAS</h4>
+                <div class="stats-list">
+                    ${triplas.length > 0 ? triplas.map(item => `
+                        <div class="stats-item">
+                            <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarTripla(item.tripla, config.incluirZero)}</span>
+                            <span class="quantidade">${item.quantidade} vez(es)</span>
+                        </div>
+                    `).join('') : `
+                        <div class="stats-item" style="justify-content: center; color: #94a3b8; padding: 20px;">
+                            Nenhuma tríade encontrada
+                        </div>
+                    `}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Meses extras
+    let mesesHtml = '';
+    if (elementosExtras.length > 0) {
+        mesesHtml = `
+            <div class="milionaria-trevos-card">
+                <h4>📅 ${nomeElemento}s MAIS SORTEADOS</h4>
+                <div class="stats-list">
+                    ${elementosExtras.map(item => `
+                        <div class="stats-item">
+                            <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${userData.isPro ? item.nome : '⭐⭐ PRO ⭐⭐'}</span>
+                            <span class="quantidade">${item.quantidade} vez(es)</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    return `
+        ${proWarning}
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px;">
+            <div style="background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="color: #94a3b8; font-size: 11px;">Total de concursos</div>
+                <div style="color: #38bdf8; font-size: 20px; font-weight: bold;">${totalDraws}</div>
+            </div>
+            <div style="background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="color: #94a3b8; font-size: 11px;">📅 Data inicial</div>
+                <div style="color: #e2e8f0; font-size: 14px; font-weight: bold;">${dataInicio || 'N/A'}</div>
+            </div>
+            <div style="background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="color: #94a3b8; font-size: 11px;">📅 Data final</div>
+                <div style="color: #e2e8f0; font-size: 14px; font-weight: bold;">${dataFim || 'N/A'}</div>
+            </div>
+            <div style="background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="color: #94a3b8; font-size: 11px;">📅 Período</div>
+                <div style="color: #f59e0b; font-size: 14px; font-weight: bold;">${periodoSelecionado === 'all' ? 'Todos' : `${periodoSelecionado} anos`}</div>
+            </div>
+        </div>
+        
+        ${dezenasHtml}
+        
+        <div style="margin-top: 20px;">
+            <div class="milionaria-trevos-grid">
+                ${mesesHtml}
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: rgba(56, 189, 248, 0.1); border-radius: 12px; text-align: center;">
+            <div style="font-size: 13px; color: var(--text-secondary);">
+                📊 Baseado em <strong>${totalDraws}</strong> concursos | 
+                🎯 ${config.numerosCSV} números + 1 ${nomeElemento} por concurso
+            </div>
+        </div>
+    `;
+}
+
+// ============================================
+// RENDERIZADOR LOTECA
+// ============================================
+
+function renderizarLoteca(data, config, userData, periodoSelecionado) {
+    console.log('⚽ renderizarLoteca chamada com data:', data);
+    
+    const totalDraws = data.filteredDraws || data.totalDraws || 0;
+    const dataInicio = data.dataInicio || '';
+    const dataFim = data.dataFim || '';
+    const loteca = data.loteca || {};
+    const { frequenciaGlobal, frequenciaPorJogo } = loteca;
+    
+    const proWarning = !userData.isPro ? `
+        <div class="pro-overlay" style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; margin-bottom: 20px;">
+            <span class="pro-badge-stats">⭐ PLANO PRO ⭐</span>
+            <p style="margin-top: 10px; font-size: 13px;">Faça login com uma conta PRO para visualizar todos os números e estatísticas completas!</p>
+            <button onclick="window.location.href='index.html'" style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; padding: 8px 20px; border-radius: 30px; color: #1e293b; font-weight: 600; cursor: pointer; margin-top: 10px;">⭐ IR PARA O SISTEMA</button>
+        </div>
+    ` : '';
+    
+    let html = `
+        ${proWarning}
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px;">
+            <div style="background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="color: #94a3b8; font-size: 11px;">Total de concursos</div>
+                <div style="color: #38bdf8; font-size: 20px; font-weight: bold;">${totalDraws}</div>
+            </div>
+            <div style="background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="color: #94a3b8; font-size: 11px;">📅 Data inicial</div>
+                <div style="color: #e2e8f0; font-size: 14px; font-weight: bold;">${dataInicio || 'N/A'}</div>
+            </div>
+            <div style="background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="color: #94a3b8; font-size: 11px;">📅 Data final</div>
+                <div style="color: #e2e8f0; font-size: 14px; font-weight: bold;">${dataFim || 'N/A'}</div>
+            </div>
+            <div style="background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="color: #94a3b8; font-size: 11px;">📅 Período</div>
+                <div style="color: #f59e0b; font-size: 14px; font-weight: bold;">${periodoSelecionado === 'all' ? 'Todos' : `${periodoSelecionado} anos`}</div>
+            </div>
+        </div>
+        
+        <div class="stats-cards-grid">
+            <div class="stats-card">
+                <h4>📊 FREQUÊNCIA GLOBAL</h4>
+                <div class="stats-list">
+                    ${frequenciaGlobal ? frequenciaGlobal.map(item => `
+                        <div class="stats-item">
+                            <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${userData.isPro ? item.resultado : '⭐⭐ PRO ⭐⭐'}</span>
+                            <span class="quantidade">${item.quantidade} vez(es)</span>
+                        </div>
+                    `).join('') : ''}
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <h4 style="color: var(--text-secondary); margin-bottom: 15px;">📊 FREQUÊNCIA POR JOGO</h4>
+            <div class="loteca-stats-grid">
+                ${frequenciaPorJogo ? frequenciaPorJogo.map(jogo => `
+                    <div class="loteca-jogo-card">
+                        <h5>⚽ Jogo ${jogo.jogo}</h5>
+                        <div class="loteca-bar">
+                            <div class="casa" style="width: ${(jogo.casa / jogo.total * 100) || 0}%;"></div>
+                            <div class="empate" style="width: ${(jogo.empate / jogo.total * 100) || 0}%;"></div>
+                            <div class="fora" style="width: ${(jogo.fora / jogo.total * 100) || 0}%;"></div>
+                        </div>
+                        <div class="loteca-legend">
+                            <span>🏠 Casa: ${jogo.casa}</span>
+                            <span>🤝 Empate: ${jogo.empate}</span>
+                            <span>✈️ Fora: ${jogo.fora}</span>
+                            <span>📊 Total: ${jogo.total}</span>
+                        </div>
+                    </div>
+                `).join('') : ''}
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: rgba(56, 189, 248, 0.1); border-radius: 12px; text-align: center;">
+            <div style="font-size: 13px; color: var(--text-secondary);">
+                📊 Baseado em <strong>${totalDraws}</strong> concursos | 
+                🎯 ${config.numerosCSV} jogos por concurso
+            </div>
+        </div>
+    `;
+    
+    return html;
+}
+
+// ============================================
+// RENDERIZADOR ESTATÍSTICAS LOCAIS (FALLBACK)
+// ============================================
+
+async function renderizarEstatisticasLocal(data) {
+    const container = document.getElementById('estatisticasContent');
+    const config = window.LOTERIAS ? window.LOTERIAS[loteriaAtualStats] : { maxNumero: 60, numeros: 6, incluirZero: false };
+    
+    // Se for uma loteria especial, usa o renderizador específico
+    if (data.isTimemania) {
+        const html = renderizarTimemania(data, config, userData, periodoSelecionadoStats);
+        container.innerHTML = html;
+        return;
+    }
+    
+    if (data.isMilionaria) {
+        const html = renderizarMilionaria(data, config, userData, periodoSelecionadoStats);
+        container.innerHTML = html;
+        return;
+    }
+    
+    if (data.isDiaDeSorte) {
+        const html = renderizarDiaDeSorte(data, config, userData, periodoSelecionadoStats);
+        container.innerHTML = html;
+        return;
+    }
+    
+    if (data.loteca) {
+        const html = renderizarLoteca(data, config, userData, periodoSelecionadoStats);
+        container.innerHTML = html;
+        return;
+    }
+    
+    // Fallback para outras loterias
+    const maisSorteados = data.maisSorteados || [];
+    const menosSorteados = data.menosSorteados || [];
+    const duplas = data.duplas || [];
+    const triplas = data.triplas || [];
+    
+    const formatarNumero = (num, incluirZero) => {
+        if (!userData.isPro) return '<span class="numero-pro" title="🔒 Disponível no Plano PRO">⭐⭐ PRO ⭐⭐</span>';
+        if (num === 0 && incluirZero) return '00';
+        return String(num).padStart(2, '0');
+    };
+    
+    const formatarDupla = (dupla, incluirZero) => {
+        if (!userData.isPro) return '(⭐⭐, ⭐⭐)';
+        return `(${formatarNumero(dupla[0], incluirZero)}, ${formatarNumero(dupla[1], incluirZero)})`;
+    };
+    
+    const formatarTripla = (tripla, incluirZero) => {
+        if (!userData.isPro) return '(⭐⭐, ⭐⭐, ⭐⭐)';
+        return `(${formatarNumero(tripla[0], incluirZero)}, ${formatarNumero(tripla[1], incluirZero)}, ${formatarNumero(tripla[2], incluirZero)})`;
+    };
+    
+    const proWarning = !userData.isPro ? `
+        <div class="pro-overlay" style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; margin-bottom: 20px;">
+            <span class="pro-badge-stats">⭐ PLANO PRO ⭐</span>
+            <p style="margin-top: 10px; font-size: 13px;">Faça login com uma conta PRO para visualizar todos os números e estatísticas completas!</p>
+            <button onclick="window.location.href='index.html'" style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; padding: 8px 20px; border-radius: 30px; color: #1e293b; font-weight: 600; cursor: pointer; margin-top: 10px;">⭐ IR PARA O SISTEMA</button>
+        </div>
+    ` : '';
+    
+    const html = `
+        ${proWarning}
+        <div class="stats-cards-grid">
+            <div class="stats-card">
+                <h4>🔢 MAIS SORTEADOS (Top 20)</h4>
+                <div class="stats-list">
+                    ${maisSorteados.length > 0 ? maisSorteados.map(item => `
+                        <div class="stats-item">
+                            <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarNumero(item.numero, config.incluirZero)}</span>
+                            <span class="quantidade">${item.quantidade} vez(es)</span>
+                        </div>
+                    `).join('') : `
+                        <div class="stats-item" style="justify-content: center; color: #94a3b8; padding: 20px;">
+                            Nenhum dado disponível
+                        </div>
+                    `}
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h4>🔢 MENOS SORTEADOS (Bottom 20)</h4>
+                <div class="stats-list">
+                    ${menosSorteados.length > 0 ? menosSorteados.map(item => `
+                        <div class="stats-item">
+                            <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarNumero(item.numero, config.incluirZero)}</span>
+                            <span class="quantidade">${item.quantidade} vez(es)</span>
+                        </div>
+                    `).join('') : `
+                        <div class="stats-item" style="justify-content: center; color: #94a3b8; padding: 20px;">
+                            Nenhum dado disponível
+                        </div>
+                    `}
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h4>👥 DUPLAS MAIS SORTEADAS</h4>
+                <div class="stats-list">
+                    ${duplas.length > 0 ? duplas.map(item => `
+                        <div class="stats-item">
+                            <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarDupla(item.dupla, config.incluirZero)}</span>
+                            <span class="quantidade">${item.quantidade} vez(es)</span>
+                        </div>
+                    `).join('') : `
+                        <div class="stats-item" style="justify-content: center; color: #94a3b8; padding: 20px;">
+                            Nenhuma dupla encontrada
+                        </div>
+                    `}
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h4>🔢 TRÍADES MAIS SORTEADAS</h4>
+                <div class="stats-list">
+                    ${triplas.length > 0 ? triplas.map(item => `
+                        <div class="stats-item">
+                            <span class="${userData.isPro ? 'numero' : 'numero-pro'}">${formatarTripla(item.tripla, config.incluirZero)}</span>
+                            <span class="quantidade">${item.quantidade} vez(es)</span>
+                        </div>
+                    `).join('') : `
+                        <div class="stats-item" style="justify-content: center; color: #94a3b8; padding: 20px;">
+                            Nenhuma tríade encontrada
+                        </div>
+                    `}
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: rgba(56, 189, 248, 0.1); border-radius: 12px; text-align: center;">
+            <div style="font-size: 13px; color: var(--text-secondary);">
+                📊 Baseado em <strong>${data.filteredDraws || data.totalDraws || 0}</strong> concursos | 
+                🎯 ${config.numerosCSV} números por concurso
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+// ============================================
 // EXPORTAÇÃO
 // ============================================
 window.renderizarEstatisticas = renderizarEstatisticas;
 window.renderizarSuperSete = renderizarSuperSete;
+window.renderizarMilionaria = renderizarMilionaria;
+window.renderizarTimemania = renderizarTimemania;
+window.renderizarDiaDeSorte = renderizarDiaDeSorte;
+window.renderizarLoteca = renderizarLoteca;
+window.renderizarEstatisticasLocal = renderizarEstatisticasLocal;
 window.calcularFrequenciaNumeros = calcularFrequenciaNumeros;
 window.calcularDuplasMaisSorteadas = calcularDuplasMaisSorteadas;
 window.calcularTriplasMaisSorteadas = calcularTriplasMaisSorteadas;
 
 console.log('✅ estatisticas.js carregado com sucesso!');
 console.log('🔍 renderizarSuperSete disponível:', typeof renderizarSuperSete);
+console.log('💎 renderizarMilionaria disponível:', typeof renderizarMilionaria);
+console.log('⚽ renderizarTimemania disponível:', typeof renderizarTimemania);
+console.log('📅 renderizarDiaDeSorte disponível:', typeof renderizarDiaDeSorte);
