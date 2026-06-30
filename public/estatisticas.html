@@ -11,10 +11,13 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
     
-    <!-- Renderizadores -->
-    <script src="js/estatisticas.js"></script>
+    <!-- Estatísticas - NOVO PONTO DE ENTRADA -->
+    <script src="js/estatisticas/index.js" type="module"></script>
     
     <style>
+        /* ============================================
+           ESTILOS GERAIS
+        ============================================ */
         .stats-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
         .lottery-grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px; }
         .lottery-card-stats { background: var(--bg-secondary); padding: 15px; border-radius: var(--radius); border: 2px solid var(--border); cursor: pointer; transition: all 0.3s; text-align: center; }
@@ -40,16 +43,7 @@
         .error-stats { background: rgba(239, 68, 68, 0.1); border: 2px solid #ef4444; padding: 15px; border-radius: var(--radius); text-align: center; color: #fca5a5; }
         .footer-stats { margin-top: 40px; margin-bottom: 20px; text-align: center; }
         .btn-footer { background: #64748b; border: none; padding: 10px 25px; border-radius: 30px; color: white; font-weight: 600; cursor: pointer; margin: 5px; }
-        .stats-note { font-size: 11px; color: #f59e0b; margin-top: 10px; text-align: center; }
         .header-logo { font-size: 32px; min-width: 50px; text-align: center; }
-        .loteca-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
-        .loteca-jogo-card { background: var(--bg-card); border-radius: var(--radius); padding: 12px; border: 2px solid var(--border); }
-        .loteca-jogo-card h5 { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
-        .loteca-bar { display: flex; gap: 4px; height: 20px; margin: 4px 0; }
-        .loteca-bar .casa { background: #38bdf8; height: 100%; border-radius: 3px; }
-        .loteca-bar .empate { background: #f59e0b; height: 100%; border-radius: 3px; }
-        .loteca-bar .fora { background: #ef4444; height: 100%; border-radius: 3px; }
-        .loteca-legend { display: flex; gap: 15px; font-size: 11px; color: var(--text-secondary); margin-top: 6px; flex-wrap: wrap; }
         .user-info-bar {
             display: flex;
             align-items: center;
@@ -61,23 +55,15 @@
             flex-wrap: wrap;
             border: 1px solid var(--border);
         }
-        .user-info-bar .info-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            color: var(--text-secondary);
-        }
+        .user-info-bar .info-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
         .user-info-bar .info-item .label { font-weight: 300; }
         .user-info-bar .info-item .value { font-weight: 600; color: var(--text-primary); }
-        .user-info-bar .info-item .value.pro { color: #f59e0b; }
-        .user-info-bar .info-item .value.free { color: #94a3b8; }
         .user-info-bar .info-item .badge-pro { background: linear-gradient(135deg, #f59e0b, #eab308); color: #1e293b; padding: 2px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
         .user-info-bar .info-item .badge-free { background: #334155; color: #94a3b8; padding: 2px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
         .user-info-bar .info-item .user-name { font-weight: 600; color: #38bdf8; }
         
         /* ============================================
-           ESTILOS ESPECÍFICOS PARA +MILIONÁRIA E TIMEMANIA
+           ESTILOS ESPECIAIS
         ============================================ */
         .milionaria-trevos-grid {
             display: grid;
@@ -107,33 +93,10 @@
             gap: 12px;
             padding: 4px 0;
         }
-        .trevo-heatmap-item .label {
-            width: 70px;
-            font-size: 13px;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-        .trevo-heatmap-item .bar {
-            flex: 1;
-            height: 20px;
-            background: #0f172a;
-            border-radius: 4px;
-            overflow: hidden;
-            position: relative;
-        }
-        .trevo-heatmap-item .bar .fill {
-            height: 100%;
-            border-radius: 4px;
-            transition: width 0.3s;
-            min-width: 2px;
-        }
-        .trevo-heatmap-item .qtd {
-            width: 50px;
-            text-align: right;
-            font-size: 13px;
-            color: #f59e0b;
-            font-weight: 600;
-        }
+        .trevo-heatmap-item .label { width: 70px; font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+        .trevo-heatmap-item .bar { flex: 1; height: 20px; background: #0f172a; border-radius: 4px; overflow: hidden; }
+        .trevo-heatmap-item .bar .fill { height: 100%; border-radius: 4px; transition: width 0.3s; min-width: 2px; }
+        .trevo-heatmap-item .qtd { width: 50px; text-align: right; font-size: 13px; color: #f59e0b; font-weight: 600; }
         .trevo-ranking-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -146,18 +109,9 @@
             text-align: center;
             border: 1px solid var(--border);
         }
-        .trevo-ranking-item .medalha {
-            font-size: 20px;
-        }
-        .trevo-ranking-item .trevo-num {
-            font-size: 16px;
-            font-weight: bold;
-            color: #38bdf8;
-        }
-        .trevo-ranking-item .trevo-qtd {
-            font-size: 11px;
-            color: #94a3b8;
-        }
+        .trevo-ranking-item .medalha { font-size: 20px; }
+        .trevo-ranking-item .trevo-num { font-size: 16px; font-weight: bold; color: #38bdf8; }
+        .trevo-ranking-item .trevo-qtd { font-size: 11px; color: #94a3b8; }
         .trevo-pares-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -172,14 +126,8 @@
             align-items: center;
             border: 1px solid var(--border);
         }
-        .trevo-par-item .par {
-            font-weight: 600;
-            color: #f59e0b;
-        }
-        .trevo-par-item .qtd {
-            font-size: 12px;
-            color: #94a3b8;
-        }
+        .trevo-par-item .par { font-weight: 600; color: #f59e0b; }
+        .trevo-par-item .qtd { font-size: 12px; color: #94a3b8; }
         .trevo-matriz {
             display: grid;
             grid-template-columns: 30px repeat(6, 1fr);
@@ -187,13 +135,7 @@
             max-width: 400px;
             margin: 0 auto;
         }
-        .trevo-matriz .header {
-            color: #94a3b8;
-            font-size: 11px;
-            text-align: center;
-            font-weight: 600;
-            padding: 4px;
-        }
+        .trevo-matriz .header { color: #94a3b8; font-size: 11px; text-align: center; font-weight: 600; padding: 4px; }
         .trevo-matriz .cell {
             background: #0f172a;
             border-radius: 4px;
@@ -203,19 +145,9 @@
             color: #e2e8f0;
             border: 1px solid #1e293b;
         }
-        .trevo-matriz .cell.diagonal {
-            background: transparent;
-            border: none;
-            color: #64748b;
-        }
-        .trevo-matriz .cell.destaque {
-            background: rgba(56, 189, 248, 0.2);
-            border-color: #38bdf8;
-        }
-        .trevo-matriz .cell.destaque-alta {
-            background: rgba(34, 197, 94, 0.3);
-            border-color: #22c55e;
-        }
+        .trevo-matriz .cell.diagonal { background: transparent; border: none; color: #64748b; }
+        .trevo-matriz .cell.destaque { background: rgba(56, 189, 248, 0.2); border-color: #38bdf8; }
+        .trevo-matriz .cell.destaque-alta { background: rgba(34, 197, 94, 0.3); border-color: #22c55e; }
         .trevo-atraso-item {
             display: flex;
             justify-content: space-between;
@@ -223,16 +155,19 @@
             border-bottom: 1px solid var(--border);
             font-size: 13px;
         }
-        .trevo-atraso-item .status {
-            font-size: 16px;
-        }
-        .trevo-atraso-item .trevo {
-            font-weight: 600;
-            color: #38bdf8;
-        }
-        .trevo-atraso-item .atraso {
-            color: #f59e0b;
-        }
+        .trevo-atraso-item .status { font-size: 16px; }
+        .trevo-atraso-item .trevo { font-weight: 600; color: #38bdf8; }
+        .trevo-atraso-item .atraso { color: #f59e0b; }
+        
+        /* Loteca */
+        .loteca-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
+        .loteca-jogo-card { background: var(--bg-card); border-radius: var(--radius); padding: 12px; border: 2px solid var(--border); }
+        .loteca-jogo-card h5 { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+        .loteca-bar { display: flex; gap: 4px; height: 20px; margin: 4px 0; }
+        .loteca-bar .casa { background: #38bdf8; height: 100%; border-radius: 3px; }
+        .loteca-bar .empate { background: #f59e0b; height: 100%; border-radius: 3px; }
+        .loteca-bar .fora { background: #ef4444; height: 100%; border-radius: 3px; }
+        .loteca-legend { display: flex; gap: 15px; font-size: 11px; color: var(--text-secondary); margin-top: 6px; flex-wrap: wrap; }
         
         @media (max-width: 768px) { 
             .stats-cards-grid { grid-template-columns: 1fr; } 
@@ -257,6 +192,7 @@
     </div>
 
     <div class="stats-container">
+        <!-- User Info -->
         <div class="user-info-bar" id="userInfoBar">
             <div class="info-item">
                 <span>👤</span>
@@ -285,8 +221,10 @@
             </div>
         </div>
 
+        <!-- Grid de Loterias -->
         <div class="lottery-grid-stats" id="lotteryGridStats"></div>
         
+        <!-- Período -->
         <div class="card">
             <h4>📅 Período (Baseado em data real)</h4>
             <div class="periodo-filtros" id="periodoFiltros">
@@ -300,14 +238,19 @@
             <div id="periodoInfo"></div>
         </div>
         
+        <!-- Conteúdo das Estatísticas -->
         <div id="estatisticasContent"><div class="loading-stats">📊 Carregando estatísticas...</div></div>
         
+        <!-- Footer -->
         <div class="footer-stats">
             <button class="btn-footer" onclick="window.location.href='index.html'">← Voltar ao Sistema</button>
             <div style="margin-top: 15px; font-size: 11px; color: var(--text-secondary);">© 2025 Loterias IA</div>
         </div>
     </div>
 
+    <!-- ============================================
+    SCRIPT PRINCIPAL
+    ============================================ -->
     <script>
         // ============================================
         // CONFIGURAÇÃO DO FIREBASE
@@ -321,9 +264,6 @@
             appId: "1:124650527048:web:bc335922cb9e1586c3fb7d"
         };
         
-        // ============================================
-        // INICIALIZAR FIREBASE
-        // ============================================
         if (!firebase.apps || firebase.apps.length === 0) {
             try {
                 firebase.initializeApp(firebaseConfig);
@@ -356,7 +296,7 @@
             megasena: { nome: 'Mega-Sena', icone: '💰', numerosCSV: 6, maxNumero: 60, incluirZero: false },
             quina: { nome: 'Quina', icone: '🎯', numerosCSV: 5, maxNumero: 80, incluirZero: false },
             lotofacil: { nome: 'Lotofácil', icone: '🍀', numerosCSV: 15, maxNumero: 25, incluirZero: false },
-            lotomania: { nome: 'Lotomania', icone: '🎪', numerosCSV: 20, maxNumero: 99, incluirZero: true, observacao: 'Sorteia 20 números entre 00 e 99' },
+            lotomania: { nome: 'Lotomania', icone: '🎪', numerosCSV: 20, maxNumero: 99, incluirZero: true },
             duplasena: { nome: 'Dupla Sena', icone: '🎲', numerosCSV: 6, maxNumero: 50, incluirZero: false },
             timemania: { 
                 nome: 'Timemania', 
@@ -365,8 +305,7 @@
                 maxNumero: 80, 
                 incluirZero: false,
                 temElementoExtra: true,
-                nomeElemento: 'Time do Coração',
-                isTimemania: true
+                nomeElemento: 'Time do Coração'
             },
             milionaria: { 
                 nome: '+Milionária', 
@@ -375,8 +314,7 @@
                 maxNumero: 50, 
                 incluirZero: false,
                 temElementoExtra: true,
-                nomeElemento: 'Trevo',
-                isMilionaria: true
+                nomeElemento: 'Trevo'
             },
             loteca: { nome: 'Loteca', icone: '⚽', numerosCSV: 14, maxNumero: 3, incluirZero: true },
             diadesorte: { 
@@ -386,33 +324,13 @@
                 maxNumero: 31, 
                 incluirZero: false,
                 temElementoExtra: true,
-                nomeElemento: 'Mês de Sorte',
-                isDiaDeSorte: true
+                nomeElemento: 'Mês de Sorte'
             },
             supersete: { nome: 'Super Sete', icone: '🌟', numerosCSV: 7, maxNumero: 9, incluirZero: true }
         };
         
         // ============================================
-        // FUNÇÕES DE FORMATAÇÃO
-        // ============================================
-        function formatarNumero(numero, incluirZero) {
-            if (!userData.isPro) return '<span class="numero-pro" title="🔒 Disponível no Plano PRO">⭐⭐ PRO ⭐⭐</span>';
-            if (numero === 0 && incluirZero) return '00';
-            return String(numero).padStart(2, '0');
-        }
-        
-        function formatarDupla(dupla, incluirZero) {
-            if (!userData.isPro) return '(⭐⭐, ⭐⭐)';
-            return `(${formatarNumero(dupla[0], incluirZero)}, ${formatarNumero(dupla[1], incluirZero)})`;
-        }
-        
-        function formatarTripla(tripla, incluirZero) {
-            if (!userData.isPro) return '(⭐⭐, ⭐⭐, ⭐⭐)';
-            return `(${formatarNumero(tripla[0], incluirZero)}, ${formatarNumero(tripla[1], incluirZero)}, ${formatarNumero(tripla[2], incluirZero)})`;
-        }
-        
-        // ============================================
-        // BUSCAR DADOS DO USUÁRIO
+        // FUNÇÕES
         // ============================================
         async function buscarDadosUsuario(uid) {
             try {
@@ -421,10 +339,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ uid: uid })
                 });
-                
                 const data = await response.json();
-                console.log('📊 Resposta do /api/user/status:', data);
-                
                 if (data.success) {
                     return {
                         nome: data.user?.nome || data.user?.email?.split('@')[0] || 'Usuário',
@@ -441,35 +356,21 @@
             }
         }
         
-        // ============================================
-        // VERIFICAR USUÁRIO
-        // ============================================
         function verificarUsuario() {
             firebase.auth().onAuthStateChanged(async (user) => {
-                console.log('🔥 Auth state changed:', user?.email || 'null');
-                
                 if (user) {
                     try {
                         const dados = await buscarDadosUsuario(user.uid);
-                        
                         if (dados) {
-                            userData.nome = dados.nome;
-                            userData.email = dados.email;
-                            userData.isPro = dados.isPro;
-                            userData.credits = dados.credits;
-                            userData.proExpiresAt = dados.proExpiresAt;
-                            userData.uid = user.uid;
-                            console.log('✅ Dados carregados do backend:', userData.nome);
+                            userData = { ...userData, ...dados, uid: user.uid };
                         } else {
                             userData.nome = user.displayName || user.email?.split('@')[0] || 'Usuário';
                             userData.email = user.email || '';
                             userData.uid = user.uid;
                             userData.isPro = false;
                             userData.credits = 0;
-                            console.log('⚠️ Fallback: usando dados do Firebase:', userData.nome);
                         }
                     } catch(e) {
-                        console.error('❌ Erro ao verificar usuário:', e);
                         userData.nome = user.displayName || user.email?.split('@')[0] || 'Usuário';
                         userData.isPro = false;
                         userData.credits = 0;
@@ -480,17 +381,12 @@
                     userData.credits = 0;
                     userData.email = '';
                     userData.uid = '';
-                    console.log('👤 Nenhum usuário logado');
                 }
-                
                 atualizarUserInfo();
                 await carregarEstatisticas();
             });
         }
         
-        // ============================================
-        // ATUALIZAR UI
-        // ============================================
         function atualizarUserInfo() {
             const nameDisplay = document.getElementById('userNameDisplay');
             if (nameDisplay) nameDisplay.textContent = userData.nome || 'Usuário';
@@ -524,21 +420,14 @@
             }
         }
         
-        // ============================================
-        // CARREGAR ESTATÍSTICAS DA API
-        // ============================================
         async function carregarEstatisticas() {
             const container = document.getElementById('estatisticasContent');
             container.innerHTML = '<div class="loading-stats">📊 Carregando estatísticas...</div>';
             
             try {
                 const url = `${API_URL}/statistics?lottery=${loteriaAtualStats}&period=${periodoSelecionadoStats}`;
-                console.log(`📥 Buscando estatísticas: ${url}`);
-                
                 const response = await fetch(url);
                 const data = await response.json();
-                
-                console.log('📊 Dados recebidos:', data);
                 
                 if (!data.success) {
                     throw new Error(data.error || 'Erro ao carregar estatísticas');
@@ -547,72 +436,22 @@
                 dadosAtuaisStats = data;
                 await atualizarPeriodoInfo(data);
                 
-                // ============================================
-                // RENDERIZAR CONFORME LOTERIA
-                // ============================================
-                if (loteriaAtualStats === 'supersete') {
-                    if (typeof window.renderizarSuperSete === 'function') {
-                        const html = window.renderizarSuperSete(data, LOTERIAS_STATS[loteriaAtualStats], userData, periodoSelecionadoStats);
-                        container.innerHTML = html;
-                    } else {
-                        container.innerHTML = `
-                            <div class="error-stats">
-                                ⚠️ Função Super Sete não disponível. 
-                                <br><br>
-                                <button onclick="carregarEstatisticas()" style="background: #8b5cf6; border: none; padding: 8px 20px; border-radius: 30px; color: white; font-weight: 600; cursor: pointer;">
-                                    🔄 Tentar novamente
-                                </button>
-                            </div>
-                        `;
-                    }
-                } else if (loteriaAtualStats === 'milionaria') {
-                    if (typeof window.renderizarMilionaria === 'function') {
-                        const html = window.renderizarMilionaria(data, LOTERIAS_STATS[loteriaAtualStats], userData, periodoSelecionadoStats);
-                        container.innerHTML = html;
-                    } else {
-                        container.innerHTML = `
-                            <div class="error-stats">
-                                ⚠️ Função +Milionária não disponível. 
-                                <br><br>
-                                <button onclick="carregarEstatisticas()" style="background: #8b5cf6; border: none; padding: 8px 20px; border-radius: 30px; color: white; font-weight: 600; cursor: pointer;">
-                                    🔄 Tentar novamente
-                                </button>
-                            </div>
-                        `;
-                    }
-                } else if (loteriaAtualStats === 'timemania') {
-                    if (typeof window.renderizarTimemania === 'function') {
-                        const html = window.renderizarTimemania(data, LOTERIAS_STATS[loteriaAtualStats], userData, periodoSelecionadoStats);
-                        container.innerHTML = html;
-                    } else {
-                        container.innerHTML = `
-                            <div class="error-stats">
-                                ⚠️ Função Timemania não disponível. 
-                                <br><br>
-                                <button onclick="carregarEstatisticas()" style="background: #8b5cf6; border: none; padding: 8px 20px; border-radius: 30px; color: white; font-weight: 600; cursor: pointer;">
-                                    🔄 Tentar novamente
-                                </button>
-                            </div>
-                        `;
-                    }
-                } else if (loteriaAtualStats === 'diadesorte') {
-                    if (typeof window.renderizarDiaDeSorte === 'function') {
-                        const html = window.renderizarDiaDeSorte(data, LOTERIAS_STATS[loteriaAtualStats], userData, periodoSelecionadoStats);
-                        container.innerHTML = html;
-                    } else {
-                        container.innerHTML = `
-                            <div class="error-stats">
-                                ⚠️ Função Dia de Sorte não disponível. 
-                                <br><br>
-                                <button onclick="carregarEstatisticas()" style="background: #8b5cf6; border: none; padding: 8px 20px; border-radius: 30px; color: white; font-weight: 600; cursor: pointer;">
-                                    🔄 Tentar novamente
-                                </button>
-                            </div>
-                        `;
-                    }
+                // Usar o novo renderizador modular
+                if (typeof window.renderizarEstatisticas === 'function') {
+                    const config = LOTERIAS_STATS[loteriaAtualStats];
+                    const html = window.renderizarEstatisticas(loteriaAtualStats, data, config, userData, periodoSelecionadoStats);
+                    container.innerHTML = html;
                 } else {
-                    // Renderização genérica para outras loterias
-                    await window.renderizarEstatisticasLocal(data);
+                    // Fallback - carregar o renderizador antigo
+                    container.innerHTML = `
+                        <div class="error-stats">
+                            ⚠️ Renderizador não disponível. Recarregue a página.
+                            <br><br>
+                            <button onclick="carregarEstatisticas()" style="background: #8b5cf6; border: none; padding: 8px 20px; border-radius: 30px; color: white; font-weight: 600; cursor: pointer;">
+                                🔄 Tentar novamente
+                            </button>
+                        </div>
+                    `;
                 }
                 
             } catch (error) {
@@ -629,9 +468,6 @@
             }
         }
         
-        // ============================================
-        // ATUALIZAR PERÍODO
-        // ============================================
         async function atualizarPeriodoInfo(data) {
             const periodoTexto = periodoSelecionadoStats === 'all' 
                 ? `Todos os concursos (${data.filteredDraws || data.totalDraws || 0} concursos)`
@@ -648,9 +484,6 @@
             `;
         }
         
-        // ============================================
-        // SELECIONAR LOTERIA
-        // ============================================
         async function selecionarLoteriaStats(loteria) {
             loteriaAtualStats = loteria;
             document.querySelectorAll('.lottery-card-stats').forEach(c => c.classList.remove('active'));
@@ -658,9 +491,6 @@
             await carregarEstatisticas();
         }
         
-        // ============================================
-        // CARREGAR GRID
-        // ============================================
         function carregarGrid() {
             const grid = document.getElementById('lotteryGridStats');
             grid.innerHTML = Object.entries(LOTERIAS_STATS).map(([id, c]) => `
@@ -673,12 +503,8 @@
             `).join('');
         }
         
-        // ============================================
-        // INICIALIZAÇÃO
-        // ============================================
         function init() {
             console.log('🚀 Inicializando página de estatísticas...');
-            
             carregarGrid();
             
             document.querySelectorAll('.periodo-btn').forEach(btn => {
