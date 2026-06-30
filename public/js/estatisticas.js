@@ -1550,6 +1550,7 @@ window.renderizarEstatisticasLocal = renderizarEstatisticasLocal;
 window.calcularFrequenciaNumeros = calcularFrequenciaNumeros;
 window.calcularDuplasMaisSorteadas = calcularDuplasMaisSorteadas;
 window.calcularTriplasMaisSorteadas = calcularTriplasMaisSorteadas;
+window.renderizarEstatisticasLocal = renderizarEstatisticasLocal;
 
 console.log('✅ estatisticas.js carregado com sucesso!');
 console.log('🔍 renderizarSuperSete disponível:', typeof renderizarSuperSete);
