@@ -1,4 +1,4 @@
-public/js/estatisticas/loterias/megasena.js
+//public/js/estatisticas/loterias/megasena.js
 //// ============================================
 // MEGA-SENA
 // ============================================
