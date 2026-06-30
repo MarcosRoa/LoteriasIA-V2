@@ -95,4 +95,5 @@ window.renderizarSuperSete = supersete.renderizar;
 // Função de fallback
 window.renderizarBase = base.renderizarBase;
 
-console.log('✅ Estatísticas car
+console.log('✅ Estatísticas carregadas com sucesso!');
+console.log('📊 Loterias disponíveis:', Object.keys(RENDERIZADORES));
