@@ -1,9 +1,15 @@
 //public/js/estatisticas/renderers/components/barraHorizontal.js
 
 // ============================================
+// COMPONENTE: BARRA HORIZONTAL 01/07/2026
+// ============================================
+// ============================================
 // COMPONENTE: BARRA HORIZONTAL
 // ============================================
 
+/**
+ * Renderiza um gráfico de barras horizontais
+ */
 export function renderizarBarraHorizontal(dados, labelKey = 'nome', valueKey = 'quantidade', cores = ['#38bdf8', '#f59e0b', '#22c55e', '#ef4444', '#8b5cf6']) {
     if (!dados || dados.length === 0) return '';
     
