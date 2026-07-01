@@ -1,65 +1,71 @@
 //public/js/estatisticas/core/calculos.js
 
 // ============================================
-// CÁLCULOS COMPARTILHADOS - TODAS AS LOTERIAS
+// CÁLCULOS COMPARTILHADOS - TODAS AS LOTERIAS 01/07/2026
+// ============================================
+
+// ============================================
+// CÁLCULOS - FUNÇÕES MATEMÁTICAS PURAS
 // ============================================
 
 /**
- * Calcula a frequência de cada número em um conjunto de dados
+ * Calcula a frequência de cada número
  */
-export function calcularFrequenciaNumeros(dados, maxNumero, incluirZero = false) {
+export function calcularFrequencia(dados, maxNumero, incluirZero = false) {
     const limite = maxNumero + (incluirZero ? 1 : 0);
     const freq = new Array(limite).fill(0);
     
     dados.forEach(jogo => {
         jogo.forEach(numero => {
-            if (numero >= 0 && numero < limite) {
-                freq[numero]++;
-            }
+            if (numero >= 0 && numero < limite) freq[numero]++;
         });
     });
     
     const resultados = [];
-    for (let i = 0; i < limite; i++) {
-        if (incluirZero || i > 0) {
-            resultados.push({ numero: i, quantidade: freq[i] });
-        }
+    for (let i = incluirZero ? 0 : 1; i < limite; i++) {
+        resultados.push({ numero: i, quantidade: freq[i] });
     }
-    
     resultados.sort((a, b) => b.quantidade - a.quantidade);
     return resultados;
 }
 
 /**
- * Calcula as duplas mais sorteadas
+ * Calcula o ranking a partir de uma frequência
  */
-export function calcularDuplasMaisSorteadas(dados) {
+export function calcularRanking(frequencia) {
+    return frequencia.map((item, index) => ({
+        ...item,
+        posicao: index + 1
+    }));
+}
+
+/**
+ * Calcula duplas mais frequentes
+ */
+export function calcularDuplas(dados) {
     const duplas = new Map();
     
     dados.forEach(jogo => {
         for (let i = 0; i < jogo.length; i++) {
             for (let j = i + 1; j < jogo.length; j++) {
-                const num1 = Math.min(jogo[i], jogo[j]);
-                const num2 = Math.max(jogo[i], jogo[j]);
-                const key = `${num1},${num2}`;
+                const key = `${Math.min(jogo[i], jogo[j])},${Math.max(jogo[i], jogo[j])}`;
                 duplas.set(key, (duplas.get(key) || 0) + 1);
             }
         }
     });
     
-    const resultados = Array.from(duplas.entries()).map(([key, quantidade]) => {
-        const [num1, num2] = key.split(',').map(Number);
-        return { dupla: [num1, num2], quantidade };
-    });
-    
-    resultados.sort((a, b) => b.quantidade - a.quantidade);
-    return resultados;
+    return Array.from(duplas.entries())
+        .map(([key, quantidade]) => {
+            const [num1, num2] = key.split(',').map(Number);
+            return { dupla: [num1, num2], quantidade };
+        })
+        .sort((a, b) => b.quantidade - a.quantidade);
 }
 
 /**
- * Calcula as triplas mais sorteadas
+ * Calcula triplas mais frequentes
  */
-export function calcularTriplasMaisSorteadas(dados) {
+export function calcularTriplas(dados) {
     const triplas = new Map();
     
     dados.forEach(jogo => {
@@ -74,52 +80,37 @@ export function calcularTriplasMaisSorteadas(dados) {
         }
     });
     
-    const resultados = Array.from(triplas.entries()).map(([key, quantidade]) => {
-        const [num1, num2, num3] = key.split(',').map(Number);
-        return { tripla: [num1, num2, num3], quantidade };
+    return Array.from(triplas.entries())
+        .map(([key, quantidade]) => {
+            const [num1, num2, num3] = key.split(',').map(Number);
+            return { tripla: [num1, num2, num3], quantidade };
+        })
+        .sort((a, b) => b.quantidade - a.quantidade);
+}
+
+/**
+ * Calcula atraso (última ocorrência)
+ */
+export function calcularAtraso(dados, elementos) {
+    const ultimaOcorrencia = new Map();
+    elementos.forEach((el, idx) => {
+        ultimaOcorrencia.set(el, idx);
     });
     
-    resultados.sort((a, b) => b.quantidade - a.quantidade);
-    return resultados;
+    const total = elementos.length;
+    return Array.from(ultimaOcorrencia.entries())
+        .map(([nome, ultima]) => ({
+            nome,
+            ultimaVez: ultima + 1,
+            concursosAtraso: total - 1 - ultima
+        }))
+        .sort((a, b) => b.concursosAtraso - a.concursosAtraso);
 }
 
 /**
- * Calcula elementos extras (times, meses, trevos)
+ * Calcula distribuição por faixas
  */
-export function calcularElementosExtras(elementos, tipo) {
-    const freq = new Map();
-    
-    elementos.forEach(el => {
-        if (el === null || el === undefined || el === 0 || el === 'Desconhecido' || el === '') {
-            return;
-        }
-        
-        let nome = String(el);
-        freq.set(nome, (freq.get(nome) || 0) + 1);
-    });
-    
-    const resultados = Array.from(freq.entries()).map(([nome, quantidade]) => ({
-        nome,
-        quantidade
-    }));
-    
-    resultados.sort((a, b) => b.quantidade - a.quantidade);
-    return resultados.slice(0, 20);
-}
-
-/**
- * Extrai UF do nome do time (ex: PALMEIRAS/SP → SP)
- */
-export function extrairUF(time) {
-    if (!time) return 'OUTROS';
-    const partes = time.split('/');
-    return partes.length > 1 ? partes[1] : 'OUTROS';
-}
-
-/**
- * Calcula distribuição por faixas de dezenas
- */
-export function calcularDistribuicaoDezenas(dados, faixas) {
+export function calcularDistribuicao(dados, faixas) {
     const resultado = faixas.map(faixa => ({
         ...faixa,
         quantidade: 0
@@ -164,6 +155,75 @@ export function calcularParesImpares(dados) {
             proporcao,
             quantidade,
             percentual: total > 0 ? (quantidade / total) * 100 : 0
+        }))
+        .sort((a, b) => b.quantidade - a.quantidade);
+}
+
+/**
+ * Calcula heatmap (frequência por categoria)
+ */
+export function calcularHeatmap(dados, categorias, maxCategoria) {
+    const heatmap = [];
+    for (let i = 0; i < categorias; i++) {
+        heatmap[i] = new Array(maxCategoria + 1).fill(0);
+    }
+    
+    dados.forEach(item => {
+        item.forEach((valor, idx) => {
+            if (idx < categorias && valor >= 0 && valor <= maxCategoria) {
+                heatmap[idx][valor]++;
+            }
+        });
+    });
+    
+    return heatmap;
+}
+
+/**
+ * Calcula tendência (últimos N concursos)
+ */
+export function calcularTendencia(dados, elementos, ultimosN = 30) {
+    const ultimos = elementos.slice(-ultimosN);
+    const freq = new Map();
+    ultimos.forEach(el => {
+        freq.set(el, (freq.get(el) || 0) + 1);
+    });
+    
+    return Array.from(freq.entries())
+        .map(([nome, quantidade]) => ({ nome, quantidade }))
+        .sort((a, b) => b.quantidade - a.quantidade);
+}
+
+/**
+ * Extrai UF do nome (ex: PALMEIRAS/SP → SP)
+ */
+export function extrairUF(nome) {
+    if (!nome) return 'OUTROS';
+    const partes = nome.split('/');
+    return partes.length > 1 ? partes[1] : 'OUTROS';
+}
+
+/**
+ * Agrupa elementos por categoria (ex: times por estado)
+ */
+export function agruparPorCategoria(elementos, categorias, extrator) {
+    const grupos = new Map();
+    elementos.forEach(el => {
+        const categoria = extrator(el);
+        if (!grupos.has(categoria)) {
+            grupos.set(categoria, { elementos: [], quantidade: 0 });
+        }
+        const grupo = grupos.get(categoria);
+        grupo.elementos.push(el);
+        grupo.quantidade++;
+    });
+    
+    return Array.from(grupos.entries())
+        .map(([categoria, data]) => ({
+            categoria,
+            elementos: data.elementos,
+            quantidade: data.quantidade,
+            percentual: elementos.length > 0 ? (data.quantidade / elementos.length) * 100 : 0
         }))
         .sort((a, b) => b.quantidade - a.quantidade);
 }
