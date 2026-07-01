@@ -1,4 +1,12 @@
 // renderers/components/helpers.js
+
+// ============================================
+// HELPERS - FUNÇÕES COMPARTILHADAS
+// ============================================
+
+/**
+ * Cria um item de estatística individual
+ */
 export function criarItemStats(label, quantidade, isPro = false) {
     const labelClass = isPro ? 'numero' : 'numero-pro';
     const labelDisplay = isPro ? label : '⭐⭐ PRO ⭐⭐';
