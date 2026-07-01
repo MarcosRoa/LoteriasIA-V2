@@ -10,10 +10,14 @@
 
 import { 
     criarProBanner, 
-    criarResumo, 
-    criarFooter 
+    criarResumo
 } from '../renderers/components/resumo.js';
-import { criarCards } from '../renderers/components/cards.js';
+
+import { criarFooter } from '../renderers/components/footer.js';
+
+// ============================================
+// FUNÇÕES DE RENDERIZAÇÃO
+// ============================================
 
 /**
  * Renderiza o heatmap da Super Sete
@@ -23,7 +27,6 @@ function renderizarHeatmap(columns) {
     
     const cores = ['#8b5cf6', '#38bdf8', '#f59e0b', '#ef4444', '#22c55e', '#ec4899', '#f97316'];
     
-    // Calcular frequências por coluna
     const columnStats = columns.map((col, index) => {
         const freq = new Array(10).fill(0);
         col.forEach(num => {
@@ -83,7 +86,7 @@ function renderizarHeatmap(columns) {
 /**
  * Renderiza análise individual por coluna
  */
-function renderizarAnaliseColunas(columns, totalDraws) {
+function renderizarAnaliseColunas(columns) {
     if (!columns || columns.length === 0) return '';
     
     const cores = ['#8b5cf6', '#38bdf8', '#f59e0b', '#ef4444', '#22c55e', '#ec4899', '#f97316'];
@@ -101,7 +104,6 @@ function renderizarAnaliseColunas(columns, totalDraws) {
         const total = col.length;
         const maxFreq = Math.max(...freq);
         
-        // Ordenar por frequência
         const ranking = freq.map((qtd, num) => ({ numero: num, quantidade: qtd }))
             .sort((a, b) => b.quantidade - a.quantidade);
         
@@ -119,12 +121,11 @@ function renderizarAnaliseColunas(columns, totalDraws) {
                     </div>
                 </div>
                 
-                <!-- Barras de frequência -->
                 <div style="display: flex; flex-direction: column; gap: 3px;">
                     ${freq.map((qtd, num) => {
                         const pct = maxFreq > 0 ? (qtd / maxFreq * 100) : 0;
                         const pctReal = total > 0 ? (qtd / total * 100) : 0;
-                        const diferenca = pctReal - 10; // Média esperada = 10%
+                        const diferenca = pctReal - 10;
                         
                         let corBarra;
                         if (diferenca > 5) corBarra = '#22c55e';
@@ -179,7 +180,6 @@ function renderizarRankingColunas(columns) {
         const maxFreq = Math.max(...freq);
         const media = total / 10;
         
-        // Calcular desvio padrão
         const desvio = Math.sqrt(freq.reduce((acc, val) => acc + Math.pow(val - media, 2), 0) / 10);
         const equilibrio = desvio < media * 0.3 ? 'Excelente' : desvio < media * 0.5 ? 'Boa' : 'Concentrada';
         const corEquilibrio = desvio < media * 0.3 ? '#22c55e' : desvio < media * 0.5 ? '#f59e0b' : '#ef4444';
@@ -238,7 +238,6 @@ function renderizarResumoIA(columns, totalDraws) {
     
     const insights = [];
     
-    // Analisar cada coluna
     columns.forEach((col, idx) => {
         const freq = new Array(10).fill(0);
         col.forEach(num => {
@@ -248,12 +247,10 @@ function renderizarResumoIA(columns, totalDraws) {
         const total = col.length;
         const media = total / 10;
         
-        // Números acima da média
         const acima = freq.map((qtd, num) => ({ num, qtd, diff: qtd - media }))
             .filter(f => f.diff > media * 0.3)
             .map(f => f.num);
         
-        // Números abaixo da média
         const abaixo = freq.map((qtd, num) => ({ num, qtd, diff: qtd - media }))
             .filter(f => f.diff < -media * 0.3)
             .map(f => f.num);
@@ -266,7 +263,6 @@ function renderizarResumoIA(columns, totalDraws) {
         }
     });
     
-    // Tendência geral
     const todosNumeros = columns.flat();
     const freqGlobal = new Array(10).fill(0);
     todosNumeros.forEach(num => {
@@ -291,7 +287,6 @@ function renderizarResumoIA(columns, totalDraws) {
         insights.push(`Globalmente, os números ${numerosFrios.join(', ')} estão abaixo da média esperada`);
     }
     
-    // Adicionar resumo final
     insights.push(`📊 Baseado em ${totalDraws} concursos analisados`);
     insights.push(`🎯 7 colunas independentes com números de 0 a 9`);
     
@@ -316,11 +311,10 @@ export function renderizar(data, config, userData, periodo) {
     const isPro = userData.isPro || false;
     const columns = data.columns || [];
     
-    // Componentes
     const proBanner = !isPro ? criarProBanner() : '';
     const resumo = criarResumo(totalDraws, dataInicio, dataFim, periodo);
     const heatmap = renderizarHeatmap(columns);
-    const analise = renderizarAnaliseColunas(columns, totalDraws);
+    const analise = renderizarAnaliseColunas(columns);
     const ranking = renderizarRankingColunas(columns);
     const resumoIA = renderizarResumoIA(columns, totalDraws);
     const footer = criarFooter(totalDraws, '7 colunas', 'números de 0 a 9');
