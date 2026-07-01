@@ -1,13 +1,18 @@
 // public/js/estatisticas/renderers/components/heatmap.js
 
 // ============================================
+// COMPONENTE: HEATMAP 01/07/2026
+// ============================================
+// ============================================
 // COMPONENTE: HEATMAP
 // ============================================
 
+/**
+ * Renderiza um heatmap a partir de colunas de dados
+ */
 export function renderizarHeatmap(columns, cores = ['#8b5cf6', '#38bdf8', '#f59e0b', '#ef4444', '#22c55e', '#ec4899', '#f97316']) {
     if (!columns || columns.length === 0) return '';
     
-    // Calcular estatísticas
     const columnStats = columns.map((col, index) => {
         const freq = new Array(10).fill(0);
         col.forEach(num => {
