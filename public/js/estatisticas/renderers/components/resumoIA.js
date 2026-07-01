@@ -1,9 +1,15 @@
 //public/js/estatisticas/renderers/components/resumoIA.js
 
 // ============================================
+// COMPONENTE: RESUMO IA  01/07/2026
+// ============================================
+// ============================================
 // COMPONENTE: RESUMO IA
 // ============================================
 
+/**
+ * Renderiza o resumo inteligente (insights)
+ */
 export function renderizarResumoIA(insights) {
     if (!insights || insights.length === 0) return '';
     
