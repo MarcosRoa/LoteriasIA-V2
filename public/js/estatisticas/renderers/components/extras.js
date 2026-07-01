@@ -4,6 +4,7 @@
 // ============================================
 
 import { criarItemStats } from './cards.js';
+import { criarItemStats } from './helpers.js';
 
 export function renderizarExtras(elementos, titulo, icone, isPro = false) {
     if (!elementos || elementos.length === 0) return '';
