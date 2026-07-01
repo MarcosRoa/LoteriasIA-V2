@@ -1,13 +1,19 @@
 //public/js/estatisticas/renderers/components/cards.js
 
 // ============================================
+// COMPONENTE: CARDS DE ESTATÍSTICAS  01/07/2026
+// ============================================
+
+// ============================================
 // COMPONENTE: CARDS DE ESTATÍSTICAS
 // ============================================
 
 import { formatarNumero, formatarDupla, formatarTripla } from '../../core/utils.js';
-import { criarItemStats } from './helpers.js';
 
-function criarItemStats(label, quantidade, isPro = false) {
+/**
+ * Cria um item de estatística individual
+ */
+export function criarItemStats(label, quantidade, isPro = false) {
     const labelClass = isPro ? 'numero' : 'numero-pro';
     const labelDisplay = isPro ? label : '⭐⭐ PRO ⭐⭐';
     return `
@@ -18,6 +24,9 @@ function criarItemStats(label, quantidade, isPro = false) {
     `;
 }
 
+/**
+ * Cria os cards de estatísticas (Mais/Menos/Duplas/Triplas)
+ */
 export function criarCards(maisSorteados, menosSorteados, duplas, triplas, isPro, incluirZero) {
     return `
         <div class="stats-cards-grid">
