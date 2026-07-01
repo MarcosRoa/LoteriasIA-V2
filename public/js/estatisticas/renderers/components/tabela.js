@@ -1,4 +1,4 @@
- public/js/estatisticas/renderers/components/tabela.js
+ // public/js/estatisticas/renderers/components/tabela.js
 
 // ============================================
 // COMPONENTE: TABELA
