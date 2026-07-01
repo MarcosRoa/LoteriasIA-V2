@@ -1,9 +1,15 @@
  // public/js/estatisticas/renderers/components/tabela.js
 
 // ============================================
+// COMPONENTE: TABELA  01/07/2026
+// ============================================
+// ============================================
 // COMPONENTE: TABELA
 // ============================================
 
+/**
+ * Renderiza uma tabela genérica
+ */
 export function renderizarTabela(dados, colunas, titulo = '') {
     if (!dados || dados.length === 0) return '';
     
