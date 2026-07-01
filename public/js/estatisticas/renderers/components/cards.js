@@ -5,6 +5,7 @@
 // ============================================
 
 import { formatarNumero, formatarDupla, formatarTripla } from '../../core/utils.js';
+import { criarItemStats } from './helpers.js';
 
 function criarItemStats(label, quantidade, isPro = false) {
     const labelClass = isPro ? 'numero' : 'numero-pro';
