@@ -1,11 +1,16 @@
 //public/js/estatisticas/renderers/components/extras.js
 // ============================================
+// COMPONENTE: ELEMENTOS EXTRAS 01/07/2026
+// ============================================
+// ============================================
 // COMPONENTE: ELEMENTOS EXTRAS
 // ============================================
 
 import { criarItemStats } from './cards.js';
-import { criarItemStats } from './helpers.js';
 
+/**
+ * Renderiza elementos extras (times, meses, trevos)
+ */
 export function renderizarExtras(elementos, titulo, icone, isPro = false) {
     if (!elementos || elementos.length === 0) return '';
     
