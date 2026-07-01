@@ -1,21 +1,21 @@
 //public/js/estatisticas/index.js
 
 // ============================================
+// PONTO DE ENTRADA - ESTATÍSTICAS  01/07/2026
+// ============================================
+
+
+// ============================================
 // PONTO DE ENTRADA - ESTATÍSTICAS
 // ============================================
 
 // ============================================
-// 1. IMPORTS - TODOS OS MÓDULOS
+// IMPORTS
 // ============================================
 
-// Core
 import * as core from './core/calculos.js';
 import * as utils from './core/utils.js';
 
-// Renderers
-import * as base from './renderers/base.js';
-
-// Loterias
 import * as megasena from './loterias/megasena.js';
 import * as quina from './loterias/quina.js';
 import * as lotofacil from './loterias/lotofacil.js';
@@ -28,7 +28,7 @@ import * as diadesorte from './loterias/diadesorte.js';
 import * as supersete from './loterias/supersete.js';
 
 // ============================================
-// 2. MAPEAMENTO DE RENDERIZADORES
+// MAPEAMENTO DE RENDERIZADORES
 // ============================================
 
 const RENDERIZADORES = {
@@ -45,7 +45,7 @@ const RENDERIZADORES = {
 };
 
 // ============================================
-// 3. CONFIGURAÇÃO DO FIREBASE
+// CONFIGURAÇÃO DO FIREBASE
 // ============================================
 
 const firebaseConfig = {
@@ -57,10 +57,6 @@ const firebaseConfig = {
     appId: "1:124650527048:web:bc335922cb9e1586c3fb7d"
 };
 
-// ============================================
-// 4. INICIALIZAR FIREBASE
-// ============================================
-
 if (!firebase.apps || firebase.apps.length === 0) {
     try {
         firebase.initializeApp(firebaseConfig);
@@ -71,7 +67,7 @@ if (!firebase.apps || firebase.apps.length === 0) {
 }
 
 // ============================================
-// 5. CONFIGURAÇÕES DA APLICAÇÃO
+// CONFIGURAÇÕES DA APLICAÇÃO
 // ============================================
 
 const API_URL = 'https://loterias-ia.vercel.app/api';
@@ -87,11 +83,6 @@ let userData = {
 
 let loteriaAtualStats = 'megasena';
 let periodoSelecionadoStats = 'all';
-let dadosAtuaisStats = null;
-
-// ============================================
-// 6. CONFIGURAÇÕES DAS LOTERIAS
-// ============================================
 
 const LOTERIAS_STATS = {
     megasena: { nome: 'Mega-Sena', icone: '💰', numerosCSV: 6, maxNumero: 60, incluirZero: false },
@@ -131,22 +122,20 @@ const LOTERIAS_STATS = {
 };
 
 // ============================================
-// 7. FUNÇÃO PRINCIPAL - RENDERIZAR ESTATÍSTICAS
+// FUNÇÃO PRINCIPAL
 // ============================================
 
 function renderizarEstatisticas(loteria, data, config, userData, periodo) {
     const renderizador = RENDERIZADORES[loteria];
-    
     if (!renderizador) {
         console.warn(`⚠️ Renderizador não encontrado para: ${loteria}`);
-        return base.renderizarBase(data, config, userData, periodo);
+        return `<div class="error-stats">⚠️ Renderizador não encontrado para ${loteria}</div>`;
     }
-    
     return renderizador(data, config, userData, periodo);
 }
 
 // ============================================
-// 8. FUNÇÕES DE USUÁRIO
+// FUNÇÕES DE USUÁRIO
 // ============================================
 
 async function buscarDadosUsuario(uid) {
@@ -156,10 +145,7 @@ async function buscarDadosUsuario(uid) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ uid: uid })
         });
-        
         const data = await response.json();
-        console.log('📊 Resposta do /api/user/status:', data);
-        
         if (data.success) {
             return {
                 nome: data.user?.nome || data.user?.email?.split('@')[0] || 'Usuário',
@@ -211,30 +197,19 @@ function atualizarUserInfo() {
 
 function verificarUsuario() {
     firebase.auth().onAuthStateChanged(async (user) => {
-        console.log('🔥 Auth state changed:', user?.email || 'null');
-        
         if (user) {
             try {
                 const dados = await buscarDadosUsuario(user.uid);
-                
                 if (dados) {
-                    userData.nome = dados.nome;
-                    userData.email = dados.email;
-                    userData.isPro = dados.isPro;
-                    userData.credits = dados.credits;
-                    userData.proExpiresAt = dados.proExpiresAt;
-                    userData.uid = user.uid;
-                    console.log('✅ Dados carregados do backend:', userData.nome);
+                    userData = { ...userData, ...dados, uid: user.uid };
                 } else {
                     userData.nome = user.displayName || user.email?.split('@')[0] || 'Usuário';
                     userData.email = user.email || '';
                     userData.uid = user.uid;
                     userData.isPro = false;
                     userData.credits = 0;
-                    console.log('⚠️ Fallback: usando dados do Firebase:', userData.nome);
                 }
             } catch(e) {
-                console.error('❌ Erro ao verificar usuário:', e);
                 userData.nome = user.displayName || user.email?.split('@')[0] || 'Usuário';
                 userData.isPro = false;
                 userData.credits = 0;
@@ -245,16 +220,14 @@ function verificarUsuario() {
             userData.credits = 0;
             userData.email = '';
             userData.uid = '';
-            console.log('👤 Nenhum usuário logado');
         }
-        
         atualizarUserInfo();
         await carregarEstatisticas();
     });
 }
 
 // ============================================
-// 9. FUNÇÕES DE CARREGAMENTO
+// FUNÇÕES DE CARREGAMENTO
 // ============================================
 
 async function atualizarPeriodoInfo(data) {
@@ -279,18 +252,13 @@ async function carregarEstatisticas() {
     
     try {
         const url = `${API_URL}/statistics?lottery=${loteriaAtualStats}&period=${periodoSelecionadoStats}`;
-        console.log(`📥 Buscando estatísticas: ${url}`);
-        
         const response = await fetch(url);
         const data = await response.json();
-        
-        console.log('📊 Dados recebidos:', data);
         
         if (!data.success) {
             throw new Error(data.error || 'Erro ao carregar estatísticas');
         }
         
-        dadosAtuaisStats = data;
         await atualizarPeriodoInfo(data);
         
         const config = LOTERIAS_STATS[loteriaAtualStats];
@@ -312,7 +280,7 @@ async function carregarEstatisticas() {
 }
 
 // ============================================
-// 10. FUNÇÕES DE UI
+// FUNÇÕES DE UI
 // ============================================
 
 function carregarGrid() {
@@ -335,7 +303,7 @@ async function selecionarLoteriaStats(loteria) {
 }
 
 // ============================================
-// 11. INICIALIZAÇÃO
+// INICIALIZAÇÃO
 // ============================================
 
 function init() {
@@ -357,42 +325,29 @@ function init() {
 }
 
 // ============================================
-// 12. EXPORTAÇÃO PARA O WINDOW
+// EXPORTAÇÃO PARA O WINDOW
 // ============================================
 
-// Função principal
 window.renderizarEstatisticas = renderizarEstatisticas;
-
-// Funções de UI
 window.selecionarLoteriaStats = selecionarLoteriaStats;
 window.carregarEstatisticas = carregarEstatisticas;
 
-// Funções de cálculo (para compatibilidade)
-window.calcularFrequenciaNumeros = core.calcularFrequenciaNumeros;
-window.calcularDuplasMaisSorteadas = core.calcularDuplasMaisSorteadas;
-window.calcularTriplasMaisSorteadas = core.calcularTriplasMaisSorteadas;
-
-// Funções de formatação
-window.formatarNumero = utils.formatarNumero;
-window.formatarDupla = utils.formatarDupla;
-window.formatarTripla = utils.formatarTripla;
-
-// Renderizadores individuais (fallback)
-window.renderizarMegasena = megasena.renderizar;
-window.renderizarQuina = quina.renderizar;
-window.renderizarLotofacil = lotofacil.renderizar;
-window.renderizarLotomania = lotomania.renderizar;
-window.renderizarDuplaSena = duplasena.renderizar;
-window.renderizarTimemania = timemania.renderizar;
-window.renderizarMilionaria = milionaria.renderizar;
-window.renderizarLoteca = loteca.renderizar;
-window.renderizarDiaDeSorte = diadesorte.renderizar;
-window.renderizarSuperSete = supersete.renderizar;
+// Exportar core para compatibilidade
+window.calcularFrequencia = core.calcularFrequencia;
+window.calcularDuplas = core.calcularDuplas;
+window.calcularTriplas = core.calcularTriplas;
+window.calcularAtraso = core.calcularAtraso;
+window.calcularDistribuicao = core.calcularDistribuicao;
+window.calcularParesImpares = core.calcularParesImpares;
+window.calcularHeatmap = core.calcularHeatmap;
+window.calcularTendencia = core.calcularTendencia;
+window.extrairUF = core.extrairUF;
+window.agruparPorCategoria = core.agruparPorCategoria;
 
 console.log('✅ Estatísticas carregadas com sucesso!');
 
 // ============================================
-// 13. INICIAR APÓS DOM CARREGADO
+// INICIAR APÓS DOM CARREGADO
 // ============================================
 
 if (document.readyState === 'loading') {
