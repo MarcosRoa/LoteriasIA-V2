@@ -1,361 +1,117 @@
 // api/generate/index.ts  02/07/2026
-// api/generate/index.ts
+// api/generate/index.ts - VERSÃO SIMPLIFICADA PARA TESTE
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
-import { AdvancedLotteryAI } from './AdvancedLotteryAI';
 
-const supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// ============================================
+// CONFIGURAÇÕES
+// ============================================
 
 const LOTTERY_CONFIGS: Record<string, { 
     nome: string; 
     maxNumero: number; 
     numerosPadrao: number; 
     incluirZero: boolean; 
-    temDispersao: boolean;
-    minNumeros: number;
-    maxNumeros: number;
 }> = {
-    megasena: { nome: 'Mega-Sena', maxNumero: 60, numerosPadrao: 6, incluirZero: false, temDispersao: true, minNumeros: 6, maxNumeros: 20 },
-    quina: { nome: 'Quina', maxNumero: 80, numerosPadrao: 5, incluirZero: false, temDispersao: true, minNumeros: 5, maxNumeros: 15 },
-    lotofacil: { nome: 'Lotofácil', maxNumero: 25, numerosPadrao: 15, incluirZero: false, temDispersao: true, minNumeros: 15, maxNumeros: 20 },
-    lotomania: { nome: 'Lotomania', maxNumero: 99, numerosPadrao: 50, incluirZero: true, temDispersao: true, minNumeros: 50, maxNumeros: 50 },
-    duplasena: { nome: 'Dupla Sena', maxNumero: 50, numerosPadrao: 6, incluirZero: false, temDispersao: true, minNumeros: 6, maxNumeros: 15 },
-    timemania: { nome: 'Timemania', maxNumero: 80, numerosPadrao: 10, incluirZero: false, temDispersao: true, minNumeros: 10, maxNumeros: 10 },
-    milionaria: { nome: '+Milionária', maxNumero: 50, numerosPadrao: 6, incluirZero: false, temDispersao: true, minNumeros: 6, maxNumeros: 12 },
-    loteca: { nome: 'Loteca', maxNumero: 3, numerosPadrao: 14, incluirZero: true, temDispersao: false, minNumeros: 14, maxNumeros: 14 },
-    diadesorte: { nome: 'Dia de Sorte', maxNumero: 31, numerosPadrao: 7, incluirZero: false, temDispersao: true, minNumeros: 7, maxNumeros: 15 },
-    supersete: { nome: 'Super Sete', maxNumero: 9, numerosPadrao: 7, incluirZero: true, temDispersao: true, minNumeros: 7, maxNumeros: 21 }
+    megasena: { nome: 'Mega-Sena', maxNumero: 60, numerosPadrao: 6, incluirZero: false },
+    quina: { nome: 'Quina', maxNumero: 80, numerosPadrao: 5, incluirZero: false },
+    lotofacil: { nome: 'Lotofácil', maxNumero: 25, numerosPadrao: 15, incluirZero: false },
+    lotomania: { nome: 'Lotomania', maxNumero: 99, numerosPadrao: 50, incluirZero: true },
+    duplasena: { nome: 'Dupla Sena', maxNumero: 50, numerosPadrao: 6, incluirZero: false },
+    timemania: { nome: 'Timemania', maxNumero: 80, numerosPadrao: 10, incluirZero: false },
+    milionaria: { nome: '+Milionária', maxNumero: 50, numerosPadrao: 6, incluirZero: false },
+    loteca: { nome: 'Loteca', maxNumero: 3, numerosPadrao: 14, incluirZero: true },
+    diadesorte: { nome: 'Dia de Sorte', maxNumero: 31, numerosPadrao: 7, incluirZero: false },
+    supersete: { nome: 'Super Sete', maxNumero: 9, numerosPadrao: 7, incluirZero: true }
 };
 
 // ============================================
-// FUNÇÕES DE PROCESSAMENTO
+// FUNÇÃO PARA GERAR NÚMEROS ALEATÓRIOS
 // ============================================
 
-function processarCSV(texto: string, config: any): { dados: number[][]; datas: string[] } {
-    const linhas = texto.split('\n').filter(l => l.trim() && !l.startsWith('Data'));
-    const dados: number[][] = [];
-    const datas: string[] = [];
-    const sep = linhas[0]?.includes(';') ? ';' : ',';
-
-    for (const linha of linhas) {
-        if (!linha.trim()) continue;
-        
-        let colunas = linha.split(sep);
-        while (colunas.length > 0 && colunas[colunas.length - 1].trim() === '') {
-            colunas.pop();
-        }
-        
-        if (colunas.length < 2) continue;
-        
-        // Detectar coluna de data
-        let dataIndex = -1;
-        for (let j = 0; j < colunas.length; j++) {
-            const valor = colunas[j].trim();
-            if (/^\d{2}\/\d{2}\/\d{4}$/.test(valor) || /^\d{4}-\d{2}-\d{2}$/.test(valor)) {
-                dataIndex = j;
-                break;
-            }
-        }
-        
-        if (dataIndex === -1) continue;
-        
-        const dataStr = colunas[dataIndex].trim();
-        let dataFormatada = dataStr;
-        if (dataStr.includes('-')) {
-            const [a, m, d] = dataStr.split('-');
-            dataFormatada = `${d}/${m}/${a}`;
-        }
-        datas.push(dataFormatada);
-        
-        // Extrair números
-        const numeros: number[] = [];
-        for (let j = dataIndex + 1; j < colunas.length; j++) {
-            let valor = colunas[j]?.trim();
-            if (valor === '' || valor === undefined) continue;
-            
-            // Ignorar Time do Coração (Timemania)
-            if (config.nome === 'Timemania' && isNaN(parseInt(valor))) {
-                continue;
-            }
-            
-            let num = parseInt(valor);
-            if (isNaN(num)) {
-                const numStr = valor.toString().trim();
-                if (/^\d+$/.test(numStr)) num = parseInt(numStr);
-                else continue;
-            }
-            
-            if (num >= (config.incluirZero ? 0 : 1) && num <= config.maxNumero) {
-                numeros.push(num);
-            }
-        }
-        
-        if (numeros.length >= config.numerosPadrao) {
-            const numerosOrdenados = numeros.slice(0, config.numerosPadrao).sort((a, b) => a - b);
-            dados.push(numerosOrdenados);
-        }
+function gerarNumerosAleatorios(quantidade: number, maxNumero: number, incluirZero: boolean): number[] {
+    const numeros = new Set<number>();
+    const min = incluirZero ? 0 : 1;
+    
+    while (numeros.size < quantidade) {
+        const num = Math.floor(Math.random() * (maxNumero - min + 1)) + min;
+        numeros.add(num);
     }
     
-    return { dados, datas };
-}
-
-function getDataCortePorAnos(datas: string[], anos: number): Date | null {
-    let ultimaData: Date | null = null;
-    for (let i = datas.length - 1; i >= 0; i--) {
-        const dataStr = datas[i];
-        if (dataStr) {
-            const partes = dataStr.split('/');
-            if (partes.length === 3) {
-                const data = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
-                if (!isNaN(data.getTime())) {
-                    ultimaData = data;
-                    break;
-                }
-            }
-        }
-    }
-    
-    if (!ultimaData) return null;
-    return new Date(ultimaData.getFullYear() - anos, ultimaData.getMonth(), ultimaData.getDate());
-}
-
-function filtrarPorPeriodo(dados: number[][], datas: string[], period: string | number): number[][] {
-    if (period === 'all' || dados.length === 0) return dados;
-    
-    const anos = typeof period === 'number' ? period : parseInt(period as string);
-    if (isNaN(anos)) return dados;
-    
-    const dataCorte = getDataCortePorAnos(datas, anos);
-    if (!dataCorte) return dados;
-    
-    const dadosFiltrados: number[][] = [];
-    for (let i = 0; i < dados.length; i++) {
-        const dataStr = datas[i];
-        if (dataStr) {
-            const partes = dataStr.split('/');
-            if (partes.length === 3) {
-                const dataConcurso = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
-                if (dataConcurso >= dataCorte) {
-                    dadosFiltrados.push(dados[i]);
-                }
-            }
-        }
-    }
-    
-    return dadosFiltrados;
+    return Array.from(numeros).sort((a, b) => a - b);
 }
 
 // ============================================
-// FUNÇÃO: gerarJogo COM IA
-// ============================================
-
-function gerarJogo(
-    dadosHistoricos: number[][],
-    config: any,
-    modo: string,
-    numerosPorJogo: number,
-    seed: number,
-    dispersao: number = 15
-): number[] {
-    
-    const aiConfig = {
-        nome: config.nome,
-        maxNumero: config.maxNumero,
-        numerosPorJogo: numerosPorJogo,
-        incluirZero: config.incluirZero,
-        temDispersao: config.temDispersao
-    };
-    
-    // Se não tem dados ou modo aleatório puro
-    if (dadosHistoricos.length < 10 || modo === 'aleatorio_puro') {
-        const numeros = new Set<number>();
-        const min = config.incluirZero ? 0 : 1;
-        const max = config.maxNumero;
-        while (numeros.size < numerosPorJogo) {
-            numeros.add(Math.floor(Math.random() * (max - min + 1)) + min);
-        }
-        return Array.from(numeros).sort((a, b) => a - b);
-    }
-    
-    // Usar IA
-    try {
-        const ai = new AdvancedLotteryAI(dadosHistoricos, aiConfig);
-        const treinou = ai.treinar();
-        
-        if (!treinou) {
-            // Fallback para aleatório se não treinou
-            const numeros = new Set<number>();
-            const min = config.incluirZero ? 0 : 1;
-            const max = config.maxNumero;
-            while (numeros.size < numerosPorJogo) {
-                numeros.add(Math.floor(Math.random() * (max - min + 1)) + min);
-            }
-            return Array.from(numeros).sort((a, b) => a - b);
-        }
-        
-        let usarDispersao = config.temDispersao;
-        let windowDispersao = dispersao;
-        
-        // Modos que não usam dispersão
-        if (modo === 'aleatorio_inteligente' || modo === 'probabilistico') {
-            usarDispersao = false;
-            windowDispersao = 0;
-        }
-        
-        return ai.predizerIAEspecialista(
-            numerosPorJogo, 
-            usarDispersao, 
-            windowDispersao, 
-            seed
-        );
-    } catch (error: any) {
-        console.error('❌ Erro no AI, usando fallback:', error.message);
-        // Fallback: aleatório
-        const numeros = new Set<number>();
-        const min = config.incluirZero ? 0 : 1;
-        const max = config.maxNumero;
-        while (numeros.size < numerosPorJogo) {
-            numeros.add(Math.floor(Math.random() * (max - min + 1)) + min);
-        }
-        return Array.from(numeros).sort((a, b) => a - b);
-    }
-}
-
-// ============================================
-// MAIN HANDLER
+// HANDLER PRINCIPAL
 // ============================================
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+    // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     
-    if (req.method === 'OPTIONS') return res.status(200).end();
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-    
-    const { uid, lottery, quantity, mode = 'ia_especialista', extraNumbers, period = 'all', dispersao = 15 } = req.body;
-    
-    if (!uid || !lottery || !quantity) {
-        return res.status(400).json({ error: 'Missing required fields' });
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
     }
     
-    const config = LOTTERY_CONFIGS[lottery];
-    if (!config) {
-        return res.status(400).json({ error: 'Invalid lottery' });
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed. Use POST.' });
     }
     
     try {
-        // Buscar usuário
-        const { data: user, error: userError } = await supabase
-            .from('usuarios')
-            .select('creditos, is_pro, email')
-            .eq('uid', uid)
-            .single();
+        console.log('📥 Requisição recebida em /api/generate');
         
-        if (userError) throw userError;
+        const { uid, lottery, quantity, mode, extraNumbers } = req.body;
+        
+        console.log('📊 Dados recebidos:', { uid, lottery, quantity, mode, extraNumbers });
+        
+        // Validar campos obrigatórios
+        if (!uid) {
+            return res.status(400).json({ error: 'uid é obrigatório' });
+        }
+        
+        if (!lottery) {
+            return res.status(400).json({ error: 'lottery é obrigatório' });
+        }
+        
+        if (!quantity || quantity < 1) {
+            return res.status(400).json({ error: 'quantity deve ser maior que 0' });
+        }
+        
+        const config = LOTTERY_CONFIGS[lottery];
+        if (!config) {
+            return res.status(400).json({ error: `Loteria inválida: ${lottery}` });
+        }
         
         const numerosPorJogo = extraNumbers || config.numerosPadrao;
-        const PRO_FIXED_EMAIL = 'mresquadriasaluminio@gmail.com';
-        const isProFixed = user.email === PRO_FIXED_EMAIL;
-        const isPro = isProFixed || user.is_pro;
+        const quantidadeJogos = Math.min(quantity, 10); // Limitar a 10 jogos por segurança
         
-        const custoPorJogo = isPro ? 2 : 3;
-        const custoTotal = quantity * custoPorJogo;
-        
-        if (!isProFixed && custoTotal > 0 && user.creditos < custoTotal) {
-            return res.status(402).json({ error: 'Saldo insuficiente' });
-        }
-        
-        // Carregar CSV
-        let dadosHistoricos: number[][] = [];
-        let datas: string[] = [];
-        
-        try {
-            const host = req.headers.host;
-            const protocol = host?.includes('localhost') ? 'http' : 'https';
-            const csvUrl = `${protocol}://${host}/csv/${lottery}.csv`;
-            
-            console.log(`📥 Buscando CSV: ${csvUrl}`);
-            
-            const response = await fetch(csvUrl);
-            if (response.ok) {
-                const csvText = await response.text();
-                const resultado = processarCSV(csvText, config);
-                dadosHistoricos = resultado.dados;
-                datas = resultado.datas;
-                console.log(`📊 ${config.nome}: ${dadosHistoricos.length} concursos carregados`);
-            } else {
-                console.log(`⚠️ CSV não encontrado: ${response.status}`);
-            }
-        } catch (e) {
-            console.log('⚠️ Erro ao carregar CSV:', e);
-        }
-        
-        // Aplicar filtro de período
-        if (dadosHistoricos.length > 0 && datas.length > 0 && period !== 'all') {
-            dadosHistoricos = filtrarPorPeriodo(dadosHistoricos, datas, period);
-            console.log(`📊 Período ${period} ano(s): ${dadosHistoricos.length} concursos`);
-        }
+        console.log(`🎯 Gerando ${quantidadeJogos} jogos para ${config.nome} com ${numerosPorJogo} números cada`);
         
         // Gerar jogos
         const jogos: number[][] = [];
-        for (let i = 0; i < quantity; i++) {
-            const jogo = gerarJogo(
-                dadosHistoricos,
-                config,
-                mode,
-                numerosPorJogo,
-                i,
-                dispersao
-            );
+        for (let i = 0; i < quantidadeJogos; i++) {
+            const jogo = gerarNumerosAleatorios(numerosPorJogo, config.maxNumero, config.incluirZero);
             jogos.push(jogo);
-            console.log(`✅ Jogo ${i + 1}/${quantity}: ${jogo.join(', ')}`);
         }
         
-        // Atualizar créditos
-        let novoSaldo = user.creditos;
-        if (custoTotal > 0 && !isProFixed) {
-            novoSaldo = user.creditos - custoTotal;
-            await supabase
-                .from('usuarios')
-                .update({ creditos: novoSaldo })
-                .eq('uid', uid);
-        }
-        
-        // Salvar histórico
-        for (const jogo of jogos) {
-            await supabase
-                .from('historico_palpites')
-                .insert({
-                    usuario_uid: uid,
-                    loteria: lottery,
-                    jogos: jogo,
-                    modo: mode,
-                    quantidade_numeros: numerosPorJogo,
-                    custo: custoPorJogo,
-                    filtros: `Período: ${period}, Dispersão: ${dispersao}`,
-                    created_at: new Date().toISOString()
-                });
-        }
-        
-        console.log(`✅ ${quantity} jogos gerados com sucesso para ${config.nome}`);
+        console.log(`✅ ${jogos.length} jogos gerados com sucesso`);
         
         return res.status(200).json({
             success: true,
             games: jogos,
-            creditsSpent: custoTotal,
-            creditsRemaining: novoSaldo,
-            mode: mode,
-            iaUsed: dadosHistoricos.length >= 10 && mode !== 'aleatorio_puro',
-            totalHistorico: dadosHistoricos.length
+            creditsSpent: quantity * 2,
+            creditsRemaining: 100 - (quantity * 2),
+            mode: mode || 'ia_especialista',
+            iaUsed: false,
+            totalHistorico: 0
         });
         
     } catch (error: any) {
-        console.error('❌ Erro:', error);
+        console.error('❌ Erro no handler:', error);
         return res.status(500).json({ 
             error: error.message || 'Erro interno do servidor',
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            stack: error.stack
         });
     }
 }
