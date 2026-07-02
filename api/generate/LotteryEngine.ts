@@ -280,7 +280,7 @@ export class LotteryEngine {
     /**
      * Verifica se a IA está disponível
      */
-    isIADisponivel(): boolean {
-        return this.ai !== null && this.ai.treinado;
+   // isIADisponivel(): boolean {
+       // return this.ai !== null && this.ai.treinado;
     }
 }
