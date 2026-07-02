@@ -1,5 +1,6 @@
 // api/generate/index.ts  02/07/2026
 // api/generate/index.ts
+// api/generate/index.ts
 // ============================================
 // HANDLER PRINCIPAL - GERAÇÃO DE JOGOS
 // ============================================
