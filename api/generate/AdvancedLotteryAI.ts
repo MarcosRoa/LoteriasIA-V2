@@ -18,7 +18,7 @@ export class AdvancedLotteryAI {
     private config: LotteryConfig;
     private frequencias: number[] = [];
     private atrasos: number[] = [];
-    private treinado: boolean = false;
+    public treinado: boolean = false;
     public confianca: number = 0;
 
     constructor(dados: number[][], config: LotteryConfig) {
@@ -66,6 +66,13 @@ export class AdvancedLotteryAI {
         this.confianca = Math.min(95, Math.floor(this.dados.length / 10) + 50);
         console.log(`✅ IA treinada com ${this.dados.length} concursos. Confiança: ${this.confianca}%`);
         return true;
+    }
+
+    /**
+     * Verifica se a IA está treinada
+     */
+    isTreinado(): boolean {
+        return this.treinado;
     }
 
     /**
