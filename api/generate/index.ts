@@ -1,57 +1,8 @@
+// api/generate/index.ts  02/07/2026
 // api/generate/index.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-
-// 🔥 TENTAR IMPORTAR O AdvancedLotteryAI
-let AdvancedLotteryAI: any;
-try {
-    // TENTATIVA 1: Mesma pasta
-    AdvancedLotteryAI = require('./AdvancedLotteryAI').AdvancedLotteryAI;
-    console.log('✅ AdvancedLotteryAI carregado de ./AdvancedLotteryAI');
-} catch (e1) {
-    try {
-        // TENTATIVA 2: Caminho alternativo
-        AdvancedLotteryAI = require('../../../core/ia/AdvancedLotteryAI').AdvancedLotteryAI;
-        console.log('✅ AdvancedLotteryAI carregado de ../../../core/ia/AdvancedLotteryAI');
-    } catch (e2) {
-        try {
-            // TENTATIVA 3: Caminho alternativo 2
-            AdvancedLotteryAI = require('../../core/ia/AdvancedLotteryAI').AdvancedLotteryAI;
-            console.log('✅ AdvancedLotteryAI carregado de ../../core/ia/AdvancedLotteryAI');
-        } catch (e3) {
-            console.error('❌ AdvancedLotteryAI NÃO ENCONTRADO em nenhum caminho!');
-            console.error('Erro 1:', e1.message);
-            console.error('Erro 2:', e2.message);
-            console.error('Erro 3:', e3.message);
-            
-            // 🔥 FALLBACK: Classe simples para não quebrar
-            AdvancedLotteryAI = class FallbackAI {
-                constructor(dados: any, config: any) {
-                    console.log('⚠️ Usando FallbackAI (classe simplificada)');
-                }
-                treinar() { return false; }
-                predizerIAEspecialista(quantidade: number) {
-                    const numeros = new Set<number>();
-                    const min = 1;
-                    const max = 60;
-                    while (numeros.size < quantidade) {
-                        numeros.add(Math.floor(Math.random() * (max - min + 1)) + min);
-                    }
-                    return Array.from(numeros).sort((a, b) => a - b);
-                }
-                gerarAleatorio(quantidade: number) {
-                    const numeros = new Set<number>();
-                    const min = 1;
-                    const max = 60;
-                    while (numeros.size < quantidade) {
-                        numeros.add(Math.floor(Math.random() * (max - min + 1)) + min);
-                    }
-                    return Array.from(numeros).sort((a, b) => a - b);
-                }
-            };
-        }
-    }
-}
+import { AdvancedLotteryAI } from './AdvancedLotteryAI';
 
 const supabase = createClient(
     process.env.SUPABASE_URL!,
@@ -80,7 +31,7 @@ const LOTTERY_CONFIGS: Record<string, {
 };
 
 // ============================================
-// FUNÇÕES DE PROCESSAMENTO DE CSV E FILTRO
+// FUNÇÕES DE PROCESSAMENTO
 // ============================================
 
 function processarCSV(texto: string, config: any): { dados: number[][]; datas: string[] } {
@@ -99,6 +50,7 @@ function processarCSV(texto: string, config: any): { dados: number[][]; datas: s
         
         if (colunas.length < 2) continue;
         
+        // Detectar coluna de data
         let dataIndex = -1;
         for (let j = 0; j < colunas.length; j++) {
             const valor = colunas[j].trim();
@@ -118,11 +70,13 @@ function processarCSV(texto: string, config: any): { dados: number[][]; datas: s
         }
         datas.push(dataFormatada);
         
+        // Extrair números
         const numeros: number[] = [];
         for (let j = dataIndex + 1; j < colunas.length; j++) {
             let valor = colunas[j]?.trim();
             if (valor === '' || valor === undefined) continue;
             
+            // Ignorar Time do Coração (Timemania)
             if (config.nome === 'Timemania' && isNaN(parseInt(valor))) {
                 continue;
             }
@@ -195,7 +149,7 @@ function filtrarPorPeriodo(dados: number[][], datas: string[], period: string | 
 }
 
 // ============================================
-// FUNÇÃO: gerarJogo
+// FUNÇÃO: gerarJogo COM IA
 // ============================================
 
 function gerarJogo(
@@ -215,6 +169,7 @@ function gerarJogo(
         temDispersao: config.temDispersao
     };
     
+    // Se não tem dados ou modo aleatório puro
     if (dadosHistoricos.length < 10 || modo === 'aleatorio_puro') {
         const numeros = new Set<number>();
         const min = config.incluirZero ? 0 : 1;
@@ -225,13 +180,26 @@ function gerarJogo(
         return Array.from(numeros).sort((a, b) => a - b);
     }
     
+    // Usar IA
     try {
         const ai = new AdvancedLotteryAI(dadosHistoricos, aiConfig);
-        ai.treinar();
+        const treinou = ai.treinar();
+        
+        if (!treinou) {
+            // Fallback para aleatório se não treinou
+            const numeros = new Set<number>();
+            const min = config.incluirZero ? 0 : 1;
+            const max = config.maxNumero;
+            while (numeros.size < numerosPorJogo) {
+                numeros.add(Math.floor(Math.random() * (max - min + 1)) + min);
+            }
+            return Array.from(numeros).sort((a, b) => a - b);
+        }
         
         let usarDispersao = config.temDispersao;
         let windowDispersao = dispersao;
         
+        // Modos que não usam dispersão
         if (modo === 'aleatorio_inteligente' || modo === 'probabilistico') {
             usarDispersao = false;
             windowDispersao = 0;
@@ -244,7 +212,7 @@ function gerarJogo(
             seed
         );
     } catch (error: any) {
-        console.error('❌ Erro no AI:', error.message);
+        console.error('❌ Erro no AI, usando fallback:', error.message);
         // Fallback: aleatório
         const numeros = new Set<number>();
         const min = config.incluirZero ? 0 : 1;
@@ -308,6 +276,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const protocol = host?.includes('localhost') ? 'http' : 'https';
             const csvUrl = `${protocol}://${host}/csv/${lottery}.csv`;
             
+            console.log(`📥 Buscando CSV: ${csvUrl}`);
+            
             const response = await fetch(csvUrl);
             if (response.ok) {
                 const csvText = await response.text();
@@ -315,6 +285,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 dadosHistoricos = resultado.dados;
                 datas = resultado.datas;
                 console.log(`📊 ${config.nome}: ${dadosHistoricos.length} concursos carregados`);
+            } else {
+                console.log(`⚠️ CSV não encontrado: ${response.status}`);
             }
         } catch (e) {
             console.log('⚠️ Erro ao carregar CSV:', e);
@@ -338,6 +310,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 dispersao
             );
             jogos.push(jogo);
+            console.log(`✅ Jogo ${i + 1}/${quantity}: ${jogo.join(', ')}`);
         }
         
         // Atualizar créditos
@@ -366,19 +339,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
         }
         
+        console.log(`✅ ${quantity} jogos gerados com sucesso para ${config.nome}`);
+        
         return res.status(200).json({
             success: true,
             games: jogos,
             creditsSpent: custoTotal,
             creditsRemaining: novoSaldo,
             mode: mode,
-            iaUsed: dadosHistoricos.length >= 10 && mode !== 'aleatorio_puro'
+            iaUsed: dadosHistoricos.length >= 10 && mode !== 'aleatorio_puro',
+            totalHistorico: dadosHistoricos.length
         });
         
     } catch (error: any) {
         console.error('❌ Erro:', error);
         return res.status(500).json({ 
-            error: error.message,
+            error: error.message || 'Erro interno do servidor',
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
