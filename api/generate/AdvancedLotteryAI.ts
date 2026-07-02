@@ -1,5 +1,6 @@
 // api/generate/AdvancedLotteryAI.ts  02/07/2026
 
+// api/generate/AdvancedLotteryAI.ts
 export interface LotteryConfig {
     nome: string;
     maxNumero: number;
@@ -21,9 +22,6 @@ export class AdvancedLotteryAI {
         this.config = config;
     }
 
-    /**
-     * Treina a IA com os dados históricos
-     */
     treinar(): boolean {
         if (this.dados.length < 10) return false;
         
@@ -31,14 +29,12 @@ export class AdvancedLotteryAI {
         this.frequencias = new Array(limite).fill(0);
         this.atrasos = new Array(limite).fill(this.dados.length);
         
-        // Calcular frequências
         for (const jogo of this.dados) {
             for (const num of jogo) {
                 if (num >= 0 && num < limite) this.frequencias[num]++;
             }
         }
         
-        // Calcular atrasos
         for (let i = 0; i < this.dados.length; i++) {
             for (const num of this.dados[i]) {
                 if (num >= 0 && num < limite) this.atrasos[num] = 0;
@@ -53,9 +49,6 @@ export class AdvancedLotteryAI {
         return true;
     }
 
-    /**
-     * Predição com IA Especialista
-     */
     predizerIAEspecialista(
         quantidade: number, 
         usarDispersao: boolean = true, 
@@ -67,19 +60,15 @@ export class AdvancedLotteryAI {
         const min = this.config.incluirZero ? 0 : 1;
         const limite = this.config.maxNumero + (this.config.incluirZero ? 1 : 0);
         
-        // Calcular scores para cada número
         const scores: { numero: number; score: number }[] = [];
         const maxFreq = Math.max(...this.frequencias.slice(min));
         const maxAtraso = Math.max(...this.atrasos.slice(min));
         
         for (let i = min; i < limite; i++) {
-            // Score baseado em frequência (menos frequente = maior score)
             const freqScore = maxFreq > 0 ? (1 - this.frequencias[i] / maxFreq) * 50 : 50;
-            // Score baseado em atraso (mais atrasado = maior score)
             const atrasoScore = maxAtraso > 0 ? (this.atrasos[i] / maxAtraso) * 50 : 50;
             let score = freqScore + atrasoScore;
             
-            // Penalizar números que saíram recentemente (dispersão)
             if (usarDispersao && this.dados.length >= windowDispersao) {
                 const recentes = new Set<number>();
                 for (let j = this.dados.length - windowDispersao; j < this.dados.length; j++) {
@@ -90,17 +79,13 @@ export class AdvancedLotteryAI {
             scores.push({ numero: i, score });
         }
         
-        // Ordenar por score
         scores.sort((a, b) => b.score - a.score);
-        
-        // Selecionar os melhores
         const result = new Set<number>();
         for (const item of scores) {
             if (result.size >= quantidade) break;
             result.add(item.numero);
         }
         
-        // Completar com números aleatórios se necessário
         while (result.size < quantidade) {
             const num = Math.floor(Math.random() * (limite - min)) + min;
             result.add(num);
@@ -109,9 +94,6 @@ export class AdvancedLotteryAI {
         return Array.from(result).sort((a, b) => a - b);
     }
 
-    /**
-     * Geração aleatória (fallback)
-     */
     gerarAleatorio(quantidade: number): number[] {
         const result = new Set<number>();
         const min = this.config.incluirZero ? 0 : 1;
@@ -122,9 +104,6 @@ export class AdvancedLotteryAI {
         return Array.from(result).sort((a, b) => a - b);
     }
 
-    /**
-     * Relatório da IA
-     */
     gerarRelatorio() {
         return {
             confiancaGeral: this.confianca,
