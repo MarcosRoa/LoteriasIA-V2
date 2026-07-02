@@ -1,7 +1,7 @@
 // api/generate/index.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { AdvancedLotteryAI } from '../../core/ia/AdvancedLotteryAI';
+import { AdvancedLotteryAI } from '../../../core/ia/AdvancedLotteryAI';
 
 const supabase = createClient(
     process.env.SUPABASE_URL!,
