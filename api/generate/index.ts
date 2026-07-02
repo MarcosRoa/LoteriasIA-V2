@@ -1,6 +1,60 @@
 // api/generate/index.ts  02/07/2026
 // api/generate/index.ts - VERSÃO SIMPLIFICADA PARA TESTE
+// api/generate/index.ts - VERSÃO DE TESTE COM FALLBACK
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { createClient } from '@supabase/supabase-js';
+
+// 🔥 TENTAR CARREGAR A IA
+let AdvancedLotteryAI: any;
+let IA_CARREGADA = false;
+
+try {
+    // Tentar importar a IA
+    const module = await import('./AdvancedLotteryAI');
+    AdvancedLotteryAI = module.AdvancedLotteryAI;
+    IA_CARREGADA = true;
+    console.log('✅ AdvancedLotteryAI carregado com sucesso!');
+} catch (error) {
+    console.log('⚠️ AdvancedLotteryAI não encontrado, usando fallback');
+    // Fallback: classe simplificada
+    AdvancedLotteryAI = class FallbackAI {
+        private dados: any[];
+        private config: any;
+        constructor(dados: any[], config: any) {
+            this.dados = dados;
+            this.config = config;
+        }
+        treinar() { return this.dados.length >= 10; }
+        predizerIAEspecialista(quantidade: number, usarDispersao: boolean = true, windowDispersao: number = 15, seed: number = 0) {
+            const numeros = new Set<number>();
+            const min = this.config.incluirZero ? 0 : 1;
+            const max = this.config.maxNumero;
+            while (numeros.size < quantidade) {
+                numeros.add(Math.floor(Math.random() * (max - min + 1)) + min);
+            }
+            return Array.from(numeros).sort((a, b) => a - b);
+        }
+        gerarAleatorio(quantidade: number) {
+            const numeros = new Set<number>();
+            const min = this.config.incluirZero ? 0 : 1;
+            const max = this.config.maxNumero;
+            while (numeros.size < quantidade) {
+                numeros.add(Math.floor(Math.random() * (max - min + 1)) + min);
+            }
+            return Array.from(numeros).sort((a, b) => a - b);
+        }
+        gerarRelatorio() {
+            return { confiancaGeral: 0, totalDados: 0, loteria: '', treinado: false };
+        }
+    };
+}
+
+const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+// ... RESTANTE DO CÓDIGO IGUAL AO QUE ESTÁ FUNCIONANDO
 
 // ============================================
 // CONFIGURAÇÕES
