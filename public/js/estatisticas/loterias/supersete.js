@@ -1,9 +1,8 @@
 // public/js/estatisticas/loterias/supersete.js
 
 // ============================================
-// SUPER SETE - 7 COLUNAS   01/07/2026
+// SUPER SETE - 7 COLUNAS   02/07/2026
 // ============================================
-
 // ============================================
 // SUPER SETE - 7 COLUNAS
 // ============================================
@@ -19,9 +18,6 @@ import { criarFooter } from '../renderers/components/footer.js';
 // FUNÇÕES DE RENDERIZAÇÃO
 // ============================================
 
-/**
- * Renderiza o heatmap da Super Sete
- */
 function renderizarHeatmap(columns) {
     if (!columns || columns.length === 0) return '';
     
@@ -83,9 +79,6 @@ function renderizarHeatmap(columns) {
     return html;
 }
 
-/**
- * Renderiza análise individual por coluna
- */
 function renderizarAnaliseColunas(columns) {
     if (!columns || columns.length === 0) return '';
     
@@ -162,9 +155,6 @@ function renderizarAnaliseColunas(columns) {
     return html;
 }
 
-/**
- * Renderiza ranking resumido das colunas
- */
 function renderizarRankingColunas(columns) {
     if (!columns || columns.length === 0) return '';
     
@@ -230,9 +220,6 @@ function renderizarRankingColunas(columns) {
     `;
 }
 
-/**
- * Renderiza resumo IA para Super Sete
- */
 function renderizarResumoIA(columns, totalDraws) {
     if (!columns || columns.length === 0) return '';
     
