@@ -4,7 +4,7 @@
 // IA ALEATÓRIO INTELIGENTE - Aleatório com ponderação
 // ============================================
 
-import { BaseEngine, EngineResult, EngineConfig } from './BaseEngine';
+import { BaseEngine, EngineResult,  JogoGerado, EngineConfig } from './BaseEngine';
 import { FrequencyAnalyzer } from '../analysis/FrequencyAnalyzer';
 import { ConfidenceCalculator } from '../evaluation/ConfidenceCalculator';
 
