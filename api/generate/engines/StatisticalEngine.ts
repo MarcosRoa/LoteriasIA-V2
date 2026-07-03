@@ -4,7 +4,7 @@
 // IA ESTATÍSTICA - Análise de frequência, atraso e dispersão
 // ============================================
 
-import { BaseEngine, EngineResult, EngineConfig } from './BaseEngine';
+import { BaseEngine, EngineResult,  JogoGerado, EngineConfig } from './BaseEngine';
 import { FrequencyAnalyzer } from '../analysis/FrequencyAnalyzer';
 import { DelayAnalyzer } from '../analysis/DelayAnalyzer';
 import { DispersionAnalyzer } from '../analysis/DispersionAnalyzer';
@@ -103,7 +103,7 @@ export class StatisticalEngine extends BaseEngine {
         // Calcular score para cada número
         for (let i = min; i <= max; i++) {
             const freqScore = frequency.getFrequenciaNormalizada(i);
-            const delayScore = delay.getAtrasoNormalizada(i);
+            const delayScore = delay.getAtrasoNormalizado(i);
             let score = freqScore * 0.5 + delayScore * 0.5;
             
             // Aplicar penalidade de dispersão
