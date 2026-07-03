@@ -4,7 +4,7 @@
 // IA ESPECIALISTA - Avalia e seleciona os melhores jogos
 // ============================================
 
-import { BaseEngine, EngineResult, EngineConfig } from './BaseEngine';
+import { BaseEngine, EngineResult,  JogoGerado, EngineConfig } from './BaseEngine';
 import { GameEvaluator } from '../evaluation/GameEvaluator';
 import { ConfidenceCalculator } from '../evaluation/ConfidenceCalculator';
 
