@@ -5,7 +5,7 @@
 // Detecta padrões e tenta prever os próximos números
 // ============================================
 
-import { BaseEngine, EngineResult, EngineConfig } from './BaseEngine';
+import { BaseEngine, EngineResult,  JogoGerado, EngineConfig } from './BaseEngine';
 import { PatternAnalyzer, Pattern } from '../analysis/PatternAnalyzer';
 import { ConfidenceCalculator } from '../evaluation/ConfidenceCalculator';
 
