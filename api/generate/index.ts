@@ -1,18 +1,16 @@
 // api/generate/index.ts  02/07/2026
-// api/generate/index.ts
-// api/generate/index.ts
+// ============================================
+// CAMINHO: api/generate/index.ts
 // ============================================
 // HANDLER PRINCIPAL - GERAÇÃO DE JOGOS
+// MODIFICADO PARA USAR A NOVA ARQUITETURA
 // ============================================
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { LotteryEngine } from './LotteryEngine';
-
-const supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { EngineFactory } from './factory/EngineFactory';
+import { BaseEngine, EngineConfig } from './engines/BaseEngine';
+import { cacheManager } from './services/CacheManager';
 
 // ============================================
 // CONFIGURAÇÕES DAS LOTERIAS
@@ -117,7 +115,7 @@ const LOTTERY_CONFIGS: Record<string, any> = {
 };
 
 // ============================================
-// PROCESSAR CSV
+// FUNÇÕES DE PROCESSAMENTO
 // ============================================
 
 function processarCSV(texto: string, config: any): { dados: number[][]; datas: string[] } {
@@ -232,6 +230,11 @@ function filtrarPorPeriodo(dados: number[][], datas: string[], period: string | 
 // HANDLER PRINCIPAL
 // ============================================
 
+const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -247,19 +250,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     try {
-        console.log('📥 /api/generate chamado');
-        
         const { 
             uid, 
             lottery, 
             quantity, 
-            mode = 'ia_especialista', 
+            engine = 'hybrid',
             extraNumbers, 
             period = 'all', 
             dispersao = 15 
         } = req.body;
         
-        console.log('📊 Parâmetros:', { uid, lottery, quantity, mode, extraNumbers, period, dispersao });
+        console.log('📥 /api/generate chamado:', { uid, lottery, quantity, engine, extraNumbers, period, dispersao });
         
         // ============================================
         // VALIDAÇÕES
@@ -297,14 +298,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(500).json({ error: 'Erro ao buscar usuário' });
         }
         
-        console.log(`👤 Usuário: ${user.nome || user.email} | PRO: ${user.is_pro} | Créditos: ${user.creditos}`);
+        const isPro = user.is_pro || user.email === 'mresquadriasaluminio@gmail.com';
+        console.log(`👤 Usuário: ${user.nome || user.email} | PRO: ${isPro} | Créditos: ${user.creditos}`);
         
         // ============================================
         // VERIFICAR QUANTIDADE DE NÚMEROS (PRO)
         // ============================================
         
         const numerosPorJogo = extraNumbers || config.numerosPadrao;
-        const isPro = user.is_pro || user.email === 'mresquadriasaluminio@gmail.com';
         
         if (isPro && numerosPorJogo > config.maxNumeros) {
             return res.status(400).json({ 
@@ -315,6 +316,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!isPro && numerosPorJogo > config.numerosPadrao) {
             return res.status(403).json({ 
                 error: `Plano FREE: apenas ${config.numerosPadrao} números. Seja PRO para mais!` 
+            });
+        }
+        
+        // ============================================
+        // VERIFICAR MOTOR (APENAS PRO)
+        // ============================================
+        
+        const motoresPro = ['probability', 'predictive'];
+        if (motoresPro.includes(engine) && !isPro) {
+            return res.status(403).json({ 
+                error: 'Esta IA é exclusiva para assinantes PRO! ⭐' 
             });
         }
         
@@ -371,17 +383,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
         
         // ============================================
-        // GERAR JOGOS COM O MOTOR
+        // CRIAR MOTOR DE IA (USANDO CACHE)
         // ============================================
         
-        const engine = new LotteryEngine(dadosHistoricos, {
+        const engineConfig: EngineConfig = {
             ...config,
             numerosPadrao: numerosPorJogo
-        });
+        };
         
-        const jogos = engine.gerarJogos(quantity, mode, 0, dispersao);
+        // Usar cache para otimizar
+        const context = cacheManager.getContext(lottery, dadosHistoricos);
         
-        console.log(`✅ ${jogos.length} jogos gerados para ${config.nome}`);
+        const motor = EngineFactory.criarEngine(engine, dadosHistoricos, engineConfig, isPro);
+        
+        // Verificar se o motor está disponível
+        if (!motor.isDisponivel()) {
+            return res.status(403).json({ 
+                error: 'Este motor não está disponível para o seu plano. ⭐' 
+            });
+        }
+        
+        // ============================================
+        // GERAR JOGOS
+        // ============================================
+        
+        const resultado = motor.gerarJogos(quantity, 0, { dispersao });
+        
+        console.log(`✅ ${resultado.games.length} jogos gerados com ${resultado.engineName}`);
         
         // ============================================
         // ATUALIZAR CRÉDITOS
@@ -399,14 +427,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // SALVAR HISTÓRICO
         // ============================================
         
-        for (const jogo of jogos) {
+        for (const jogo of resultado.games) {
             await supabase
                 .from('historico_palpites')
                 .insert({
                     usuario_uid: uid,
                     loteria: lottery,
                     jogos: jogo.numeros,
-                    modo: mode,
+                    modo: engine,
                     quantidade_numeros: numerosPorJogo,
                     custo: custoPorJogo,
                     filtros: `Período: ${period}, Dispersão: ${dispersao}`,
@@ -415,29 +443,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         trevos: jogo.trevos || null,
                         mesSorte: jogo.mesSorte || null,
                         colunas: jogo.colunas || null,
-                        lotecaResultados: jogo.lotecaResultados || null
+                        lotecaResultados: jogo.lotecaResultados || null,
+                        explicacao: jogo.explicacao || null
                     },
                     created_at: new Date().toISOString()
                 });
         }
         
-        console.log(`💾 ${jogos.length} jogos salvos no histórico`);
+        console.log(`💾 ${resultado.games.length} jogos salvos no histórico`);
+        
+        // ============================================
+        // LIMPAR CACHE PERIODICAMENTE
+        // ============================================
+        
+        cacheManager.cleanup();
         
         // ============================================
         // RESPOSTA
         // ============================================
         
-        const relatorio = engine.getRelatorio();
-        
         return res.status(200).json({
             success: true,
-            games: jogos,
+            games: resultado.games,
             creditsSpent: custoTotal,
             creditsRemaining: novoSaldo,
-            mode: mode,
-            iaUsed: dadosHistoricos.length >= 10 && mode !== 'aleatorio_puro',
+            engine: engine,
+            engineName: resultado.engineName,
+            confidence: resultado.confidence,
+            explanation: resultado.explanation,
+            iaUsed: dadosHistoricos.length >= 10,
             totalHistorico: dadosHistoricos.length,
-            confiancaMedia: relatorio.confiancaGeral || 0,
             isPro: isPro
         });
         
