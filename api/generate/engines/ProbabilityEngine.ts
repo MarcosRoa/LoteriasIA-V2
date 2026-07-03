@@ -5,7 +5,7 @@
 // Distribuição binomial, entropia, variância
 // ============================================
 
-import { BaseEngine, EngineResult, EngineConfig } from './BaseEngine';
+import { BaseEngine, EngineResult,  JogoGerado, EngineConfig } from './BaseEngine';
 import { ProbabilityAnalyzer } from '../analysis/ProbabilityAnalyzer';
 import { ConfidenceCalculator } from '../evaluation/ConfidenceCalculator';
 
