@@ -4,7 +4,7 @@
 // IA HÍBRIDA - Combina estatística, probabilidade e tendência
 // ============================================
 
-import { BaseEngine, EngineResult, EngineConfig } from './BaseEngine';
+import { BaseEngine, EngineResult,  JogoGerado, EngineConfig } from './BaseEngine';
 import { FrequencyAnalyzer } from '../analysis/FrequencyAnalyzer';
 import { DelayAnalyzer } from '../analysis/DelayAnalyzer';
 import { DispersionAnalyzer } from '../analysis/DispersionAnalyzer';
@@ -127,7 +127,7 @@ export class HybridEngine extends BaseEngine {
 
         for (let i = min; i <= max; i++) {
             const freqScore = frequency.getFrequenciaNormalizada(i) / 100;
-            const delayScore = delay.getAtrasoNormalizada(i) / 100;
+            const delayScore = delay.getAtrasoNormalizado(i) / 100;
             const probScore = probability.getProbabilidade(i) * 2;
             const padraoScore = padroesNumeros.has(i) ? 0.8 : 0.2;
 
