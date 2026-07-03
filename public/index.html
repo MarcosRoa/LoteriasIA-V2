@@ -25,10 +25,114 @@
     <script src="/js/jogos.js"></script>
     <script src="/js/ia-training.js"></script>
     <script src="/js/user-interface.js"></script>
-    <!-- <script src="/js/estatisticas.js"></script> -->
-    <!-- <script src="js/estatisticas/index.js" type="module"></script> -->
     <script src="/js/api-client.js"></script>
     <script src="/js/init.js"></script>
+    
+    <style>
+        /* ============================================
+           BOTÕES DE IA - ESTILO ELIPSE/BALÃO
+        ============================================ */
+        .ia-selector-container {
+            display: flex;
+            justify-content: center;
+            margin: 16px 0;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .ia-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 18px;
+            border-radius: 50px;
+            border: 2px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+        
+        .ia-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            border-color: var(--text-secondary);
+        }
+        
+        .ia-btn.active {
+            background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+            border-color: #8b5cf6;
+            color: #ffffff;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+        }
+        
+        .ia-btn .badge-pro {
+            background: linear-gradient(135deg, #f59e0b, #eab308);
+            color: #1e293b;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 20px;
+            margin-left: 4px;
+        }
+        
+        .ia-btn .badge-free {
+            background: #334155;
+            color: #94a3b8;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 20px;
+            margin-left: 4px;
+        }
+        
+        .ia-btn.pro-only {
+            opacity: 0.6;
+            cursor: not-allowed;
+            border-style: dashed;
+        }
+        
+        .ia-btn.pro-only:hover {
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .ia-btn.pro-only.active {
+            opacity: 1;
+            cursor: pointer;
+            border-style: solid;
+        }
+        
+        /* Cores específicas para cada IA */
+        .ia-btn[data-ia="statistical"]:not(.active):hover { border-color: #38bdf8; color: #38bdf8; }
+        .ia-btn[data-ia="hybrid"]:not(.active):hover { border-color: #8b5cf6; color: #8b5cf6; }
+        .ia-btn[data-ia="specialist"]:not(.active):hover { border-color: #22c55e; color: #22c55e; }
+        .ia-btn[data-ia="smartrandom"]:not(.active):hover { border-color: #f59e0b; color: #f59e0b; }
+        .ia-btn[data-ia="probability"]:not(.active):hover { border-color: #f97316; color: #f97316; }
+        .ia-btn[data-ia="predictive"]:not(.active):hover { border-color: #ef4444; color: #ef4444; }
+        
+        .ia-btn.active[data-ia="statistical"] { background: linear-gradient(135deg, #38bdf8, #0ea5e9); border-color: #38bdf8; }
+        .ia-btn.active[data-ia="hybrid"] { background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-color: #8b5cf6; }
+        .ia-btn.active[data-ia="specialist"] { background: linear-gradient(135deg, #22c55e, #16a34a); border-color: #22c55e; }
+        .ia-btn.active[data-ia="smartrandom"] { background: linear-gradient(135deg, #f59e0b, #d97706); border-color: #f59e0b; }
+        .ia-btn.active[data-ia="probability"] { background: linear-gradient(135deg, #f97316, #ea580c); border-color: #f97316; }
+        .ia-btn.active[data-ia="predictive"] { background: linear-gradient(135deg, #ef4444, #dc2626); border-color: #ef4444; }
+        
+        @media (max-width: 768px) {
+            .ia-btn {
+                padding: 6px 12px;
+                font-size: 11px;
+                gap: 4px;
+            }
+            .ia-selector-container {
+                gap: 4px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="header">
@@ -64,7 +168,109 @@
 
     <div class="container">
         <div class="lottery-grid" id="lotteryGrid"></div>
+        
+        <!-- ============================================
+             SELEÇÃO DE IA - BOTÕES ESTILO ELIPSE
+        ============================================ -->
+        <div class="ia-selector-container" id="iaSelector">
+            <button class="ia-btn" data-ia="statistical" title="Análise de frequência, atraso e dispersão">
+                📊 Estatística
+            </button>
+            <button class="ia-btn active" data-ia="hybrid" title="Combina estatística, probabilidade e tendência">
+                🧠 Híbrida
+                <span class="badge-free">REC</span>
+            </button>
+            <button class="ia-btn" data-ia="specialist" title="Avalia e seleciona os melhores jogos">
+                🎯 Especialista
+            </button>
+            <button class="ia-btn" data-ia="smartrandom" title="Aleatório com ponderação estatística">
+                🎲 Aleatório
+            </button>
+            <button class="ia-btn pro-only" data-ia="probability" title="🔒 Distribuição binomial, entropia e variância">
+                📈 Probabilística
+                <span class="badge-pro">⭐PRO</span>
+            </button>
+            <button class="ia-btn pro-only" data-ia="predictive" title="🔒 Detecta padrões e tenta prever os próximos números">
+                🔮 Preditiva
+                <span class="badge-pro">⭐PRO</span>
+            </button>
+        </div>
+        
         <div id="conteudoLoteria"></div>
     </div>
+
+    <script>
+    // ============================================
+    // SELEÇÃO DE IA - VIA CLIQUE
+    // ============================================
+    (function() {
+        let iaSelecionada = 'hybrid';
+        
+        // Verificar se é PRO
+        function isPro() {
+            return window.usuarioAtual?.isPro || window.creditosUsuario >= 0;
+        }
+        
+        // Atualizar estado dos botões PRO
+        function atualizarBotoesPro() {
+            const isProUser = isPro();
+            document.querySelectorAll('.ia-btn.pro-only').forEach(btn => {
+                if (isProUser) {
+                    btn.classList.remove('pro-only');
+                    btn.title = btn.title.replace('🔒 ', '');
+                } else {
+                    btn.classList.add('pro-only');
+                    if (!btn.title.includes('🔒')) {
+                        btn.title = '🔒 ' + btn.title;
+                    }
+                }
+            });
+        }
+        
+        // Selecionar IA
+        function selecionarIA(ia) {
+            document.querySelectorAll('.ia-btn').forEach(b => b.classList.remove('active'));
+            const btn = document.querySelector(`.ia-btn[data-ia="${ia}"]`);
+            if (btn) {
+                btn.classList.add('active');
+                iaSelecionada = ia;
+                
+                // Atualizar o campo hidden
+                const hiddenInput = document.getElementById('iaSelecionada');
+                if (hiddenInput) hiddenInput.value = ia;
+                
+                console.log('🤖 IA selecionada:', ia);
+            }
+        }
+        
+        // Event listeners
+        document.querySelectorAll('.ia-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const ia = this.dataset.ia;
+                
+                // Verificar se é PRO
+                if (this.classList.contains('pro-only')) {
+                    const isProUser = isPro();
+                    if (!isProUser) {
+                        window.mostrarToast('⭐ Essa IA é exclusiva para assinantes PRO!', 'warning');
+                        return;
+                    }
+                }
+                
+                selecionarIA(ia);
+            });
+        });
+        
+        // Expor funções globalmente
+        window.selecionarIA = selecionarIA;
+        window.getIAAtual = () => iaSelecionada;
+        window.atualizarBotoesPro = atualizarBotoesPro;
+        
+        // Atualizar quando o usuário mudar
+        document.addEventListener('userUpdated', atualizarBotoesPro);
+        
+        console.log('✅ IA Selector carregado!');
+    })();
+    </script>
 </body>
 </html>
