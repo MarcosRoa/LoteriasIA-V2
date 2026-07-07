@@ -1,8 +1,8 @@
-// ============================================
+// ============================================//
 // CAMINHO: api/generate/analysis/DelayAnalyzer.ts
 // ============================================
 // Análise de atraso de números (do mais recente para o mais antigo)
-// ============================================
+// ============================================//
 
 export class DelayAnalyzer {
     private dados: number[][];
