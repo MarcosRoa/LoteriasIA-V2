@@ -1,8 +1,8 @@
-// ============================================
+// ============================================//
 // CAMINHO: api/generate/analysis/DispersionAnalyzer.ts
 // ============================================
 // Análise de dispersão (números recentes)
-// ============================================
+// ============================================//
 
 export class DispersionAnalyzer {
     private dados: number[][];
