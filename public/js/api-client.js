@@ -6,7 +6,7 @@
 // ============================================
 // api-client.js - V2.0 16/06/2026
 
-const API_BASE = '/api';
+const API_BASE = '/api/proxy-ia';
 
 class ApiClient {
     async getFirebaseToken() {
@@ -73,25 +73,22 @@ class ApiClient {
         const user = firebase.auth().currentUser;
         if (!user) throw new Error('User not logged in');
         
-        try {
-            return await this.request('/generate', {
-                method: 'POST',
-                body: JSON.stringify({
-                    uid: user.uid,
-                    lottery: request.lottery,
-                    quantity: request.quantity,
-                    mode: request.mode || 'ia_especialista',
-                    extraNumbers: request.extraNumbers || 0,
-                    // 🔧 CORREÇÃO: Enviar dados necessários para a IA
-                    filters: request.filters || {},
-                    dados: request.dados || [],
-                    dadosExtras: request.dadosExtras || []
-                })
-            });
-        } catch (error) {
-            console.error('Erro ao gerar jogos:', error);
-            throw error;
-        }
+        const token = await user.getIdToken();
+        
+        const response = await fetch(`${API_BASE}?action=generate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                lotteryType: request.lottery,
+                count: request.quantity,
+                method: request.mode || 'hybrid'
+            })
+        });
+        
+        return response.json()
     }
 
     async createPayment(amount) {
