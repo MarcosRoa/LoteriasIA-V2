@@ -1,10 +1,10 @@
 // ============================================
 // CAMINHO: public/js/api-client.js
 // ============================================
-// VERSÃO 2.1 - COMPLETA E CORRIGIDA
+// VERSÃO 2.2 - CORRIGIDA (APENAS IA VAI PARA O PROXY)
 // ============================================
 
-const API_BASE = '/api/proxy-ia';
+const API_BASE = '/api';
 
 class ApiClient {
     async getFirebaseToken() {
@@ -46,15 +46,19 @@ class ApiClient {
     }
 
     // ============================================
-    // 🔥 CORRIGIDO: Usar /user/status (POST) em vez de /credits (GET)
+    // 🔥 USUÁRIO: Vai para /api/user/status (Vercel + Supabase)
     // ============================================
     async getCredits() {
         const user = firebase.auth().currentUser;
         if (!user) return 0;
         try {
-            const data = await this.request('/user/status', {
-                method: 'POST',
-                body: JSON.stringify({ uid: user.uid })
+            const data = await this.request('/credits', {
+                method: 'GET',
+                headers: {
+                    'X-User-Id': user.uid,
+                    'X-User-Email': user.email || '',
+                    'X-User-Name': user.displayName || ''
+                }
             });
             return data.credits || 0;
         } catch (error) {
@@ -63,16 +67,17 @@ class ApiClient {
         }
     }
 
-    // ============================================
-    // 🔥 CORRIGIDO: Usar /user/status (POST) em vez de /pro/status (GET)
-    // ============================================
     async getProStatus() {
         const user = firebase.auth().currentUser;
         if (!user) return { isPro: false, daysLeft: 0 };
         try {
-            const data = await this.request('/user/status', {
-                method: 'POST',
-                body: JSON.stringify({ uid: user.uid })
+            const data = await this.request('/pro/status', {
+                method: 'GET',
+                headers: {
+                    'X-User-Id': user.uid,
+                    'X-User-Email': user.email || '',
+                    'X-User-Name': user.displayName || ''
+                }
             });
             return { 
                 isPro: data.isPro || false, 
@@ -84,50 +89,6 @@ class ApiClient {
         }
     }
 
-    // ============================================
-    // 🔥 CORRIGIDO: Usar /generate (POST) com os parâmetros corretos
-    // ============================================
-    async generateGames(request) {
-        const user = firebase.auth().currentUser;
-        if (!user) throw new Error('User not logged in');
-        
-        try {
-            const body = {
-                uid: user.uid,
-                lottery: request.lottery,
-                quantity: request.quantity,
-                mode: request.mode || 'hybrid',
-                extraNumbers: request.extraNumbers || 0,
-                period: request.filters?.periodo || 'all',
-                dispersao: request.filters?.dispersao || 15
-            };
-            
-            console.log('📤 Enviando requisição:', body);
-            
-            return await this.request('/generate', {
-                method: 'POST',
-                body: JSON.stringify(body)
-            });
-        } catch (error) {
-            console.error('❌ Erro ao gerar jogos:', error);
-            throw error;
-        }
-    }
-
-    async createPayment(amount) {
-        const user = firebase.auth().currentUser;
-        if (!user) throw new Error('User not logged in');
-        try {
-            return await this.request('/payments/create', {
-                method: 'POST',
-                body: JSON.stringify({ userId: user.uid, amount })
-            });
-        } catch (error) {
-            console.error('Erro ao criar pagamento:', error);
-            throw error;
-        }
-    }
-    
     async getUserStatus() {
         const user = firebase.auth().currentUser;
         if (!user) {
@@ -158,6 +119,63 @@ class ApiClient {
             };
         }
     }
+
+    // ============================================
+    // 🔥 IA: Vai para /api/generate (Vercel → Railway)
+    // ============================================
+    async generateGames(request) {
+        const user = firebase.auth().currentUser;
+        if (!user) throw new Error('User not logged in');
+        
+        try {
+            const body = {
+                uid: user.uid,
+                lottery: request.lottery,
+                quantity: request.quantity,
+                mode: request.mode || 'hybrid',
+                extraNumbers: request.extraNumbers || 0,
+                period: request.filters?.periodo || 'all',
+                dispersao: request.filters?.dispersao || 15
+            };
+            
+            console.log('📤 Enviando requisição para IA (Railway):', body);
+            
+            return await this.request('/generate', {
+                method: 'POST',
+                body: JSON.stringify(body)
+            });
+        } catch (error) {
+            console.error('❌ Erro ao gerar jogos:', error);
+            throw error;
+        }
+    }
+
+    async createPayment(amount) {
+        const user = firebase.auth().currentUser;
+        if (!user) throw new Error('User not logged in');
+        try {
+            return await this.request('/payments/create', {
+                method: 'POST',
+                body: JSON.stringify({ userId: user.uid, amount })
+            });
+        } catch (error) {
+            console.error('Erro ao criar pagamento:', error);
+            throw error;
+        }
+    }
+
+    async getHistory(limit = 50) {
+        const user = firebase.auth().currentUser;
+        if (!user) throw new Error('User not logged in');
+        try {
+            return await this.request(`/user/history?uid=${user.uid}&limit=${limit}`, {
+                method: 'GET'
+            });
+        } catch (error) {
+            console.error('Erro ao buscar histórico:', error);
+            throw error;
+        }
+    }
 }
 
 const apiClient = new ApiClient();
@@ -167,5 +185,6 @@ window.getCredits = () => apiClient.getCredits();
 window.getProStatus = () => apiClient.getProStatus();
 window.generateGames = (request) => apiClient.generateGames(request);
 window.createPayment = (amount) => apiClient.createPayment(amount);
+window.getHistory = (limit) => apiClient.getHistory(limit);
 
-console.log('✅ API Client V2.1 carregado');
+console.log('✅ API Client V2.2 carregado (Vercel + Railway)');
