@@ -1,10 +1,8 @@
-// js/api-client.js - VERSÃO 2.0 (Núcleo do Frontend)
 // ============================================
-// api-client.js - V2.0
-// api-client.js - V2.0
-// js/api-client.js - VERSÃO 2.0 (Núcleo do Frontend)
+// CAMINHO: public/js/api-client.js
 // ============================================
-// api-client.js - V2.0 16/06/2026
+// VERSÃO 2.1 - COMPLETA E CORRIGIDA
+// ============================================
 
 const API_BASE = '/api/proxy-ia';
 
@@ -34,7 +32,10 @@ class ApiClient {
             headers['X-User-Name'] = user.displayName || '';
         }
 
-        const response = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
+        const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
+        console.log(`📤 ${options.method || 'GET'} ${url}`);
+
+        const response = await fetch(url, { ...options, headers });
 
         if (!response.ok) {
             const error = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
@@ -44,11 +45,17 @@ class ApiClient {
         return await response.json();
     }
 
+    // ============================================
+    // 🔥 CORRIGIDO: Usar /user/status (POST) em vez de /credits (GET)
+    // ============================================
     async getCredits() {
         const user = firebase.auth().currentUser;
         if (!user) return 0;
         try {
-            const data = await this.request(`/credits?uid=${user.uid}`);
+            const data = await this.request('/user/status', {
+                method: 'POST',
+                body: JSON.stringify({ uid: user.uid })
+            });
             return data.credits || 0;
         } catch (error) {
             console.error('Erro ao buscar créditos:', error);
@@ -56,39 +63,55 @@ class ApiClient {
         }
     }
 
+    // ============================================
+    // 🔥 CORRIGIDO: Usar /user/status (POST) em vez de /pro/status (GET)
+    // ============================================
     async getProStatus() {
         const user = firebase.auth().currentUser;
         if (!user) return { isPro: false, daysLeft: 0 };
         try {
-            const data = await this.request(`/pro/status?uid=${user.uid}`);
-            return { isPro: data.isPro || false, daysLeft: data.daysLeft || 0 };
+            const data = await this.request('/user/status', {
+                method: 'POST',
+                body: JSON.stringify({ uid: user.uid })
+            });
+            return { 
+                isPro: data.isPro || false, 
+                daysLeft: data.daysLeft || 0 
+            };
         } catch (error) {
             console.error('Erro ao buscar status PRO:', error);
             return { isPro: false, daysLeft: 0 };
         }
     }
 
-    // 🔧 CORREÇÃO: Adicionar filters, dados e dadosExtras
+    // ============================================
+    // 🔥 CORRIGIDO: Usar /generate (POST) com os parâmetros corretos
+    // ============================================
     async generateGames(request) {
         const user = firebase.auth().currentUser;
         if (!user) throw new Error('User not logged in');
         
-        const token = await user.getIdToken();
-        
-        const response = await fetch(`${API_BASE}?action=generate`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                lotteryType: request.lottery,
-                count: request.quantity,
-                method: request.mode || 'hybrid'
-            })
-        });
-        
-        return response.json()
+        try {
+            const body = {
+                uid: user.uid,
+                lottery: request.lottery,
+                quantity: request.quantity,
+                mode: request.mode || 'hybrid',
+                extraNumbers: request.extraNumbers || 0,
+                period: request.filters?.periodo || 'all',
+                dispersao: request.filters?.dispersao || 15
+            };
+            
+            console.log('📤 Enviando requisição:', body);
+            
+            return await this.request('/generate', {
+                method: 'POST',
+                body: JSON.stringify(body)
+            });
+        } catch (error) {
+            console.error('❌ Erro ao gerar jogos:', error);
+            throw error;
+        }
     }
 
     async createPayment(amount) {
@@ -119,12 +142,10 @@ class ApiClient {
         }
         
         try {
-            // 🔥 Usa o endpoint /api/pro/status (GET) ou /api/user/status (POST)
-            const response = await fetch(`${API_BASE}/pro/status?uid=${user.uid}`, {
-                credentials: 'include'
+            return await this.request('/user/status', {
+                method: 'POST',
+                body: JSON.stringify({ uid: user.uid })
             });
-            const data = await response.json();
-            return data;
         } catch (error) {
             console.error('Erro ao buscar status do usuário:', error);
             return { 
@@ -137,7 +158,6 @@ class ApiClient {
             };
         }
     }
-    
 }
 
 const apiClient = new ApiClient();
@@ -148,4 +168,4 @@ window.getProStatus = () => apiClient.getProStatus();
 window.generateGames = (request) => apiClient.generateGames(request);
 window.createPayment = (amount) => apiClient.createPayment(amount);
 
-console.log('✅ API Client V2.0 carregado');
+console.log('✅ API Client V2.1 carregado');
