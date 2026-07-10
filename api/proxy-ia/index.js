@@ -67,10 +67,8 @@ export default async function handler(req, res) {
     console.log(`👤 Usuário: ${user.email} | UID: ${user.uid}`);
 
     // ============================================
-    // 3. ROTAS ESPECÍFICAS (créditos e status)
+    // 3. ROTA: /credits
     // ============================================
-    
-    // ROTA: /credits
     if (req.url?.includes('/credits')) {
         try {
             const { data, error } = await supabase
@@ -78,6 +76,14 @@ export default async function handler(req, res) {
                 .select('creditos')
                 .eq('uid', user.uid)
                 .single();
+
+            // ✅ Se não encontrar o usuário, retorna 0 (não cria)
+            if (error && error.code === 'PGRST116') {
+                return res.status(200).json({
+                    success: true,
+                    credits: 0
+                });
+            }
 
             if (error) {
                 console.error('❌ Erro ao buscar créditos:', error);
@@ -100,7 +106,9 @@ export default async function handler(req, res) {
         }
     }
 
-    // ROTA: /pro/status
+    // ============================================
+    // 4. ROTA: /pro/status
+    // ============================================
     if (req.url?.includes('/pro/status')) {
         try {
             const { data, error } = await supabase
@@ -108,6 +116,16 @@ export default async function handler(req, res) {
                 .select('is_pro, pro_expires_at')
                 .eq('uid', user.uid)
                 .single();
+
+            // ✅ Se não encontrar o usuário, retorna false (não cria)
+            if (error && error.code === 'PGRST116') {
+                return res.status(200).json({
+                    success: true,
+                    isPro: false,
+                    daysLeft: 0,
+                    proExpiresAt: null
+                });
+            }
 
             if (error) {
                 console.error('❌ Erro ao buscar status PRO:', error);
@@ -141,7 +159,7 @@ export default async function handler(req, res) {
     }
 
     // ============================================
-    // 4. ROTA: ação (generate, analyze, predict)
+    // 5. ROTA: ação (generate, analyze, predict)
     // ============================================
     const { action } = req.query;
     if (!action) {
@@ -161,7 +179,7 @@ export default async function handler(req, res) {
                     'x-api-key': API_SECRET_KEY,
                     'x-user-id': user.uid,
                     'x-user-email': user.email || '',
-                    'x-user-plan': user.isPro ? 'pro' : 'free'
+                    'x-user-plan': 'free' // Será atualizado depois
                 },
                 body: req.method !== 'GET' ? JSON.stringify(req.body) : undefined
             }
@@ -202,7 +220,7 @@ async function verifyFirebaseToken(token) {
         return {
             uid: user.localId,
             email: user.email,
-            isPro: false // Será buscado do Supabase quando necessário
+            isPro: false
         };
     } catch (error) {
         console.error('❌ Erro ao verificar token:', error);
