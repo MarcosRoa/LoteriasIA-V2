@@ -4,7 +4,13 @@
 // PROXY PARA CHAMAR O RAILWAY
 // + ROTAS PARA CRÉDITOS E STATUS PRO (SUPABASE)
 // ============================================
-
+console.log({
+    SUPABASE_URL: !!process.env.SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    FIREBASE_API_KEY: !!process.env.FIREBASE_API_KEY,
+    RAILWAY_URL: !!process.env.RAILWAY_URL,
+    RAILWAY_API_KEY: !!process.env.RAILWAY_API_KEY
+});
 const { createClient } = require('@supabase/supabase-js');
 
 // ============================================
