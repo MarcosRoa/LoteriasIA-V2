@@ -4,6 +4,23 @@
 // PROXY PARA CHAMAR O RAILWAY
 // + ROTAS PARA CRÉDITOS E STATUS PRO (SUPABASE)
 // ============================================
+console.log("1 - Proxy iniciado");
+
+export default async function handler(req, res) {
+    console.log("2 - Entrou no handler");
+
+    try {
+        console.log("3 - Método:", req.method);
+        console.log("4 - URL:", req.url);
+
+        console.log("5 - Verificando Authorization");
+        // código atual...
+
+    } catch (e) {
+        console.error("ERRO GERAL:", e);
+        throw e;
+    }
+}
 console.log({
     SUPABASE_URL: !!process.env.SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
