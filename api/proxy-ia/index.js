@@ -2,12 +2,26 @@
 // CAMINHO: api/proxy-ia/index.js
 // ============================================
 // PROXY PARA CHAMAR O RAILWAY
-// Mantém a API_SECRET_KEY segura no backend
+// + ROTAS PARA CRÉDITOS E STATUS PRO (SUPABASE)
 // ============================================
 
+import { createClient } from '@supabase/supabase-js';
+
+// ============================================
+// CONFIGURAÇÕES
+// ============================================
 const API_SECRET_KEY = process.env.RAILWAY_API_KEY || 'loterias-ia-2024-segura';
 const RAILWAY_URL = process.env.RAILWAY_URL || 'https://loterias-ia-core-production.up.railway.app';
 
+// Supabase
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// ============================================
+// HANDLER PRINCIPAL
+// ============================================
 export default async function handler(req, res) {
     // ============================================
     // 1. CORS
@@ -21,18 +35,7 @@ export default async function handler(req, res) {
     }
 
     // ============================================
-    // 2. Pegar a ação da URL
-    // ============================================
-    const { action } = req.query; // generate, analyze, predict
-    if (!action) {
-        return res.status(400).json({ 
-            success: false, 
-            error: 'Parâmetro "action" é obrigatório (generate, analyze, predict)' 
-        });
-    }
-
-    // ============================================
-    // 3. Validar autenticação do usuário (Firebase)
+    // 2. VALIDAR TOKEN (obrigatório para todas as rotas)
     // ============================================
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -44,23 +47,111 @@ export default async function handler(req, res) {
 
     const token = authHeader.split(' ')[1];
 
+    let user;
     try {
-        // ============================================
-        // 4. Validar token com Firebase
-        // ============================================
-        const user = await verifyFirebaseToken(token);
+        user = await verifyFirebaseToken(token);
         if (!user) {
             return res.status(401).json({ 
                 success: false, 
                 error: 'Token inválido ou expirado' 
             });
         }
+    } catch (error) {
+        console.error('❌ Erro ao verificar token:', error);
+        return res.status(401).json({ 
+            success: false, 
+            error: 'Erro ao validar token' 
+        });
+    }
 
-        console.log(`👤 Usuário: ${user.email} | UID: ${user.uid}`);
+    console.log(`👤 Usuário: ${user.email} | UID: ${user.uid}`);
 
-        // ============================================
-        // 5. Encaminhar para o Railway
-        // ============================================
+    // ============================================
+    // 3. ROTAS ESPECÍFICAS (créditos e status)
+    // ============================================
+    
+    // ROTA: /credits
+    if (req.url?.includes('/credits')) {
+        try {
+            const { data, error } = await supabase
+                .from('usuarios')
+                .select('creditos')
+                .eq('uid', user.uid)
+                .single();
+
+            if (error) {
+                console.error('❌ Erro ao buscar créditos:', error);
+                return res.status(500).json({ 
+                    success: false, 
+                    error: 'Erro ao buscar créditos' 
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                credits: data?.creditos || 0
+            });
+        } catch (error) {
+            console.error('❌ Erro ao buscar créditos:', error);
+            return res.status(500).json({ 
+                success: false, 
+                error: 'Erro ao buscar créditos' 
+            });
+        }
+    }
+
+    // ROTA: /pro/status
+    if (req.url?.includes('/pro/status')) {
+        try {
+            const { data, error } = await supabase
+                .from('usuarios')
+                .select('is_pro, pro_expires_at')
+                .eq('uid', user.uid)
+                .single();
+
+            if (error) {
+                console.error('❌ Erro ao buscar status PRO:', error);
+                return res.status(500).json({ 
+                    success: false, 
+                    error: 'Erro ao buscar status PRO' 
+                });
+            }
+
+            const isPro = data?.is_pro || false;
+            let daysLeft = 0;
+            if (isPro && data?.pro_expires_at) {
+                const expiry = new Date(data.pro_expires_at);
+                const now = new Date();
+                daysLeft = Math.max(0, Math.ceil((expiry - now) / (1000 * 60 * 60 * 24)));
+            }
+
+            return res.status(200).json({
+                success: true,
+                isPro,
+                daysLeft,
+                proExpiresAt: data?.pro_expires_at || null
+            });
+        } catch (error) {
+            console.error('❌ Erro ao buscar status PRO:', error);
+            return res.status(500).json({ 
+                success: false, 
+                error: 'Erro ao buscar status PRO' 
+            });
+        }
+    }
+
+    // ============================================
+    // 4. ROTA: ação (generate, analyze, predict)
+    // ============================================
+    const { action } = req.query;
+    if (!action) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'Parâmetro "action" é obrigatório (generate, analyze, predict)' 
+        });
+    }
+
+    try {
         const railwayResponse = await fetch(
             `${RAILWAY_URL}/api/${action}`,
             {
@@ -77,10 +168,6 @@ export default async function handler(req, res) {
         );
 
         const data = await railwayResponse.json();
-
-        // ============================================
-        // 6. Retornar resposta
-        // ============================================
         res.status(railwayResponse.status).json(data);
 
     } catch (error) {
@@ -97,8 +184,6 @@ export default async function handler(req, res) {
 // ============================================
 async function verifyFirebaseToken(token) {
     try {
-        // Usar Firebase Admin SDK (se disponível)
-        // Ou fazer uma requisição para o Firebase Auth
         const response = await fetch(
             `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${process.env.FIREBASE_API_KEY}`,
             {
@@ -117,7 +202,7 @@ async function verifyFirebaseToken(token) {
         return {
             uid: user.localId,
             email: user.email,
-            isPro: false // Você pode buscar do seu banco depois
+            isPro: false // Será buscado do Supabase quando necessário
         };
     } catch (error) {
         console.error('❌ Erro ao verificar token:', error);
