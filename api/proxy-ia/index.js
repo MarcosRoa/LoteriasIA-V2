@@ -4,31 +4,8 @@
 // PROXY PARA CHAMAR O RAILWAY
 // + ROTAS PARA CRÉDITOS E STATUS PRO (SUPABASE)
 // ============================================
-console.log("1 - Proxy iniciado");
 
-export default async function handler(req, res) {
-    console.log("2 - Entrou no handler");
-
-    try {
-        console.log("3 - Método:", req.method);
-        console.log("4 - URL:", req.url);
-
-        console.log("5 - Verificando Authorization");
-        // código atual...
-
-    } catch (e) {
-        console.error("ERRO GERAL:", e);
-        throw e;
-    }
-}
-console.log({
-    SUPABASE_URL: !!process.env.SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-    FIREBASE_API_KEY: !!process.env.FIREBASE_API_KEY,
-    RAILWAY_URL: !!process.env.RAILWAY_URL,
-    RAILWAY_API_KEY: !!process.env.RAILWAY_API_KEY
-});
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
 // ============================================
 // CONFIGURAÇÕES
@@ -45,7 +22,7 @@ const supabase = createClient(
 // ============================================
 // HANDLER PRINCIPAL
 // ============================================
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
     // ============================================
     // 1. CORS
     // ============================================
@@ -102,69 +79,33 @@ module.exports = async function handler(req, res) {
     console.log(`👤 Usuário: ${user.email} | UID: ${user.uid}`);
 
     // ============================================
-    // 4. ROTA: /credits
+    // 4. ROTA: /user/status (UNIFICADA)
     // ============================================
-    if (req.url?.includes('/credits')) {
+    if (req.url?.includes('/user/status')) {
         try {
             const { data, error } = await supabase
                 .from('usuarios')
-                .select('creditos')
+                .select('creditos, is_pro, pro_expires_at, nome, email')
                 .eq('uid', user.uid)
                 .single();
 
             if (error && error.code === 'PGRST116') {
                 return res.status(200).json({
                     success: true,
-                    credits: 0
-                });
-            }
-
-            if (error) {
-                console.error('❌ Erro ao buscar créditos:', error);
-                return res.status(500).json({ 
-                    success: false, 
-                    error: 'Erro ao buscar créditos' 
-                });
-            }
-
-            return res.status(200).json({
-                success: true,
-                credits: data?.creditos || 0
-            });
-        } catch (error) {
-            console.error('❌ Erro ao buscar créditos:', error);
-            return res.status(500).json({ 
-                success: false, 
-                error: 'Erro ao buscar créditos' 
-            });
-        }
-    }
-
-    // ============================================
-    // 5. ROTA: /pro/status
-    // ============================================
-    if (req.url?.includes('/pro/status')) {
-        try {
-            const { data, error } = await supabase
-                .from('usuarios')
-                .select('is_pro, pro_expires_at')
-                .eq('uid', user.uid)
-                .single();
-
-            if (error && error.code === 'PGRST116') {
-                return res.status(200).json({
-                    success: true,
+                    credits: 0,
                     isPro: false,
                     daysLeft: 0,
-                    proExpiresAt: null
+                    proExpiresAt: null,
+                    nome: user.email?.split('@')[0] || 'Usuário',
+                    email: user.email
                 });
             }
 
             if (error) {
-                console.error('❌ Erro ao buscar status PRO:', error);
+                console.error('❌ Erro ao buscar usuário:', error);
                 return res.status(500).json({ 
                     success: false, 
-                    error: 'Erro ao buscar status PRO' 
+                    error: 'Erro ao buscar dados do usuário' 
                 });
             }
 
@@ -178,21 +119,59 @@ module.exports = async function handler(req, res) {
 
             return res.status(200).json({
                 success: true,
-                isPro,
-                daysLeft,
-                proExpiresAt: data?.pro_expires_at || null
+                credits: data?.creditos || 0,
+                isPro: isPro,
+                daysLeft: daysLeft,
+                proExpiresAt: data?.pro_expires_at || null,
+                nome: data?.nome || user.email?.split('@')[0] || 'Usuário',
+                email: data?.email || user.email
             });
         } catch (error) {
-            console.error('❌ Erro ao buscar status PRO:', error);
+            console.error('❌ Erro ao buscar usuário:', error);
             return res.status(500).json({ 
                 success: false, 
-                error: 'Erro ao buscar status PRO' 
+                error: 'Erro ao buscar dados do usuário' 
             });
         }
     }
 
     // ============================================
-    // 6. ROTA: ação (generate, analyze, predict)
+    // 5. ROTA: /generate (REDIRECIONA PARA O RAILWAY)
+    // ============================================
+    if (req.url?.includes('/generate')) {
+        try {
+            // Pega o corpo da requisição
+            const body = req.body || {};
+
+            const railwayResponse = await fetch(
+                `${RAILWAY_URL}/api/generate`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': API_SECRET_KEY,
+                        'x-user-id': user.uid,
+                        'x-user-email': user.email || '',
+                        'x-user-plan': 'free'
+                    },
+                    body: JSON.stringify(body)
+                }
+            );
+
+            const data = await railwayResponse.json();
+            return res.status(railwayResponse.status).json(data);
+
+        } catch (error) {
+            console.error('❌ Erro no proxy generate:', error);
+            return res.status(500).json({
+                success: false,
+                error: error.message || 'Erro ao processar geração'
+            });
+        }
+    }
+
+    // ============================================
+    // 6. ROTA: action (generate, analyze, predict)
     // ============================================
     const { action } = req.query;
     if (!action) {
@@ -228,7 +207,7 @@ module.exports = async function handler(req, res) {
             error: error.message || 'Erro ao processar requisição'
         });
     }
-};
+}
 
 // ============================================
 // FUNÇÃO PARA VERIFICAR TOKEN FIREBASE
