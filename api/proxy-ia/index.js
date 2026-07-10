@@ -5,7 +5,7 @@
 // + ROTAS PARA CRÉDITOS E STATUS PRO (SUPABASE)
 // ============================================
 
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
 // ============================================
 // CONFIGURAÇÕES
@@ -22,7 +22,7 @@ const supabase = createClient(
 // ============================================
 // HANDLER PRINCIPAL
 // ============================================
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     // ============================================
     // 1. CORS
     // ============================================
@@ -35,7 +35,19 @@ export default async function handler(req, res) {
     }
 
     // ============================================
-    // 2. VALIDAR TOKEN (obrigatório para todas as rotas)
+    // 2. ROTA DE TESTE: /health
+    // ============================================
+    if (req.url === '/health' || req.url === '/proxy-ia/health') {
+        return res.status(200).json({
+            success: true,
+            status: 'OK',
+            service: 'Proxy IA',
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    // ============================================
+    // 3. VALIDAR TOKEN (obrigatório para todas as rotas)
     // ============================================
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -67,7 +79,7 @@ export default async function handler(req, res) {
     console.log(`👤 Usuário: ${user.email} | UID: ${user.uid}`);
 
     // ============================================
-    // 3. ROTA: /credits
+    // 4. ROTA: /credits
     // ============================================
     if (req.url?.includes('/credits')) {
         try {
@@ -77,7 +89,6 @@ export default async function handler(req, res) {
                 .eq('uid', user.uid)
                 .single();
 
-            // ✅ Se não encontrar o usuário, retorna 0 (não cria)
             if (error && error.code === 'PGRST116') {
                 return res.status(200).json({
                     success: true,
@@ -107,7 +118,7 @@ export default async function handler(req, res) {
     }
 
     // ============================================
-    // 4. ROTA: /pro/status
+    // 5. ROTA: /pro/status
     // ============================================
     if (req.url?.includes('/pro/status')) {
         try {
@@ -117,7 +128,6 @@ export default async function handler(req, res) {
                 .eq('uid', user.uid)
                 .single();
 
-            // ✅ Se não encontrar o usuário, retorna false (não cria)
             if (error && error.code === 'PGRST116') {
                 return res.status(200).json({
                     success: true,
@@ -159,7 +169,7 @@ export default async function handler(req, res) {
     }
 
     // ============================================
-    // 5. ROTA: ação (generate, analyze, predict)
+    // 6. ROTA: ação (generate, analyze, predict)
     // ============================================
     const { action } = req.query;
     if (!action) {
@@ -179,7 +189,7 @@ export default async function handler(req, res) {
                     'x-api-key': API_SECRET_KEY,
                     'x-user-id': user.uid,
                     'x-user-email': user.email || '',
-                    'x-user-plan': 'free' // Será atualizado depois
+                    'x-user-plan': 'free'
                 },
                 body: req.method !== 'GET' ? JSON.stringify(req.body) : undefined
             }
@@ -195,7 +205,7 @@ export default async function handler(req, res) {
             error: error.message || 'Erro ao processar requisição'
         });
     }
-}
+};
 
 // ============================================
 // FUNÇÃO PARA VERIFICAR TOKEN FIREBASE
