@@ -136,11 +136,82 @@ export default async function handler(req, res) {
     }
 
     // ============================================
-    // 5. ROTA: /generate (REDIRECIONA PARA O RAILWAY)
+    // 5. ROTA: /credits (APENAS CRÉDITOS)
+    // ============================================
+    if (req.url?.includes('/credits')) {
+        try {
+            const { data, error } = await supabase
+                .from('usuarios')
+                .select('creditos')
+                .eq('uid', user.uid)
+                .single();
+
+            if (error) {
+                return res.status(500).json({ 
+                    success: false, 
+                    error: error.message 
+                });
+            }
+
+            return res.status(200).json({ 
+                success: true, 
+                credits: data?.creditos || 0 
+            });
+        } catch (error) {
+            console.error('❌ Erro ao buscar créditos:', error);
+            return res.status(500).json({ 
+                success: false, 
+                error: error.message 
+            });
+        }
+    }
+
+    // ============================================
+    // 6. ROTA: /pro/status (APENAS STATUS PRO)
+    // ============================================
+    if (req.url?.includes('/pro/status')) {
+        try {
+            const { data, error } = await supabase
+                .from('usuarios')
+                .select('is_pro, pro_expires_at')
+                .eq('uid', user.uid)
+                .single();
+
+            if (error) {
+                return res.status(500).json({ 
+                    success: false, 
+                    error: error.message 
+                });
+            }
+
+            const isPro = data?.is_pro || false;
+            let daysLeft = 0;
+            if (isPro && data?.pro_expires_at) {
+                const expiry = new Date(data.pro_expires_at);
+                const now = new Date();
+                daysLeft = Math.max(0, Math.ceil((expiry - now) / (1000 * 60 * 60 * 24)));
+            }
+
+            return res.status(200).json({
+                success: true,
+                isPro: isPro,
+                daysLeft: daysLeft,
+                proExpiresAt: data?.pro_expires_at || null
+            });
+        } catch (error) {
+            console.error('❌ Erro ao buscar status PRO:', error);
+            return res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    }
+
+    // ============================================
+    // 7. ROTA: /generate (REDIRECIONA PARA O RAILWAY)
     // ============================================
     if (req.url?.includes('/generate')) {
         try {
-            // Pega o corpo da requisição
             const body = req.body || {};
 
             const railwayResponse = await fetch(
@@ -171,7 +242,7 @@ export default async function handler(req, res) {
     }
 
     // ============================================
-    // 6. ROTA: action (generate, analyze, predict)
+    // 8. ROTA: action (generate, analyze, predict)
     // ============================================
     const { action } = req.query;
     if (!action) {
