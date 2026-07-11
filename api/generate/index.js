@@ -2,10 +2,25 @@
 // CAMINHO: api/generate/index.js
 // ============================================
 // REDIRECIONA PARA O RAILWAY (APENAS IA)
+// VERSÃO 2.0 - COM TIMEOUT E TRATAMENTO DE ERROS
 // ============================================
 
 const RAILWAY_URL = process.env.RAILWAY_URL || 'https://loterias-ia-core-production.up.railway.app';
 const API_SECRET_KEY = process.env.RAILWAY_API_KEY || 'loterias-ia-2024-segura';
+const TIMEOUT_MS = 20000; // 20 segundos
+
+// ============================================
+// LOG CONDICIONAL (apenas em desenvolvimento)
+// ============================================
+function log(...args) {
+    if (process.env.NODE_ENV !== 'production') {
+        console.log(...args);
+    }
+}
+
+function logError(...args) {
+    console.error(...args); // Erros sempre devem ser logados
+}
 
 export default async function handler(req, res) {
     // CORS
@@ -22,12 +37,22 @@ export default async function handler(req, res) {
     }
 
     try {
-        console.log('📥 /api/generate (proxy) chamado');
-        console.log('📤 Redirecionando para:', `${RAILWAY_URL}/api/generate`);
+        log('📥 /api/generate (proxy) chamado');
 
         // Buscar o token do header
         const authHeader = req.headers.authorization;
         const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+
+        // ============================================
+        // 🔥 TIMEOUT COM ABORTCONTROLLER
+        // ============================================
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+            controller.abort();
+        }, TIMEOUT_MS);
+
+        log('📤 Redirecionando para:', `${RAILWAY_URL}/api/generate`);
+        log('📦 Body:', req.body);
 
         const response = await fetch(`${RAILWAY_URL}/api/generate`, {
             method: 'POST',
@@ -39,17 +64,48 @@ export default async function handler(req, res) {
                 'x-user-name': req.headers['x-user-name'] || '',
                 'Authorization': token ? `Bearer ${token}` : ''
             },
-            body: JSON.stringify(req.body || {})
+            body: JSON.stringify(req.body || {}),
+            signal: controller.signal
         });
 
-        const data = await response.json();
+        clearTimeout(timeoutId);
 
-        console.log('✅ Resposta do Railway recebida:', response.status);
+        // ============================================
+        // 🔥 TRATAMENTO DE RESPOSTA (pode ser HTML)
+        // ============================================
+        const texto = await response.text();
+        let data;
+
+        try {
+            data = JSON.parse(texto);
+        } catch (e) {
+            // Se não for JSON, retorna erro formatado
+            logError('⚠️ Railway respondeu com HTML/Texto:', texto.substring(0, 200));
+            data = {
+                success: false,
+                error: 'Erro ao processar resposta da IA',
+                raw: texto.substring(0, 200)
+            };
+            return res.status(502).json(data);
+        }
+
+        log('✅ Resposta do Railway recebida:', response.status);
 
         return res.status(response.status).json(data);
 
     } catch (error) {
-        console.error('❌ Erro no proxy /api/generate:', error);
+        // ============================================
+        // 🔥 TRATAMENTO DE TIMEOUT
+        // ============================================
+        if (error.name === 'AbortError') {
+            logError('⏰ Timeout ao chamar o Railway (20s)');
+            return res.status(504).json({
+                success: false,
+                error: 'Tempo limite excedido. O servidor de IA demorou muito para responder.'
+            });
+        }
+
+        logError('❌ Erro no proxy /api/generate:', error);
         return res.status(500).json({
             success: false,
             error: error.message || 'Erro ao processar geração'
