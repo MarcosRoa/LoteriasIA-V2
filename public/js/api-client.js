@@ -1,10 +1,19 @@
 // ============================================
 // CAMINHO: public/js/api-client.js
 // ============================================
-// VERSÃO 2.2 - CORRIGIDA (APENAS IA VAI PARA O PROXY)
+// VERSÃO 2.3 - OTIMIZADA (SEM DUPLICAÇÃO)
 // ============================================
 
 const API_BASE = '/api';
+
+// ============================================
+// LOG CONDICIONAL (apenas em desenvolvimento)
+// ============================================
+function log(...args) {
+    if (process.env.NODE_ENV !== 'production') {
+        console.log(...args);
+    }
+}
 
 class ApiClient {
     async getFirebaseToken() {
@@ -33,7 +42,7 @@ class ApiClient {
         }
 
         const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
-        console.log(`📤 ${options.method || 'GET'} ${url}`);
+        log(`📤 ${options.method || 'GET'} ${url}`);
 
         const response = await fetch(url, { ...options, headers });
 
@@ -46,88 +55,80 @@ class ApiClient {
     }
 
     // ============================================
-    // 🔥 USUÁRIO: Vai para /api/user/status (Vercel + Supabase)
+    // 🔥 UNIFICADO: getUserStatus() retorna TUDO
     // ============================================
-    async getCredits() {
-        const user = firebase.auth().currentUser;
-        if (!user) return 0;
-        try {
-            const data = await this.request('/credits', {
-                method: 'GET',
-                headers: {
-                    'X-User-Id': user.uid,
-                    'X-User-Email': user.email || '',
-                    'X-User-Name': user.displayName || ''
-                }
-            });
-            return data.credits || 0;
-        } catch (error) {
-            console.error('Erro ao buscar créditos:', error);
-            return 0;
-        }
-    }
-
-    async getProStatus() {
-        const user = firebase.auth().currentUser;
-        if (!user) return { isPro: false, daysLeft: 0 };
-        try {
-            const data = await this.request('/pro/status', {
-                method: 'GET',
-                headers: {
-                    'X-User-Id': user.uid,
-                    'X-User-Email': user.email || '',
-                    'X-User-Name': user.displayName || ''
-                }
-            });
-            return { 
-                isPro: data.isPro || false, 
-                daysLeft: data.daysLeft || 0 
-            };
-        } catch (error) {
-            console.error('Erro ao buscar status PRO:', error);
-            return { isPro: false, daysLeft: 0 };
-        }
-    }
-
     async getUserStatus() {
         const user = firebase.auth().currentUser;
         if (!user) {
-            return { 
-                success: false, 
-                error: 'Usuário não logado', 
-                isPro: false, 
+            return {
+                success: false,
+                error: 'Usuário não logado',
+                isPro: false,
                 credits: 0,
                 proExpiresAt: null,
-                daysLeft: 0
+                daysLeft: 0,
+                nome: '',
+                email: '',
+                foto: null
             };
         }
-        
+
         try {
-            return await this.request('/user/status', {
+            const data = await this.request('/user/status', {
                 method: 'POST',
                 body: JSON.stringify({ uid: user.uid })
             });
+
+            return {
+                success: data.success || false,
+                isPro: data.isPro || false,
+                credits: data.credits || 0,
+                proExpiresAt: data.proExpiresAt || null,
+                daysLeft: data.daysLeft || 0,
+                nome: data.user?.nome || user.displayName || user.email?.split('@')[0] || 'Usuário',
+                email: data.user?.email || user.email || '',
+                foto: data.user?.foto || null
+            };
         } catch (error) {
-            console.error('Erro ao buscar status do usuário:', error);
-            return { 
-                success: false, 
-                error: error.message, 
-                isPro: false, 
+            console.error('❌ Erro ao buscar status do usuário:', error);
+            return {
+                success: false,
+                error: error.message,
+                isPro: false,
                 credits: 0,
                 proExpiresAt: null,
-                daysLeft: 0
+                daysLeft: 0,
+                nome: user.displayName || user.email?.split('@')[0] || 'Usuário',
+                email: user.email || '',
+                foto: null
             };
         }
     }
 
     // ============================================
-    // 🔥 IA: Vai para /api/generate (Vercel → Railway)
+    // 🔥 DEPRECIADO: Use getUserStatus() em vez disso
+    // ============================================
+    async getCredits() {
+        console.warn('⚠️ getCredits() está depreciado. Use getUserStatus()');
+        const status = await this.getUserStatus();
+        return status.credits || 0;
+    }
+
+    async getProStatus() {
+        console.warn('⚠️ getProStatus() está depreciado. Use getUserStatus()');
+        const status = await this.getUserStatus();
+        return { isPro: status.isPro || false, daysLeft: status.daysLeft || 0 };
+    }
+
+    // ============================================
+    // 🔥 IA: Envia TODOS os dados necessários
     // ============================================
     async generateGames(request) {
         const user = firebase.auth().currentUser;
         if (!user) throw new Error('User not logged in');
-        
+
         try {
+            // 🔥 ENVIA TODOS OS DADOS NECESSÁRIOS PARA A IA
             const body = {
                 uid: user.uid,
                 lottery: request.lottery,
@@ -135,11 +136,22 @@ class ApiClient {
                 mode: request.mode || 'hybrid',
                 extraNumbers: request.extraNumbers || 0,
                 period: request.filters?.periodo || 'all',
-                dispersao: request.filters?.dispersao || 15
+                dispersao: request.filters?.dispersao || 15,
+
+                // 🔥 IMPORTANTE: Dados históricos para a IA
+                dados: request.dados || [],
+                dadosExtras: request.dadosExtras || [],
+                filters: request.filters || {}
             };
-            
-            console.log('📤 Enviando requisição para IA (Railway):', body);
-            
+
+            log('📤 Enviando requisição para IA (Railway):', {
+                lottery: body.lottery,
+                quantity: body.quantity,
+                mode: body.mode,
+                extraNumbers: body.extraNumbers,
+                dadosLength: body.dados?.length || 0
+            });
+
             return await this.request('/generate', {
                 method: 'POST',
                 body: JSON.stringify(body)
@@ -181,10 +193,15 @@ class ApiClient {
 const apiClient = new ApiClient();
 
 window.apiClient = apiClient;
+
+// 🔥 RECOMENDADO: Usar getUserStatus() para tudo
+window.getUserStatus = () => apiClient.getUserStatus();
+
+// 🔥 DEPRECIADO: Manter para compatibilidade
 window.getCredits = () => apiClient.getCredits();
 window.getProStatus = () => apiClient.getProStatus();
 window.generateGames = (request) => apiClient.generateGames(request);
 window.createPayment = (amount) => apiClient.createPayment(amount);
 window.getHistory = (limit) => apiClient.getHistory(limit);
 
-console.log('✅ API Client V2.2 carregado (Vercel + Railway)');
+console.log('✅ API Client V2.3 carregado (Otimizado - getUserStatus unificado)');
