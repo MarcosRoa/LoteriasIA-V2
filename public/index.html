@@ -30,14 +30,14 @@
     
     <style>
         /* ============================================
-           BOTÕES DE IA - ESTILO ELIPSE/BALÃO
+           BOTÕES DE IA - ESTILO ELIPSE/BALÃO (DENTRO DO CARD)
         ============================================ */
         .ia-selector-container {
             display: flex;
             justify-content: center;
-            margin: 16px 0;
             flex-wrap: wrap;
             gap: 8px;
+            margin: 10px 0;
         }
         
         .ia-btn {
@@ -107,7 +107,6 @@
             border-style: solid;
         }
         
-        /* Cores específicas para cada IA */
         .ia-btn[data-ia="statistical"]:not(.active):hover { border-color: #38bdf8; color: #38bdf8; }
         .ia-btn[data-ia="hybrid"]:not(.active):hover { border-color: #8b5cf6; color: #8b5cf6; }
         .ia-btn[data-ia="specialist"]:not(.active):hover { border-color: #22c55e; color: #22c55e; }
@@ -121,6 +120,15 @@
         .ia-btn.active[data-ia="smartrandom"] { background: linear-gradient(135deg, #f59e0b, #d97706); border-color: #f59e0b; }
         .ia-btn.active[data-ia="probability"] { background: linear-gradient(135deg, #f97316, #ea580c); border-color: #f97316; }
         .ia-btn.active[data-ia="predictive"] { background: linear-gradient(135deg, #ef4444, #dc2626); border-color: #ef4444; }
+        
+        .config-label-ia {
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            display: block;
+            color: var(--text-secondary);
+            text-align: center;
+        }
         
         @media (max-width: 768px) {
             .ia-btn {
@@ -143,7 +151,7 @@
             <div class="header-text">
                 <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
                     <h1 style="margin: 0; background: linear-gradient(135deg, #8b5cf6, #06b6d4, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 22px;">
-                        🧠🧠 Sistema Profissional de Loterias com IA Real 🧠
+                        🧠🧠 Sistema Profissional de Loterias com IA Real 🧠🧠
                     </h1>
                     <span class="version-badge">V.7.0 PRO</span>
                 </div>
@@ -169,49 +177,20 @@
     <div class="container">
         <div class="lottery-grid" id="lotteryGrid"></div>
         
-        <!-- ============================================
-             SELEÇÃO DE IA - BOTÕES ESTILO ELIPSE
-        ============================================ -->
-        <div class="ia-selector-container" id="iaSelector">
-            <button class="ia-btn" data-ia="statistical" title="Análise de frequência, atraso e dispersão">
-                📊 Estatística
-            </button>
-            <button class="ia-btn active" data-ia="hybrid" title="Combina estatística, probabilidade e tendência">
-                🧠 Híbrida
-                <span class="badge-free">REC</span>
-            </button>
-            <button class="ia-btn" data-ia="specialist" title="Avalia e seleciona os melhores jogos">
-                🎯 Especialista
-            </button>
-            <button class="ia-btn" data-ia="smartrandom" title="Aleatório com ponderação estatística">
-                🎲 Aleatório
-            </button>
-            <button class="ia-btn pro-only" data-ia="probability" title="🔒 Distribuição binomial, entropia e variância">
-                📈 Probabilística
-                <span class="badge-pro">⭐PRO</span>
-            </button>
-            <button class="ia-btn pro-only" data-ia="predictive" title="🔒 Detecta padrões e tenta prever os próximos números">
-                🔮 Preditiva
-                <span class="badge-pro">⭐PRO</span>
-            </button>
-        </div>
-        
         <div id="conteudoLoteria"></div>
     </div>
 
     <script>
     // ============================================
-    // SELEÇÃO DE IA - VIA CLIQUE
+    // SELEÇÃO DE IA - VIA CLIQUE (AGORA DENTRO DO CARD)
     // ============================================
     (function() {
         let iaSelecionada = 'hybrid';
         
-        // Verificar se é PRO
         function isPro() {
             return window.usuarioAtual?.isPro || window.creditosUsuario >= 0;
         }
         
-        // Atualizar estado dos botões PRO
         function atualizarBotoesPro() {
             const isProUser = isPro();
             document.querySelectorAll('.ia-btn.pro-only').forEach(btn => {
@@ -227,18 +206,12 @@
             });
         }
         
-        // Selecionar IA
         function selecionarIA(ia) {
             document.querySelectorAll('.ia-btn').forEach(b => b.classList.remove('active'));
             const btn = document.querySelector(`.ia-btn[data-ia="${ia}"]`);
             if (btn) {
                 btn.classList.add('active');
                 iaSelecionada = ia;
-                
-                // Atualizar o campo hidden
-                const hiddenInput = document.getElementById('iaSelecionada');
-                if (hiddenInput) hiddenInput.value = ia;
-                
                 console.log('🤖 IA selecionada:', ia);
             }
         }
@@ -247,8 +220,6 @@
         document.querySelectorAll('.ia-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const ia = this.dataset.ia;
-                
-                // Verificar se é PRO
                 if (this.classList.contains('pro-only')) {
                     const isProUser = isPro();
                     if (!isProUser) {
@@ -256,17 +227,14 @@
                         return;
                     }
                 }
-                
                 selecionarIA(ia);
             });
         });
         
-        // Expor funções globalmente
         window.selecionarIA = selecionarIA;
         window.getIAAtual = () => iaSelecionada;
         window.atualizarBotoesPro = atualizarBotoesPro;
         
-        // Atualizar quando o usuário mudar
         document.addEventListener('userUpdated', atualizarBotoesPro);
         
         console.log('✅ IA Selector carregado!');
