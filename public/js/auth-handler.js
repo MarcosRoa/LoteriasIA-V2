@@ -1,60 +1,48 @@
-// js/auth-handler.js - Processamento de login (V2.0)
+// ============================================
+// CAMINHO: public/js/auth-handler.js
+// ============================================
+// VERSÃO 2.1 - USANDO getUserStatus UNIFICADO
+// ============================================
+
 async function processarLogin(user) {
-    if (window.processandoLogin) {
-        console.log('⏳ Login já sendo processado...');
-        return;
-    }
-    
-    window.processandoLogin = true;
-    
+    console.log('🔐 Processando login para:', user.email);
+
     try {
-        console.log('🔐 Processando login para:', user.email);
-        
-        window.usuarioAtual = {
-            uid: user.uid,
-            nome: user.displayName || user.email?.split('@')[0] || 'Usuário',
-            email: user.email,
-            foto: user.photoURL,
-            isAdmin: false
-        };
-        
-        const credits = await window.apiClient.getCredits();
-        window.creditosUsuario = credits;
-        
-        const proStatus = await window.apiClient.getProStatus();
-        window.isUserPro = proStatus.isPro;
-        window.proDiasRestantes = proStatus.daysLeft || 0;
-        
-        console.log(`📋 Usuário: ${user.email} | PRO: ${window.isUserPro} | Créditos: ${window.creditosUsuario}`);
-        
-        window.usuarioAtual.isPro = window.isUserPro;
-        
+        // 🔥 UMA ÚNICA CHAMADA PARA TUDO
+        const status = await window.apiClient.getUserStatus();
+
+        window.usuarioAtual = user;
+        window.creditosUsuario = status.credits || 0;
+        window.isUserPro = status.isPro || false;
+        window.proExpiresAt = status.proExpiresAt || null;
+        window.proDaysLeft = status.daysLeft || 0;
+
+        console.log(`📋 Usuário: ${status.email} | PRO: ${status.isPro} | Créditos: ${status.credits}`);
+
+        // Atualizar interface
         if (typeof window.atualizarInterfaceUsuario === 'function') {
-            await window.atualizarInterfaceUsuario();
+            window.atualizarInterfaceUsuario();
         }
-        
-        const proMsg = window.isUserPro ? ' ⭐ PRO' : '';
-        if (typeof window.mostrarToast === 'function') {
-            window.mostrarToast(`Bem-vindo ${window.usuarioAtual.nome}! Saldo: R$ ${window.creditosUsuario}${proMsg}`, 'success');
-        }
-        
-        setTimeout(() => {
-            if (typeof window.renderizarConteudo === 'function') {
-                const loteria = window.loteriaAtual ? window.loteriaAtual() : 'megasena';
-                window.renderizarConteudo(loteria);
+
+        // Disparar evento para outros módulos
+        document.dispatchEvent(new CustomEvent('userUpdated', {
+            detail: {
+                user: window.usuarioAtual,
+                credits: window.creditosUsuario,
+                isPro: window.isUserPro,
+                proDaysLeft: window.proDaysLeft
             }
-        }, 500);
-        
+        }));
+
+        window.mostrarToast(`Bem-vindo ${status.nome}! Saldo: R$ ${status.credits} ${status.isPro ? '⭐ PRO' : ''}`, 'success');
+
     } catch (error) {
-        console.error('❌ Erro no processarLogin:', error);
-        if (typeof window.mostrarToast === 'function') {
-            window.mostrarToast('Erro ao processar login', 'error');
-        }
-    } finally {
-        window.processandoLogin = false;
+        console.error('❌ Erro ao processar login:', error);
+        window.mostrarToast('Erro ao carregar dados do usuário', 'error');
     }
 }
 
+// EXPORTAÇÃO
 window.processarLogin = processarLogin;
 
-console.log('✅ AUTH-HANDLER.js atualizado (V2.0)');
+console.log('✅ AUTH-HANDLER.js atualizado (V2.1 - getUserStatus unificado)');
