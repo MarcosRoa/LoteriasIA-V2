@@ -4,16 +4,6 @@
 // VERSÃO 2.3 - OTIMIZADA (SEM DUPLICAÇÃO)
 // ============================================
 
-const API_BASE = '/api';
-
-// ============================================
-// LOG CONDICIONAL (apenas em desenvolvimento)
-// ============================================
-function log(...args) {
-    if (process.env.NODE_ENV !== 'production') {
-        console.log(...args);
-    }
-}
 
 class ApiClient {
     async getFirebaseToken() {
