@@ -1,191 +1,194 @@
-// js/user-interface.js - VERSÃO 2.0
-// js/user-interface.js - Interface do usuário (V2.0)
+// ============================================
+// CAMINHO: public/js/user-interface.js
+// ============================================
+// VERSÃO 2.1 - CORRIGIDO (MOSTRAR NOME)
+// ============================================
 
+// ============================================
+// ATUALIZAR INTERFACE DO USUÁRIO
+// ============================================
+function atualizarInterfaceUsuario() {
+    console.log('🔄 Atualizando interface do usuário...');
+
+    const userInfoArea = document.getElementById('userInfoArea');
+    const loginArea = document.getElementById('loginArea');
+
+    if (!userInfoArea) {
+        console.warn('⚠️ Elemento userInfoArea não encontrado');
+        return;
+    }
+
+    // ============================================
+    // 🔥 EXTRAIR INFORMAÇÕES DO USUÁRIO
+    // ============================================
+    const usuario = window.usuarioAtual || {};
+    const nome = usuario.nome || usuario.displayName || usuario.email?.split('@')[0] || 'Usuário';
+    const email = usuario.email || '';
+    const foto = usuario.photoURL || usuario.foto || null;
+    const credits = window.creditosUsuario ?? 0;
+    const isPro = window.isUserPro || false;
+    const daysLeft = window.proDaysLeft || 0;
+
+    // ============================================
+    // 🔥 VERIFICAR SE ESTÁ LOGADO
+    // ============================================
+    if (usuario && usuario.uid) {
+        // ============================================
+        // 🔥 EXIBIR INFORMAÇÕES DO USUÁRIO LOGADO
+        // ============================================
+        if (loginArea) loginArea.style.display = 'none';
+        userInfoArea.style.display = 'block';
+
+        // ============================================
+        // 🔥 MONTAR HTML
+        // ============================================
+        const proBadge = isPro 
+            ? '<span class="badge-pro">⭐ PRO</span>' 
+            : '<span class="badge-free">FREE</span>';
+
+        const daysMsg = isPro && daysLeft > 0 
+            ? `<span style="font-size: 11px; color: #94a3b8;">(${daysLeft} dias)</span>` 
+            : '';
+
+        const fotoHtml = foto 
+            ? `<img src="${foto}" alt="${nome}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">` 
+            : `<span style="font-size: 24px;">👤</span>`;
+
+        userInfoArea.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 8px 0;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    ${fotoHtml}
+                    <div>
+                        <div style="font-weight: 600; color: var(--text-primary); font-size: 14px;">
+                            ${nome}
+                        </div>
+                        <div style="font-size: 11px; color: #94a3b8;">
+                            ${email}
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 6px; background: var(--bg-card); padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border);">
+                        <span style="font-size: 14px;">💰</span>
+                        <span style="font-weight: 600; color: #f59e0b; font-size: 14px;">
+                            R$ ${credits}
+                        </span>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        ${proBadge}
+                        ${daysMsg}
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+                    <button onclick="window.abrirModalComprar()" 
+                            style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; padding: 6px 16px; border-radius: 20px; color: #1e293b; font-weight: 600; font-size: 12px; cursor: pointer;">
+                        💳 Comprar
+                    </button>
+                    <button onclick="window.deslogar()" 
+                            style="background: transparent; border: 1px solid #ef4444; padding: 6px 16px; border-radius: 20px; color: #ef4444; font-weight: 600; font-size: 12px; cursor: pointer;">
+                        Sair
+                    </button>
+                </div>
+            </div>
+        `;
+
+    } else {
+        // ============================================
+        // 🔥 EXIBIR ÁREA DE LOGIN
+        // ============================================
+        if (loginArea) loginArea.style.display = 'block';
+        userInfoArea.style.display = 'none';
+    }
+
+    console.log('✅ Interface atualizada');
+}
+
+// ============================================
+// 🔥 BUSCAR CRÉDITOS DA API
+// ============================================
 async function buscarCreditosAPI() {
     try {
-        const credits = await window.apiClient.getCredits();
-        if (credits !== window.creditosUsuario) window.creditosUsuario = credits;
-        return credits;
+        if (window.apiClient && typeof window.apiClient.getCredits === 'function') {
+            const credits = await window.apiClient.getCredits();
+            if (credits !== undefined && credits !== null) {
+                window.creditosUsuario = credits;
+                console.log('💰 Créditos atualizados:', credits);
+                atualizarInterfaceUsuario();
+                return credits;
+            }
+        }
+        return window.creditosUsuario || 0;
     } catch (error) {
-        console.error('Erro ao buscar créditos:', error);
+        console.error('❌ Erro ao buscar créditos:', error);
         return window.creditosUsuario || 0;
     }
 }
 
 // ============================================
-// 🔧 CORREÇÃO: ATUALIZAR VISUALIZAÇÃO DAS CONFIGURAÇÕES
+// 🔥 ATUALIZAR INTERFACE DO JOGO
 // ============================================
-function atualizarVisualizacaoConfiguracoes() {
-    const configTags = document.getElementById('configTags');
-    if (!configTags) return;
-    
+function atualizarInterfaceJogo(loteriaId) {
+    // Atualiza o grid de loterias
+    const cards = document.querySelectorAll('.lottery-card-stats');
+    cards.forEach(card => {
+        card.classList.remove('active');
+        if (card.dataset.loteria === loteriaId) {
+            card.classList.add('active');
+        }
+    });
+
+    // Atualiza o título
+    const titulo = document.getElementById('tituloLoteria');
+    if (titulo) {
+        const config = window.LOTERIAS?.[loteriaId];
+        if (config) {
+            titulo.textContent = `${config.icone} ${config.nome}`;
+        }
+    }
+}
+
+// ============================================
+// 🔥 CARREGAR DADOS DO USUÁRIO
+// ============================================
+async function carregarDadosUsuario() {
     try {
-        // Verificar se a função getFiltrosAtivos existe
-        if (typeof window.getFiltrosAtivos !== 'function') {
-            configTags.innerHTML = '<span class="filtro-item">⚙️ Aguardando configurações...</span>';
-            return;
-        }
-        
-        const filtros = window.getFiltrosAtivos();
-        
-        if (!filtros || filtros.length === 0) {
-            configTags.innerHTML = '<span class="filtro-item">⚙️ Nenhuma configuração ativa</span>';
-            return;
-        }
-        
-        // Renderizar os filtros
-        configTags.innerHTML = filtros.map(f => 
-            `<span class="filtro-item">${f.label}: <strong>${f.valor}</strong></span>`
-        ).join('');
-        
-    } catch (error) {
-        console.error('Erro ao atualizar configurações:', error);
-        configTags.innerHTML = '<span class="filtro-item">⚠️ Erro ao carregar configurações</span>';
-    }
-}
-
-// ============================================
-// FUNÇÃO PARA MASCARAR CONFIGURAÇÕES (PRO)
-// ============================================
-function mascararConfiguracoes(valor) {
-    if (!valor) return '🔒';
-    if (typeof valor === 'string' && valor.includes('@')) {
-        return valor.replace(/(.{2}).*(@.*)/, '$1***$2');
-    }
-    if (typeof valor === 'string' && valor.length > 4) {
-        return valor.slice(0, 2) + '***' + valor.slice(-2);
-    }
-    return '🔒';
-}
-
-async function atualizarInterfaceUsuario() {
-    const loginArea = document.getElementById('loginArea');
-    const userInfoArea = document.getElementById('userInfoArea');
-    
-    if (window.usuarioAtual) {
-        if (loginArea) loginArea.style.display = 'none';
-        if (userInfoArea) {
-            userInfoArea.style.display = 'flex';
-            userInfoArea.style.justifyContent = 'center';
-            userInfoArea.style.alignItems = 'center';
-            userInfoArea.style.gap = '12px';
-            userInfoArea.style.flexWrap = 'wrap';
-        }
-        
-        await buscarCreditosAPI();
-        
-        const avatarHtml = window.usuarioAtual.foto 
-            ? `<img src="${window.usuarioAtual.foto}" class="user-avatar" alt="Avatar" style="object-fit: cover; width: 40px; height: 40px; border-radius: 50%;">`
-            : `<div class="user-avatar" style="background: linear-gradient(135deg, #8b5cf6, #06b6d4); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">👤</div>`;
-        
-        const proBadgeHtml = window.isUserPro ? '<span class="pro-badge" style="background: #f59e0b; padding: 2px 8px; border-radius: 20px; font-size: 10px;">⭐ PRO</span>' : '';
-        
-        if (userInfoArea) {
-            userInfoArea.innerHTML = `
-                <div class="user-info" style="display: flex; align-items: center; gap: 12px;">
-                    ${avatarHtml}
-                    <div>
-                        <h4 style="margin: 0;">${window.usuarioAtual.nome} ${proBadgeHtml}</h4>
-                        <p style="margin: 0; font-size: 11px;">${window.usuarioAtual.email}</p>
-                    </div>
-                </div>
-                <div class="credits-box" onclick="window.abrirPerfil()" style="cursor: pointer;">
-                    <span>💰 CRÉDITOS</span>
-                    <strong id="creditosDisplay">R$ ${window.creditosUsuario || 0}</strong>
-                </div>
-                <button class="btn-comprar" onclick="window.abrirModalComprar()">➕ Comprar</button>
-                <button class="btn-perfil" onclick="window.abrirPerfil()">👤 Perfil</button>
-                <button class="btn-tema" onclick="window.toggleTema()">🌓 Tema</button>
-                <button class="btn-logout" onclick="window.logout()">🚪 Sair</button>
-            `;
-        }
-    } else {
-        if (loginArea) loginArea.style.display = 'block';
-        if (userInfoArea) {
-            userInfoArea.style.display = 'none';
-            userInfoArea.innerHTML = '';
-        }
-    }
-}
-
-async function comprarCreditos(valor) {
-    if (!window.usuarioAtual) {
-        window.mostrarModalLogin();
-        return;
-    }
-    
-    try {
-        const result = await window.apiClient.createPayment(valor);
-        if (result.mode === 'simulation') {
-            window.mostrarToast(`✅ R$ ${valor} adicionados!`, 'success');
-            window.creditosUsuario = result.newBalance;
-            await window.atualizarInterfaceUsuario();
-            const display = document.getElementById('creditosDisplay');
-            if (display) display.innerText = `R$ ${result.newBalance}`;
+        const user = firebase.auth().currentUser;
+        if (user) {
+            await window.processarLogin(user);
         }
     } catch (error) {
-        console.error('Erro:', error);
-        window.mostrarToast('Erro ao processar pagamento', 'error');
+        console.error('❌ Erro ao carregar dados do usuário:', error);
     }
 }
 
-function abrirPerfil() {
-    if (!window.usuarioAtual) {
-        if (typeof window.mostrarModalLogin === 'function') window.mostrarModalLogin();
-        return;
-    }
-    
-    sessionStorage.setItem('perfil_usuario', JSON.stringify({
-        uid: window.usuarioAtual.uid,
-        nome: window.usuarioAtual.nome,
-        email: window.usuarioAtual.email,
-        foto: window.usuarioAtual.foto,
-        creditos: window.creditosUsuario,
-        isPro: window.isUserPro,
-        proExpiresAt: window.proExpiresAt
-    }));
-    
-    window.location.href = 'perfil.html';
-}
-
-function abrirModalComprar() {
-    if (!window.usuarioAtual) {
-        window.mostrarModalLogin();
-        return;
-    }
-    
-    if (document.querySelector('.modal-pix-overlay')) return;
-    
-    const modal = document.createElement('div');
-    modal.className = 'modal-pix-overlay';
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000;';
-    modal.innerHTML = `
-        <div style="background: var(--bg-card); border-radius: 16px; padding: 24px; max-width: 400px; width: 90%;">
-            <h2 style="color: #10b981;">💰 Comprar Créditos</h2>
-            <p>Saldo atual: <strong>R$ ${window.creditosUsuario || 0}</strong></p>
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 20px 0;">
-                ${[12, 24, 36, 48, 60, 120, 180, 240].map(v => `
-                    <button onclick="window.comprarCreditos(${v}); this.closest('.modal-pix-overlay').remove()" style="padding: 12px; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 12px; color: white; font-weight: bold; cursor: pointer;">
-                        R$ ${v}
-                    </button>
-                `).join('')}
-            </div>
-            <button onclick="this.closest('.modal-pix-overlay').remove()" style="width: 100%; padding: 12px; background: #64748b; border: none; border-radius: 12px; color: white; cursor: pointer;">Fechar</button>
-        </div>
-    `;
-    document.body.appendChild(modal);
+// ============================================
+// 🔥 DESLOGAR
+// ============================================
+function deslogar() {
+    firebase.auth().signOut().then(() => {
+        window.usuarioAtual = null;
+        window.creditosUsuario = 0;
+        window.isUserPro = false;
+        window.proExpiresAt = null;
+        window.proDaysLeft = 0;
+        atualizarInterfaceUsuario();
+        window.mostrarToast('👋 Deslogado com sucesso!', 'success');
+    }).catch((error) => {
+        console.error('❌ Erro ao deslogar:', error);
+        window.mostrarToast('Erro ao deslogar', 'error');
+    });
 }
 
 // ============================================
 // EXPORTAÇÃO PARA O WINDOW
 // ============================================
-window.comprarCreditos = comprarCreditos;
-window.buscarCreditosAPI = buscarCreditosAPI;
 window.atualizarInterfaceUsuario = atualizarInterfaceUsuario;
-window.abrirPerfil = abrirPerfil;
-window.abrirModalComprar = abrirModalComprar;
-window.simularPix = comprarCreditos;
-window.atualizarVisualizacaoConfiguracoes = atualizarVisualizacaoConfiguracoes;
-window.mascararConfiguracoes = mascararConfiguracoes;
+window.buscarCreditosAPI = buscarCreditosAPI;
+window.atualizarInterfaceJogo = atualizarInterfaceJogo;
+window.carregarDadosUsuario = carregarDadosUsuario;
+window.deslogar = deslogar;
 
-console.log('✅ USER-INTERFACE.js carregado (V2.0)');
+console.log('✅ USER-INTERFACE.js carregado (V2.1 - Nome corrigido)');
