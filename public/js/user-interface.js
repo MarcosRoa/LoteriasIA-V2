@@ -163,6 +163,50 @@ async function carregarDadosUsuario() {
         console.error('❌ Erro ao carregar dados do usuário:', error);
     }
 }
+// ============================================
+// ATUALIZAR VISUALIZAÇÃO DAS CONFIGURAÇÕES
+// ============================================
+function atualizarVisualizacaoConfiguracoes() {
+    const configTags = document.getElementById('configTags');
+    if (!configTags) {
+        console.warn('⚠️ configTags não encontrado');
+        return;
+    }
+    
+    try {
+        // Usar a função getFiltrosAtivos do loterias.js
+        if (typeof window.getFiltrosAtivos !== 'function') {
+            configTags.innerHTML = '<span class="filtro-item">⚙️ Aguardando configurações...</span>';
+            return;
+        }
+        
+        const filtros = window.getFiltrosAtivos();
+        
+        if (!filtros || filtros.length === 0) {
+            configTags.innerHTML = '<span class="filtro-item">⚙️ Nenhuma configuração ativa</span>';
+            return;
+        }
+        
+        // Renderizar os filtros
+        configTags.innerHTML = filtros.map(f => 
+            `<span class="filtro-item">${f.label}: <strong>${f.valor}</strong></span>`
+        ).join('');
+        
+        // Mostrar o container de visualização
+        const configVisualizacao = document.getElementById('configVisualizacao');
+        if (configVisualizacao) {
+            configVisualizacao.style.display = 'block';
+        }
+        
+        console.log('✅ Configurações atualizadas:', filtros.length, 'filtros');
+        
+    } catch (error) {
+        console.error('Erro ao atualizar configurações:', error);
+        configTags.innerHTML = '<span class="filtro-item">⚠️ Erro ao carregar configurações</span>';
+    }
+}
+
+
 
 // ============================================
 // 🔥 DESLOGAR
@@ -185,10 +229,12 @@ function deslogar() {
 // ============================================
 // EXPORTAÇÃO PARA O WINDOW
 // ============================================
+
 window.atualizarInterfaceUsuario = atualizarInterfaceUsuario;
 window.buscarCreditosAPI = buscarCreditosAPI;
 window.atualizarInterfaceJogo = atualizarInterfaceJogo;
 window.carregarDadosUsuario = carregarDadosUsuario;
+window.atualizarVisualizacaoConfiguracoes = atualizarVisualizacaoConfiguracoes;
 window.deslogar = deslogar;
 
 console.log('✅ USER-INTERFACE.js carregado (V2.1 - Nome corrigido)');
