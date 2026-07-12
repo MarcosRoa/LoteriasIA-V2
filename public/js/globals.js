@@ -1,4 +1,4 @@
-// js/globals.js - VERSÃO 3.0 (appState centralizado)
+// js/globals.js - VERSÃO 3.1 (com updateAppState)
 // ============================================
 
 // ============================================
@@ -19,9 +19,8 @@ if (!window.appState) {
 }
 
 // ============================================
-// VARIÁVEIS DE COMPATIBILIDADE (APENAS REFERÊNCIAS)
+// VARIÁVEIS DE COMPATIBILIDADE (TEMPORÁRIAS)
 // ============================================
-// ✅ USAR Object.defineProperty para manter sincronia
 Object.defineProperty(window, 'usuarioAtual', {
     get: () => window.appState.usuario,
     set: (v) => { window.appState.usuario = v; }
@@ -48,6 +47,26 @@ Object.defineProperty(window, 'proExpiresAt', {
 });
 
 // ============================================
+// MÉTODO OFICIAL PARA ALTERAR O ESTADO
+// ============================================
+window.updateAppState = function(update) {
+    // Aplicar as mudanças
+    Object.assign(window.appState, update);
+    
+    // Sincronizar variáveis de compatibilidade (TEMPORÁRIO)
+    if (update.usuario !== undefined) window.usuarioAtual = window.appState.usuario;
+    if (update.creditos !== undefined) window.creditosUsuario = window.appState.creditos;
+    if (update.isPro !== undefined) window.isUserPro = window.appState.isPro;
+    if (update.proDaysLeft !== undefined) window.proDiasRestantes = window.appState.proDaysLeft;
+    if (update.proExpiresAt !== undefined) window.proExpiresAt = window.appState.proExpiresAt;
+    
+    // Disparar evento
+    document.dispatchEvent(new CustomEvent('appStateChanged', {
+        detail: { state: window.appState }
+    }));
+};
+
+// ============================================
 // VARIÁVEIS SIMPLES
 // ============================================
 let processandoLogin = false;
@@ -62,4 +81,4 @@ window.initExecuted = initExecuted;
 const VERSAO = "7.0.0";
 window.VERSAO = VERSAO;
 
-console.log(`🚀 Loterias ${VERSAO} - V3.0 (appState centralizado)`);
+console.log(`🚀 Loterias ${VERSAO} - V3.1 (appState com updateAppState)`);
