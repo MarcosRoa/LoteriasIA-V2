@@ -42,16 +42,6 @@ function atualizarQuantidadePorInput(valor) {
     if (qtdRange) qtdRange.value = valor;
 }
 
-function getModoTexto(modo) {
-    const modos = {
-        'ia_especialista': '🎓 IA Especialista',
-        'aleatorio_inteligente': '🎲 Aleatório Inteligente',
-        'probabilistico': '📊 Probabilístico',
-        'aleatorio_puro': '🎯 Aleatório Puro'
-    };
-    return modos[modo] || modo;
-}
-
 window.mostrarToast = mostrarToast;
 window.toggleTema = toggleTema;
 window.carregarTema = carregarTema;
