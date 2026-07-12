@@ -143,6 +143,9 @@
     </style>
 </head>
 <body>
+    <!-- ============================================
+    CABEÇALHO
+    ============================================ -->
     <div class="header">
         <div class="header-content">
             <div class="header-logo">
@@ -151,7 +154,7 @@
             <div class="header-text">
                 <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
                     <h1 style="margin: 0; background: linear-gradient(135deg, #8b5cf6, #06b6d4, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 22px;">
-                        🧠🧠 Sistema Profissional de Loterias com IA Real 🧠🧠
+                        🧠 Sistema Profissional de Loterias com IA Real 🧠
                     </h1>
                     <span class="version-badge">V.7.0 PRO</span>
                 </div>
@@ -163,27 +166,50 @@
         </div>
     </div>
 
+    <!-- ============================================
+    PAINEL DO USUÁRIO
+    ============================================ -->
     <div id="userPanel" class="user-panel">
         <div id="loginArea">
             <div class="login-buttons">
                 <button class="btn-google" onclick="window.loginGoogle()">🔐 Entrar com Google</button>
                 <button class="btn-facebook" onclick="window.loginFacebook()">🔐 Entrar com Facebook</button>
             </div>
-            <p>Faça login para gerar jogos e salvar seu histórico</p>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-top: 5px;">Faça login para gerar jogos e salvar seu histórico</p>
         </div>
         <div id="userInfoArea" style="display: none;"></div>
     </div>
 
+    <!-- ============================================
+    CONTEÚDO PRINCIPAL
+    ============================================ -->
     <div class="container">
+        <!-- Grid de Loterias -->
         <div class="lottery-grid" id="lotteryGrid"></div>
         
+        <!-- Conteúdo da Loteria -->
         <div id="conteudoLoteria"></div>
     </div>
 
+    <!-- ============================================
+    ELEMENTOS OCULTOS (usados pelo JavaScript)
+    ============================================ -->
+    <div id="trainingProgressBar" style="display:none;"></div>
+    <div id="trainingLog" style="display:none;"></div>
+    <div id="trainingStatus" style="display:none;"></div>
+    <div id="trainingStatus2" style="display:none;"></div>
+    <div id="configVisualizacao" style="display:none;">
+        <div id="configTags"></div>
+    </div>
+    <input type="file" id="uploadManual" accept=".csv" style="display:none;">
+    <div id="resultados"></div>
+    <div id="backtestResultados"></div>
+    <div id="iaTrainingAnimation" style="display:none;"></div>
+
+    <!-- ============================================
+    IA SELECTOR - INICIALIZAÇÃO
+    ============================================ -->
     <script>
-    // ============================================
-    // SELEÇÃO DE IA - VIA CLIQUE (AGORA DENTRO DO CARD)
-    // ============================================
     (function() {
         let iaSelecionada = 'hybrid';
         
@@ -217,23 +243,27 @@
         }
         
         // Event listeners
-        document.querySelectorAll('.ia-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const ia = this.dataset.ia;
-                if (this.classList.contains('pro-only')) {
-                    const isProUser = isPro();
-                    if (!isProUser) {
-                        window.mostrarToast('⭐ Essa IA é exclusiva para assinantes PRO!', 'warning');
-                        return;
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.ia-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const ia = this.dataset.ia;
+                    if (this.classList.contains('pro-only')) {
+                        const isProUser = isPro();
+                        if (!isProUser) {
+                            window.mostrarToast('⭐ Essa IA é exclusiva para assinantes PRO!', 'warning');
+                            return;
+                        }
                     }
-                }
-                selecionarIA(ia);
+                    selecionarIA(ia);
+                });
             });
+            atualizarBotoesPro();
         });
         
         window.selecionarIA = selecionarIA;
         window.getIAAtual = () => iaSelecionada;
         window.atualizarBotoesPro = atualizarBotoesPro;
+        window.isPro = isPro;
         
         document.addEventListener('userUpdated', atualizarBotoesPro);
         
