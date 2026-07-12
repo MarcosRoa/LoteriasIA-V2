@@ -1,7 +1,7 @@
 // ============================================
 // CAMINHO: public/js/loterias.js
 // ============================================
-// VERSÃO 2.2 - COMPLETA (CSV + FILTROS + DADOS)
+// VERSÃO 2.3 - COMPLETA (COM BOTÕES IA RESTAURADOS)
 // ============================================
 
 // ============================================
@@ -17,6 +17,7 @@ let isTraining = false;
 let iaTreinada = false;
 let aiModel = null;
 let filtrosTreinamento = null;
+let iaSelecionada = 'hybrid';
 
 // Cache persistente em memória
 const cacheProcessamento = {};
@@ -33,6 +34,24 @@ function debounce(func, wait) {
         }, wait);
         return timeoutId;
     };
+}
+
+// ============================================
+// FUNÇÃO PARA PEGAR IA SELECIONADA
+// ============================================
+function getIAAtual() {
+    return iaSelecionada;
+}
+
+function setIAAtual(ia) {
+    iaSelecionada = ia;
+    // Atualizar botões visualmente
+    document.querySelectorAll('.ia-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector(`.ia-btn[data-ia="${ia}"]`);
+    if (btn) {
+        btn.classList.add('active');
+    }
+    console.log('🤖 IA selecionada:', ia);
 }
 
 // ============================================
@@ -195,7 +214,6 @@ function processarCSV(loteria, texto, nome) {
     
     const minimo = config.incluirZero ? 0 : 1;
     
-    // Converter meses texto para número
     function converterMesTextoParaNumero(texto) {
         if (!texto) return null;
         const meses = {
@@ -242,7 +260,6 @@ function processarCSV(loteria, texto, nome) {
             let valor = colunas[j]?.trim();
             if (valor === '' || valor === undefined) continue;
             
-            // LOTECA
             if (loteria === 'loteca') {
                 if (valor === 'Coluna 1') numeros.push(1);
                 else if (valor === 'Coluna do meio') numeros.push(0);
@@ -250,7 +267,6 @@ function processarCSV(loteria, texto, nome) {
                 continue;
             }
             
-            // TIMEMANIA
             if (loteria === 'timemania') {
                 const numTeste = parseInt(valor);
                 if (isNaN(numTeste) || valor.includes('/') || /[A-Za-zÀ-ú]/.test(valor)) {
@@ -259,7 +275,6 @@ function processarCSV(loteria, texto, nome) {
                 }
             }
             
-            // DIA DE SORTE
             if (loteria === 'diadesorte') {
                 if (numeros.length >= config.numeros) {
                     const numTeste = parseInt(valor);
@@ -277,7 +292,6 @@ function processarCSV(loteria, texto, nome) {
                 }
             }
             
-            // DEMAIS LOTERIAS
             let num = parseInt(valor);
             if (isNaN(num)) {
                 const numStr = valor.toString().trim();
@@ -293,7 +307,6 @@ function processarCSV(loteria, texto, nome) {
             }
         }
         
-        // VALIDAÇÃO ESPECIAL PARA LOTECA
         if (loteria === 'loteca') {
             if (numeros.length === config.numeros) {
                 dados.push([...numeros]);
@@ -429,7 +442,6 @@ async function selecionarLoteria(loteria) {
     const card = document.getElementById(`card-${loteria}`);
     if (card) card.classList.add('active');
     
-    // Verificar cache
     if (window.cacheDados && window.cacheDados[loteria] && window.cacheDados[loteria].carregado) {
         dadosAtuais = [...window.cacheDados[loteria].dados];
         dadosExtrasAtuais = window.cacheDadosExtras && window.cacheDadosExtras[loteria] ? [...window.cacheDadosExtras[loteria]] : [];
@@ -441,7 +453,6 @@ async function selecionarLoteria(loteria) {
         return;
     }
     
-    // Carregar CSV
     dadosAtuais = [];
     dadosExtrasAtuais = [];
     datasAtuais = [];
@@ -495,7 +506,33 @@ function atualizarDispersao(v) {
 }
 
 // ============================================
-// RENDERIZAR CONTEÚDO DA LOTERIA
+// ANIMAÇÃO DE TREINAMENTO
+// ============================================
+function atualizarAnimacaoTreinamento(status) {
+    const container = document.getElementById('iaTrainingAnimation');
+    if (!container) return;
+    
+    if (status === 'training') {
+        container.className = 'ia-training-animation';
+        container.innerHTML = `
+            <div class="ia-training-text">🧠 INTELIGÊNCIA ARTIFICIAL EM TREINAMENTO...</div>
+            <div class="ia-training-subtext">Analisando padrões e processando dados históricos</div>
+        `;
+        container.style.display = 'block';
+    } else if (status === 'trained') {
+        container.className = 'ia-training-animation treinado';
+        container.innerHTML = `
+            <div class="ia-training-text treinado">✅ INTELIGÊNCIA ARTIFICIAL TREINADA!</div>
+            <div class="ia-training-subtext">Pronto para gerar palpites com alta precisão</div>
+        `;
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+// ============================================
+// RENDERIZAR CONTEÚDO DA LOTERIA (COM BOTÕES IA)
 // ============================================
 function renderizarConteudo(loteria) {
     const div = document.getElementById('conteudoLoteria');
@@ -567,7 +604,7 @@ function renderizarConteudo(loteria) {
                 <div class="training-progress-bar" id="trainingProgressBar" style="width:${iaTreinada ? '100%' : '0%'};"></div>
             </div>
             <div class="training-log" id="trainingLog">${iaTreinada ? '✅ IA pronta!' : '⏳ Clique em Treinar'}</div>
-            <div id="iaTrainingAnimation" style="display: ${iaTreinada ? 'block' : 'none'};"></div>
+            <div id="iaTrainingAnimation"></div>
         </div>
         
         <div id="configVisualizacao" style="background: rgba(56, 189, 248, 0.1); border-radius: 12px; padding: 12px; margin: 15px 0; border-left: 4px solid #38bdf8;">
@@ -579,6 +616,37 @@ function renderizarConteudo(loteria) {
         
         <div class="card">
             <h4>🎲 Configurar e Gerar Jogos</h4>
+            
+            <!-- ============================================
+                 BOTÕES DE IA (DENTRO DO CARD)
+            ============================================ -->
+            <label class="config-label-ia">🤖 Selecione o Motor de IA</label>
+            <div class="ia-selector-container" id="iaSelectorCard">
+                <button class="ia-btn" data-ia="statistical" title="Análise de frequência, atraso e dispersão">
+                    📊 Estatística
+                </button>
+                <button class="ia-btn active" data-ia="hybrid" title="Combina estatística, probabilidade e tendência">
+                    🧠 Híbrida
+                    <span class="badge-free">REC</span>
+                </button>
+                <button class="ia-btn" data-ia="specialist" title="Avalia e seleciona os melhores jogos">
+                    🎯 Especialista
+                </button>
+                <button class="ia-btn" data-ia="smartrandom" title="Aleatório com ponderação estatística">
+                    🎲 Aleatório
+                </button>
+                <button class="ia-btn pro-only" data-ia="probability" title="${isPro ? 'Distribuição binomial, entropia e variância' : '🔒 Exclusivo PRO'}">
+                    📈 Probabilística
+                    <span class="badge-pro">⭐PRO</span>
+                </button>
+                <button class="ia-btn pro-only" data-ia="predictive" title="${isPro ? 'Detecta padrões e tenta prever os próximos números' : '🔒 Exclusivo PRO'}">
+                    🔮 Preditiva
+                    <span class="badge-pro">⭐PRO</span>
+                </button>
+            </div>
+            
+            <hr style="border-color: var(--border); margin: 15px 0;">
+            
             <div class="config-grid">
                 <div>
                     <label class="config-label">📊 Quantidade de Jogos</label>
@@ -658,7 +726,15 @@ function renderizarConteudo(loteria) {
     
     div.innerHTML = html;
     
-    // Atualizar visualização das configurações
+    // Restaurar IA selecionada
+    setTimeout(() => {
+        const btn = document.querySelector(`.ia-btn[data-ia="${iaSelecionada}"]`);
+        if (btn) {
+            document.querySelectorAll('.ia-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+    }, 50);
+    
     if (typeof window.atualizarVisualizacaoConfiguracoes === 'function') {
         setTimeout(() => window.atualizarVisualizacaoConfiguracoes(), 100);
     }
@@ -701,36 +777,7 @@ function toggleModoBolao() {
 function atualizarQuantidadeNumerosBolao(valor) {
     document.getElementById('qtdNumerosValue') && (document.getElementById('qtdNumerosValue').innerText = valor);
 }
-// ============================================
-// ANIMAÇÃO DE TREINAMENTO
-// ============================================
-function atualizarAnimacaoTreinamento(status) {
-    const container = document.getElementById('iaTrainingAnimation');
-    if (!container) return;
-    
-    if (status === 'training') {
-        container.className = 'ia-training-animation';
-        container.innerHTML = `
-            <div class="ia-training-text">🧠 INTELIGÊNCIA ARTIFICIAL EM TREINAMENTO...</div>
-            <div class="ia-training-subtext">Analisando padrões e processando dados históricos</div>
-        `;
-        container.style.display = 'block';
-    } else if (status === 'trained') {
-        container.className = 'ia-training-animation treinado';
-        container.innerHTML = `
-            <div class="ia-training-text treinado">✅ INTELIGÊNCIA ARTIFICIAL TREINADA!</div>
-            <div class="ia-training-subtext">Pronto para gerar palpites com alta precisão</div>
-        `;
-        container.style.display = 'block';
-    } else {
-        container.style.display = 'none';
-    }
-}
 
-// ============================================
-// EXPORTAÇÃO
-// ============================================
-window.atualizarAnimacaoTreinamento = atualizarAnimacaoTreinamento;
 // ============================================
 // EXPORTAÇÕES PARA O WINDOW
 // ============================================
@@ -745,6 +792,9 @@ window.importarArquivo = importarArquivo;
 window.processarCSV = processarCSV;
 window.toggleModoBolao = toggleModoBolao;
 window.atualizarQuantidadeNumerosBolao = atualizarQuantidadeNumerosBolao;
+window.atualizarAnimacaoTreinamento = atualizarAnimacaoTreinamento;
+window.getIAAtual = getIAAtual;
+window.setIAAtual = setIAAtual;
 
 // Getters para outros módulos
 window.loteriaAtual = () => loteriaAtual;
@@ -766,4 +816,4 @@ window.setDadosAtuais = (dados) => { dadosAtuais = dados; };
 window.setDadosExtrasAtuais = (dados) => { dadosExtrasAtuais = dados; };
 window.setDatasAtuais = (datas) => { datasAtuais = datas; };
 
-console.log('✅ LOTERIAS.js carregado (V2.2 - COMPLETA)');
+console.log('✅ LOTERIAS.js carregado (V2.3 - COMPLETA COM BOTÕES IA)');
