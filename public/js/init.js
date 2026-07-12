@@ -1,5 +1,7 @@
 // js/init.js - Inicialização do sistema (V2.0)
-// js/init.js - Inicialização do sistema (V2.0)
+// js/init.js - Inicialização do sistema (V2.1)
+// ============================================
+
 async function init() {
     if (window.initExecuted) {
         console.log('⚠️ init já executado, ignorando');
@@ -7,15 +9,21 @@ async function init() {
     }
     window.initExecuted = true;
     
-    console.log('🚀 Inicializando sistema V2.0...');
+    console.log('🚀 Inicializando sistema V2.1...');
     
-    if (typeof window.carregarTema === 'function') window.carregarTema();
+    // Carregar tema
+    if (typeof window.carregarTema === 'function') {
+        window.carregarTema();
+    }
+    
+    // Carregar grid de loterias
     if (typeof window.carregarGridLoterias === 'function') {
         window.carregarGridLoterias();
     } else {
-        console.error('❌ carregarGridLoterias não disponível');
+        console.warn('⚠️ carregarGridLoterias não disponível');
     }
     
+    // Configurar autenticação
     if (typeof window.onAuthStateChanged === 'function') {
         window.onAuthStateChanged(async (user) => {
             if (user) {
@@ -33,6 +41,7 @@ async function init() {
         });
     }
     
+    // Carregar loteria inicial
     setTimeout(async () => {
         const loteriaAtual = window.loteriaAtual ? window.loteriaAtual() : 'megasena';
         const dadosAtuais = window.dadosAtuais ? window.dadosAtuais() : [];
@@ -56,3 +65,5 @@ window.init = init;
 window.checkAndInit = checkAndInit;
 
 checkAndInit();
+
+console.log('✅ init.js carregado (V2.1)');
