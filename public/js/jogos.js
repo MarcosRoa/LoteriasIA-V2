@@ -1,34 +1,28 @@
-// js/jogos.js - VERSÃO 2.3 (COMPLETA E CORRIGIDA) 10/07/2026
+// js/jogos.js - VERSÃO 2.3 (COMPLETA E CORRIGIDA) 12/07/2026
 // ============================================
 
 // ============================================
 // VALIDAR SALDO E ACESSO
 // ============================================
-
 function validarSaldoEAcesso(qtd, valorTotal) {
-    // 1. Verifica se usuário está logado
     if (!window.usuarioAtual) {
         window.mostrarModalLogin();
         return { valido: false, motivo: 'login' };
     }
     
-    // 2. Verifica se créditos estão disponíveis
     if (window.creditosUsuario === undefined || window.creditosUsuario === null) {
         window.mostrarToast('⚠️ Erro ao verificar créditos. Recarregue a página.', 'error');
         return { valido: false, motivo: 'erro' };
     }
     
-    // 3. Verifica se saldo é suficiente
     if (window.creditosUsuario < valorTotal) {
         window.mostrarToast(`❌ Saldo insuficiente! Necessário: R$ ${valorTotal} | Disponível: R$ ${window.creditosUsuario}`, 'error');
-        // Abre modal para comprar créditos
         if (typeof window.abrirModalComprar === 'function') {
             window.abrirModalComprar();
         }
         return { valido: false, motivo: 'saldo' };
     }
     
-    // 4. Tudo ok
     return { valido: true };
 }
 
@@ -47,36 +41,27 @@ function getNomeMes(mes) {
 // FUNÇÃO PRINCIPAL: GERAR JOGOS
 // ============================================
 async function gerarJogos() {
-    // 1. Verifica se usuário está logado
     if (!window.usuarioAtual) {
         window.mostrarModalLogin();
         return;
     }
     
-    // 2. Obtém quantidade de jogos
     const qtd = parseInt(document.getElementById('qtdJogos')?.value || 1);
-    
-    // 3. Calcula custo (PRO = 2, FREE = 3)
     const custoPorJogo = window.isUserPro ? 2 : 3;
     const valorTotal = qtd * custoPorJogo;
     
-    // 4. 🔥 VALIDA SALDO E ACESSO
     const validacao = validarSaldoEAcesso(qtd, valorTotal);
     if (!validacao.valido) return;
     
-    // 5. Obtém loteria atual
     const loteria = window.loteriaAtual ? window.loteriaAtual() : 'megasena';
-    
-    // 6. Obtém IA selecionada
     const modo = window.getIAAtual ? window.getIAAtual() : 'hybrid';
     
-    const config = window.LOTERIAS[loteria];
+    const config = window.LOTERIAS ? window.LOTERIAS[loteria] : null;
     if (!config) {
         window.mostrarToast('Erro: Loteria não encontrada', 'error');
         return;
     }
     
-    // 7. Verifica modo bolão
     const modoBolaoAtivo = document.getElementById('modoBolaoCheckbox')?.checked || false;
     let quantidadeNumerosJogo = config.jogoSimples;
     
@@ -88,32 +73,44 @@ async function gerarJogos() {
         quantidadeNumerosJogo = parseInt(document.getElementById('qtdNumerosBolao')?.value || config.jogoSimples);
     }
     
-    // 8. Exibe loading
     const resultadosDiv = document.getElementById('resultados');
     if (resultadosDiv) {
         resultadosDiv.innerHTML = '<div class="loading">🎲 Gerando jogos com IA...</div>';
     }
     
     try {
-        // 9. Obtém filtros atuais
         const periodo = window.periodoSelecionado ? window.periodoSelecionado() : 'all';
         const dispersao = window.dispersaoAtual ? window.dispersaoAtual() : 15;
+        const dados = window.dadosAtuais ? window.dadosAtuais() : [];
+        const dadosExtras = window.dadosExtrasAtuais ? window.dadosExtrasAtuais() : [];
         
-        // 10. Chama a API
-        const result = await window.apiClient.generateGames({
-            lottery: loteria,
-            quantity: qtd,
-            mode: modo,
-            extraNumbers: quantidadeNumerosJogo,
-            dados: window.dadosAtuais ? window.dadosAtuais() : [],
-            dadosExtras: window.dadosExtrasAtuais ? window.dadosExtrasAtuais() : [],
-            filters: {
-                periodo: periodo,
-                dispersao: dispersao
-            }
+        // Usar o proxy da Vercel que redireciona para o Railway
+        const response = await fetch('/api/proxy-ia?action=generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${await window.apiClient.getFirebaseToken()}`
+            },
+            body: JSON.stringify({
+                lotteryType: loteria,
+                count: qtd,
+                method: modo,
+                history: dados,
+                extras: dadosExtras,
+                isPro: window.isUserPro || false,
+                filters: {
+                    periodo: periodo,
+                    dispersao: dispersao
+                }
+            })
         });
         
-        // 11. Atualiza créditos
+        const result = await response.json();
+        
+        if (!result.success) {
+            throw new Error(result.error || 'Erro ao gerar jogos');
+        }
+        
         if (result.creditsRemaining !== undefined && result.creditsRemaining !== null) {
             window.creditosUsuario = result.creditsRemaining;
             const creditsDisplay = document.getElementById('creditosDisplay');
@@ -122,7 +119,7 @@ async function gerarJogos() {
             }
         }
         
-        // 12. Renderiza resultados
+        // Renderizar resultados
         if (resultadosDiv && result.games) {
             let html = `
                 <div style="margin-top: 20px; padding: 15px; background: rgba(56, 189, 248, 0.1); border-radius: 12px; border-left: 4px solid #38bdf8;">
@@ -132,19 +129,15 @@ async function gerarJogos() {
                         ${result.explanation ? `<br>${result.explanation.join(' • ')}` : ''}
                     </p>
                 </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
             `;
-            
-            html += `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">`;
             
             result.games.forEach((game, index) => {
                 const numeros = Array.isArray(game) ? game : (game.numeros || []);
-                const isProGame = window.isUserPro ? '🔒' : '⭐';
-                
                 html += `
-                    <div style="background: #1e293b; border-radius: 12px; padding: 15px; border: 1px solid #334155; position: relative;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="background: #1e293b; border-radius: 12px; padding: 15px; border: 1px solid #334155;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                             <span style="font-size: 11px; color: #94a3b8;">Jogo ${index + 1}</span>
-                            <span style="font-size: 10px; color: #f59e0b;">${isProGame}</span>
                         </div>
                         <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                             ${numeros.map(n => `
@@ -159,38 +152,27 @@ async function gerarJogos() {
                             </div>
                         ` : ''}
                         ${game.timeCoracao ? `
-                            <div style="font-size: 10px; color: #ec4899; margin-top: 5px;">
-                                ⚽ Time: ${game.timeCoracao}
-                            </div>
+                            <div style="font-size: 10px; color: #ec4899; margin-top: 5px;">⚽ Time: ${game.timeCoracao}</div>
                         ` : ''}
                         ${game.trevos ? `
-                            <div style="font-size: 10px; color: #a855f7; margin-top: 5px;">
-                                🍀 Trevos: ${game.trevos.join(' - ')}
-                            </div>
+                            <div style="font-size: 10px; color: #a855f7; margin-top: 5px;">🍀 Trevos: ${game.trevos.join(' - ')}</div>
                         ` : ''}
                         ${game.mesSorte ? `
-                            <div style="font-size: 10px; color: #f97316; margin-top: 5px;">
-                                📅 Mês: ${getNomeMes(game.mesSorte)}
-                            </div>
+                            <div style="font-size: 10px; color: #f97316; margin-top: 5px;">📅 Mês: ${getNomeMes(game.mesSorte)}</div>
                         ` : ''}
                     </div>
                 `;
             });
             
-            html += `</div>`;
-            
-            // Rodapé com informações
-            html += `
+            html += `</div>
                 <div style="margin-top: 15px; padding: 10px; background: #1e293b; border-radius: 8px; text-align: center; font-size: 11px; color: #94a3b8;">
-                    💰 Créditos gastos: R$ ${result.creditsSpent || (qtd * 3)} | 
+                    💰 Créditos gastos: R$ ${result.creditsSpent || (qtd * custoPorJogo)} | 
                     Saldo restante: R$ ${result.creditsRemaining || window.creditosUsuario}
                     ${result.isPro ? ' ⭐ PRO' : ''}
                 </div>
             `;
             
             resultadosDiv.innerHTML = html;
-            
-            // Scroll para os resultados
             resultadosDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
         
@@ -215,10 +197,10 @@ async function gerarJogos() {
 }
 
 // ============================================
-// EXPORTAÇÃO PARA O WINDOW
+// EXPORTAÇÕES
 // ============================================
 window.gerarJogos = gerarJogos;
 window.validarSaldoEAcesso = validarSaldoEAcesso;
 window.getNomeMes = getNomeMes;
 
-console.log('✅ JOGOS.js carregado (VERSÃO 2.3 - COMPLETA E CORRIGIDA)');
+console.log('✅ JOGOS.js carregado (VERSÃO 2.3 - COMPLETA)');
