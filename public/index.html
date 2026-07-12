@@ -211,12 +211,16 @@
     ============================================ -->
     <script>
     (function() {
-        let iaSelecionada = 'hybrid';
-        
+        // ============================================
+        // IS PRO (USANDO appState)
+        // ============================================
         function isPro() {
-            return window.usuarioAtual?.isPro || window.creditosUsuario >= 0;
+            return Boolean(window.appState?.isPro);
         }
         
+        // ============================================
+        // ATUALIZAR BOTÕES PRO
+        // ============================================
         function atualizarBotoesPro() {
             const isProUser = isPro();
             document.querySelectorAll('.ia-btn.pro-only').forEach(btn => {
@@ -232,17 +236,9 @@
             });
         }
         
-        function selecionarIA(ia) {
-            document.querySelectorAll('.ia-btn').forEach(b => b.classList.remove('active'));
-            const btn = document.querySelector(`.ia-btn[data-ia="${ia}"]`);
-            if (btn) {
-                btn.classList.add('active');
-                iaSelecionada = ia;
-                console.log('🤖 IA selecionada:', ia);
-            }
-        }
-        
-        // Event listeners
+        // ============================================
+        // EVENTO DE CLIQUE (CHAMA DIRETO setIAAtual)
+        // ============================================
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.ia-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -254,20 +250,32 @@
                             return;
                         }
                     }
-                    selecionarIA(ia);
+                    // ✅ CHAMAR DIRETAMENTE (sem intermediário)
+                    if (typeof window.setIAAtual === 'function') {
+                        window.setIAAtual(ia);
+                    }
                 });
             });
             atualizarBotoesPro();
         });
         
-        window.selecionarIA = selecionarIA;
-        window.getIAAtual = () => iaSelecionada;
+        // ============================================
+        // REAGIR A MUDANÇAS NO appState
+        // ============================================
+        document.addEventListener('appStateChanged', function() {
+            atualizarBotoesPro();
+            if (typeof window.sincronizarIASelecionada === 'function') {
+                window.sincronizarIASelecionada();
+            }
+        });
+        
+        // ============================================
+        // EXPORTAÇÕES
+        // ============================================
         window.atualizarBotoesPro = atualizarBotoesPro;
         window.isPro = isPro;
         
-        document.addEventListener('userUpdated', atualizarBotoesPro);
-        
-        console.log('✅ IA Selector carregado!');
+        console.log('✅ IA Selector carregado (v3.0)');
     })();
     </script>
 </body>
