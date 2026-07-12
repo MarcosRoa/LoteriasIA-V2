@@ -208,7 +208,33 @@ function mostrarRelatorioPadroes() {
 function fecharModalRelatorio() {
     document.getElementById('modalRelatorio')?.remove();
 }
+// ============================================
+// ANIMAÇÃO DE TREINAMENTO
+// ============================================
+function atualizarAnimacaoTreinamento(status) {
+    const container = document.getElementById('iaTrainingAnimation');
+    if (!container) return;
+    
+    if (status === 'training') {
+        container.className = 'ia-training-animation';
+        container.innerHTML = `
+            <div class="ia-training-text">🧠 INTELIGÊNCIA ARTIFICIAL EM TREINAMENTO...</div>
+            <div class="ia-training-subtext">Analisando padrões e processando dados históricos</div>
+        `;
+        container.style.display = 'block';
+    } else if (status === 'trained') {
+        container.className = 'ia-training-animation treinado';
+        container.innerHTML = `
+            <div class="ia-training-text treinado">✅ INTELIGÊNCIA ARTIFICIAL TREINADA!</div>
+            <div class="ia-training-subtext">Pronto para gerar palpites com alta precisão</div>
+        `;
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
+    }
+}
 
+window.atualizarAnimacaoTreinamento = atualizarAnimacaoTreinamento;
 // ============================================
 // EXPORTAÇÃO PARA O WINDOW
 // ============================================
