@@ -1,4 +1,4 @@
-// js/jogos.js - VERSÃO 2.3 (COMPLETA E CORRIGIDA) 12/07/2026
+/// js/jogos.js - VERSÃO 2.4 (CORRIGIDA COM getIAAtual)
 // ============================================
 
 // ============================================
@@ -54,6 +54,10 @@ async function gerarJogos() {
     if (!validacao.valido) return;
     
     const loteria = window.loteriaAtual ? window.loteriaAtual() : 'megasena';
+    
+    // ============================================
+    // 🔥 PEGAR IA SELECIONADA (RESTAURADO)
+    // ============================================
     const modo = window.getIAAtual ? window.getIAAtual() : 'hybrid';
     
     const config = window.LOTERIAS ? window.LOTERIAS[loteria] : null;
@@ -84,7 +88,6 @@ async function gerarJogos() {
         const dados = window.dadosAtuais ? window.dadosAtuais() : [];
         const dadosExtras = window.dadosExtrasAtuais ? window.dadosExtrasAtuais() : [];
         
-        // Usar o proxy da Vercel que redireciona para o Railway
         const response = await fetch('/api/proxy-ia?action=generate', {
             method: 'POST',
             headers: {
@@ -119,7 +122,6 @@ async function gerarJogos() {
             }
         }
         
-        // Renderizar resultados
         if (resultadosDiv && result.games) {
             let html = `
                 <div style="margin-top: 20px; padding: 15px; background: rgba(56, 189, 248, 0.1); border-radius: 12px; border-left: 4px solid #38bdf8;">
@@ -203,4 +205,4 @@ window.gerarJogos = gerarJogos;
 window.validarSaldoEAcesso = validarSaldoEAcesso;
 window.getNomeMes = getNomeMes;
 
-console.log('✅ JOGOS.js carregado (VERSÃO 2.3 - COMPLETA)');
+console.log('✅ JOGOS.js carregado (VERSÃO 2.4 - CORRIGIDA)');
