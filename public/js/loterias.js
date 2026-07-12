@@ -1,7 +1,7 @@
 // ============================================
 // CAMINHO: public/js/loterias.js
 // ============================================
-// VERSÃO 2.1 - COM BOTÕES DE IA NO CARD
+// VERSÃO 2.2 - COMPLETA E CORRIGIDA
 // ============================================
 
 // ============================================
@@ -16,24 +16,15 @@ function renderizarConteudoLoteria(loteriaId) {
         return;
     }
     
-    // ============================================
-    // VERIFICAR SE É PRO
-    // ============================================
+    // Verificar se é PRO
     const isPro = window.isUserPro || false;
     
-    // ============================================
-    // HTML DO CONTEÚDO COM BOTÕES DE IA
-    // ============================================
     const html = `
-        <!-- ============================================
-             CARD: CONFIGURAR E GERAR JOGOS
-        ============================================ -->
+        <!-- Card: Configurar e Gerar Jogos -->
         <div class="card">
             <h3 style="color: #f59e0b; margin-bottom: 15px;">⚙️ Configurar e Gerar Jogos</h3>
             
-            <!-- ============================================
-                 BOTÕES DE IA (DENTRO DO CARD)
-            ============================================ -->
+            <!-- Botões de IA (dentro do card) -->
             <label class="config-label-ia">🤖 Selecione o Motor de IA</label>
             <div class="ia-selector-container" id="iaSelectorCard">
                 <button class="ia-btn" data-ia="statistical" title="Análise de frequência, atraso e dispersão">
@@ -61,9 +52,7 @@ function renderizarConteudoLoteria(loteriaId) {
             
             <hr style="border-color: var(--border); margin: 15px 0;">
             
-            <!-- ============================================
-                 CONFIGURAÇÕES
-            ============================================ -->
+            <!-- Configurações -->
             <div class="config-grid">
                 <!-- Quantidade de jogos -->
                 <div class="quantidade-container">
@@ -124,17 +113,13 @@ function renderizarConteudoLoteria(loteriaId) {
             </div>
         </div>
         
-        <!-- ============================================
-             RESULTADOS
-        ============================================ -->
+        <!-- Resultados -->
         <div id="resultados"></div>
     `;
     
     container.innerHTML = html;
     
-    // ============================================
-    // REATIVAR OS EVENTOS DOS BOTÕES DE IA
-    // ============================================
+    // Reativar eventos dos botões de IA
     document.querySelectorAll('#iaSelectorCard .ia-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const ia = this.dataset.ia;
@@ -148,27 +133,18 @@ function renderizarConteudoLoteria(loteriaId) {
                 }
             }
             
-            // Atualizar seleção
             document.querySelectorAll('#iaSelectorCard .ia-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-            
-            // Atualizar variável global
             window.iaSelecionada = ia;
             console.log('🤖 IA selecionada:', ia);
         });
     });
     
-    // ============================================
-    // REATIVAR EVENTOS DOS SLIDERS
-    // ============================================
+    // Reativar eventos dos sliders
     const qtdRange = document.getElementById('qtdRange');
     const qtdJogos = document.getElementById('qtdJogos');
     const dispersaoRange = document.getElementById('dispersaoRange');
     const dispersaoValor = document.getElementById('dispersaoValor');
-    const modoBolaoCheckbox = document.getElementById('modoBolaoCheckbox');
-    const qtdNumerosBolao = document.getElementById('qtdNumerosBolao');
-    const bolaoConfig = document.getElementById('bolaoConfig');
-    const bolaoBadge = document.getElementById('bolaoBadge');
     
     if (qtdRange && qtdJogos) {
         qtdRange.addEventListener('input', function() {
@@ -188,83 +164,164 @@ function renderizarConteudoLoteria(loteriaId) {
             dispersaoValor.textContent = this.value;
         });
     }
+}
+
+// ============================================
+// TOGGLE MODO BOLÃO (GLOBAL)
+// ============================================
+window.toggleModoBolao = function() {
+    const checkbox = document.getElementById('modoBolaoCheckbox');
+    const config = document.getElementById('bolaoConfig');
+    const badge = document.getElementById('bolaoBadge');
+    const isProUser = window.isUserPro || false;
     
-    // ============================================
-    // FUNÇÃO TOGGLE MODO BOLÃO
-    // ============================================
-    window.toggleModoBolao = function() {
-        const checkbox = document.getElementById('modoBolaoCheckbox');
-        const config = document.getElementById('bolaoConfig');
-        const badge = document.getElementById('bolaoBadge');
-        const isProUser = window.isUserPro || false;
+    if (!checkbox) return;
+    
+    if (checkbox.checked) {
+        if (!isProUser) {
+            window.mostrarToast('⭐ Modo Bolão é exclusivo para assinantes PRO!', 'warning');
+            checkbox.checked = false;
+            if (config) config.style.display = 'none';
+            return;
+        }
         
-        if (!checkbox) return;
-        
-        if (checkbox.checked) {
-            if (!isProUser) {
-                window.mostrarToast('⭐ Modo Bolão é exclusivo para assinantes PRO!', 'warning');
-                checkbox.checked = false;
-                config.style.display = 'none';
-                return;
-            }
-            
-            config.style.display = 'flex';
+        if (config) config.style.display = 'flex';
+        if (badge) {
             badge.textContent = '⭐ PRO ATIVO';
             badge.className = 'badge-pro';
-            
-            const loteria = window.loteriaAtual ? window.loteriaAtual() : 'megasena';
-            const loteriaConfig = window.LOTERIAS?.[loteria];
-            if (loteriaConfig && qtdNumerosBolao) {
-                qtdNumerosBolao.min = loteriaConfig.jogoSimples || 6;
-                qtdNumerosBolao.max = loteriaConfig.maxNumeros || 20;
-                qtdNumerosBolao.value = Math.min(
-                    parseInt(qtdNumerosBolao.value) || loteriaConfig.jogoSimples + 1,
-                    loteriaConfig.maxNumeros || 20
-                );
-            }
-            
-            window.mostrarToast('📊 Modo Bolão ativado! Selecione a quantidade de números.', 'success');
-            
-        } else {
-            config.style.display = 'none';
+        }
+        
+        const loteria = window.loteriaAtual ? window.loteriaAtual() : 'megasena';
+        const loteriaConfig = window.LOTERIAS?.[loteria];
+        const qtdNumerosBolao = document.getElementById('qtdNumerosBolao');
+        if (loteriaConfig && qtdNumerosBolao) {
+            qtdNumerosBolao.min = loteriaConfig.jogoSimples || 6;
+            qtdNumerosBolao.max = loteriaConfig.maxNumeros || 20;
+            qtdNumerosBolao.value = Math.min(
+                parseInt(qtdNumerosBolao.value) || loteriaConfig.jogoSimples + 1,
+                loteriaConfig.maxNumeros || 20
+            );
+        }
+        
+        window.mostrarToast('📊 Modo Bolão ativado!', 'success');
+        
+    } else {
+        if (config) config.style.display = 'none';
+        if (badge) {
             badge.textContent = '⭐ PRO';
             badge.className = 'badge-free';
         }
-    };
+    }
+};
+
+window.verificarStatusBolao = function() {
+    const checkbox = document.getElementById('modoBolaoCheckbox');
+    const badge = document.getElementById('bolaoBadge');
+    const isProUser = window.isUserPro || false;
     
-    // ============================================
-    // VERIFICAR STATUS DO BOLÃO
-    // ============================================
-    function verificarStatusBolao() {
-        const checkbox = document.getElementById('modoBolaoCheckbox');
-        const badge = document.getElementById('bolaoBadge');
-        const isProUser = window.isUserPro || false;
-        
-        if (!checkbox) return;
-        
-        if (checkbox.checked) {
-            if (!isProUser) {
-                checkbox.checked = false;
-                document.getElementById('bolaoConfig').style.display = 'none';
-                if (badge) {
-                    badge.textContent = '⭐ PRO';
-                    badge.className = 'badge-free';
-                }
-            } else {
-                if (badge) {
-                    badge.textContent = '⭐ PRO ATIVO';
-                    badge.className = 'badge-pro';
-                }
+    if (!checkbox) return;
+    
+    if (checkbox.checked) {
+        if (!isProUser) {
+            checkbox.checked = false;
+            const config = document.getElementById('bolaoConfig');
+            if (config) config.style.display = 'none';
+            if (badge) {
+                badge.textContent = '⭐ PRO';
+                badge.className = 'badge-free';
+            }
+        } else {
+            if (badge) {
+                badge.textContent = '⭐ PRO ATIVO';
+                badge.className = 'badge-pro';
             }
         }
     }
+};
+
+// ============================================
+// CARREGAR GRID DE LOTERIAS
+// ============================================
+function carregarGridLoterias() {
+    console.log('🔄 Carregando grid de loterias...');
+    const grid = document.getElementById('lotteryGrid');
+    if (!grid) {
+        console.error('❌ Elemento lotteryGrid não encontrado');
+        return;
+    }
     
-    window.verificarStatusBolao = verificarStatusBolao;
+    const loterias = window.LOTERIAS || {};
+    const ids = Object.keys(loterias);
     
-    // Escutar atualizações de usuário
-    document.addEventListener('userUpdated', function() {
-        verificarStatusBolao();
+    if (ids.length === 0) {
+        console.warn('⚠️ Nenhuma loteria encontrada');
+        grid.innerHTML = '<p style="color: var(--text-secondary);">Nenhuma loteria disponível</p>';
+        return;
+    }
+    
+    // Pegar a loteria atualmente selecionada
+    const loteriaAtual = window.loteriaAtual || 'megasena';
+    
+    grid.innerHTML = ids.map(id => {
+        const config = loterias[id];
+        const isActive = id === loteriaAtual ? 'active' : '';
+        return `
+            <div class="lottery-card ${isActive}" 
+                 onclick="window.selecionarLoteria('${id}')" 
+                 id="card-${id}"
+                 data-loteria="${id}">
+                <h3>${config.icone || '🎰'} ${config.nome || id}</h3>
+                <p class="rules">${config.numerosCSV || '?'} números • 1 a ${config.maxNumero || '?'}</p>
+                ${config.temElementoExtra ? `<p class="rules">+ ${config.nomeElemento || 'Extra'}</p>` : ''}
+            </div>
+        `;
+    }).join('');
+    
+    console.log(`✅ Grid carregado com ${ids.length} loterias`);
+}
+
+// ============================================
+// SELECIONAR LOTERIA
+// ============================================
+function selecionarLoteria(id) {
+    console.log(`🎯 Selecionando loteria: ${id}`);
+    window.loteriaAtual = id;
+    
+    // Atualizar grid
+    document.querySelectorAll('.lottery-card').forEach(card => {
+        card.classList.remove('active');
+        if (card.dataset.loteria === id) {
+            card.classList.add('active');
+        }
     });
     
-    console.log('✅ LOTERIAS.js carregado (V2.1 - com botões IA no card)');
+    // Carregar conteúdo da loteria
+    if (typeof window.renderizarConteudoLoteria === 'function') {
+        window.renderizarConteudoLoteria(id);
+    } else {
+        console.warn('⚠️ renderizarConteudoLoteria não disponível');
+        // Fallback: carregar conteúdo básico
+        const container = document.getElementById('conteudoLoteria');
+        if (container) {
+            const config = window.LOTERIAS?.[id];
+            container.innerHTML = `
+                <div class="card">
+                    <h3>${config?.icone || '🎰'} ${config?.nome || id}</h3>
+                    <p style="color: var(--text-secondary);">Selecione as opções e clique em "Gerar Jogos"</p>
+                    <button onclick="window.gerarJogos()" class="btn btn-primary">
+                        🎲 Gerar Jogos
+                    </button>
+                </div>
+            `;
+        }
+    }
 }
+
+// ============================================
+// EXPORTAÇÕES PARA O WINDOW
+// ============================================
+window.carregarGridLoterias = carregarGridLoterias;
+window.selecionarLoteria = selecionarLoteria;
+window.renderizarConteudoLoteria = renderizarConteudoLoteria;
+
+console.log('✅ LOTERIAS.js carregado (VERSÃO 2.2 - COMPLETA E CORRIGIDA)');
