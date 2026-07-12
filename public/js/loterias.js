@@ -39,12 +39,14 @@ function debounce(func, wait) {
 // ============================================
 // FUNÇÃO PARA PEGAR IA SELECIONADA
 // ============================================
+// ✅ CORRETO - Retorna a IA selecionada
 function getIAAtual() {
-    return iaSelecionada;
+    return window.iaSelecionada || 'hybrid';
 }
 
+// ✅ CORRETO - Define a IA selecionada
 function setIAAtual(ia) {
-    iaSelecionada = ia;
+    window.iaSelecionada = ia;
     // Atualizar botões visualmente
     document.querySelectorAll('.ia-btn').forEach(b => b.classList.remove('active'));
     const btn = document.querySelector(`.ia-btn[data-ia="${ia}"]`);
