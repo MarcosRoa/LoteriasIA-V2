@@ -719,15 +719,7 @@ function renderizarConteudo(loteria) {
                     <input type="number" id="qtdJogos" class="quantidade-input" value="1" min="1" max="20" 
                            oninput="window.atualizarQuantidadePorInput(this.value); window.atualizarVisualizacaoConfiguracoes?.()">
                 </div>
-                <div>
-                    <label class="config-label">🎓 Modo de IA</label>
-                    <select id="modoGeracao" class="modo-select" onchange="window.atualizarVisualizacaoConfiguracoes?.()">
-                        <option value="ia_especialista">🎓 IA Especialista</option>
-                        <option value="aleatorio_inteligente">🎲 Aleatório Inteligente</option>
-                        <option value="probabilistico">📊 Probabilístico</option>
-                        <option value="aleatorio_puro">🎯 Aleatório Puro (RNG)</option>
-                    </select>
-                </div>
+                
                 ${config.temDispersao ? `
                 <div>
                     <label class="config-label">🎯 Dispersão</label>
