@@ -149,7 +149,6 @@ body.light-mode {
     border-style: solid;
 }
 
-/* Cores específicas para cada IA */
 .ia-btn[data-ia="statistical"]:not(.active):hover { border-color: #38bdf8; color: #38bdf8; }
 .ia-btn[data-ia="hybrid"]:not(.active):hover { border-color: #8b5cf6; color: #8b5cf6; }
 .ia-btn[data-ia="specialist"]:not(.active):hover { border-color: #22c55e; color: #22c55e; }
@@ -350,12 +349,33 @@ body.light-mode {
 /* CONTAINER E GRADE DE LOTERIAS */
 /* ============================================ */
 .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-.lottery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
-.lottery-card { background: var(--bg-secondary); padding: 20px; border-radius: var(--radius); border: 2px solid var(--border); cursor: pointer; transition: all 0.3s; text-align: center; position: relative; }
+.lottery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+.lottery-card { 
+    background: var(--bg-secondary); 
+    padding: 15px; 
+    border-radius: var(--radius); 
+    border: 2px solid var(--border); 
+    cursor: pointer; 
+    transition: all 0.3s; 
+    text-align: center; 
+    position: relative; 
+}
 .lottery-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
 .lottery-card.active { border-color: #38bdf8; background: var(--bg-card); }
-.lottery-card h3 { font-size: 18px; margin: 8px 0; }
+.lottery-card h3 { font-size: 16px; margin: 8px 0; }
 .lottery-card .rules { font-size: 11px; color: var(--text-secondary); }
+
+/* Status da IA no card */
+.ia-status {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-bottom: 5px;
+}
+.ia-status.nao-treinado { background: #ef4444; }
+.ia-status.treinado { background: #22c55e; }
+.ia-status.treinando { background: #f59e0b; animation: pulse 1s ease infinite; }
 
 /* ============================================ */
 /* CARDS */
@@ -368,6 +388,7 @@ body.light-mode {
 .btn-upload { background: #3b82f6; color: white; }
 .btn-treinar { background: #f59e0b; color: #1e293b; }
 .btn-backtest { background: #06b6d4; color: #1e293b; }
+.btn-relatorio { background: #8b5cf6; color: white; }
 
 /* ============================================ */
 /* CONFIGURAÇÕES */
@@ -465,6 +486,121 @@ body.light-mode {
 .dispersao-valor { font-size: 12px; margin-top: 5px; }
 
 /* ============================================ */
+/* TREINAMENTO DA IA */
+/* ============================================ */
+.training-section {
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    padding: 20px;
+    border: 2px solid var(--border);
+    margin-bottom: 20px;
+}
+.training-progress {
+    margin-top: 10px;
+    background: var(--bg-card);
+    border-radius: 6px;
+    height: 8px;
+    overflow: hidden;
+}
+.training-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #8b5cf6, #06b6d4);
+    border-radius: 6px;
+    transition: width 0.5s ease;
+    width: 0%;
+}
+.training-log {
+    margin-top: 10px;
+    background: var(--bg-card);
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-family: monospace;
+    max-height: 150px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.status-badge.status-ready { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+.status-badge.status-error { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+.status-badge.status-training { background: rgba(245, 158, 11, 0.2); color: #f59e0b; animation: pulse 1s ease infinite; }
+
+/* ============================================ */
+/* INFO PERÍODO */
+/* ============================================ */
+.info-periodo {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    padding: 10px;
+    background: var(--bg-card);
+    border-radius: var(--radius);
+}
+.info-periodo-item {
+    display: flex;
+    flex-direction: column;
+}
+.info-periodo-label {
+    font-size: 10px;
+    color: var(--text-secondary);
+}
+.info-periodo-valor {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* ============================================ */
+/* FILTRO ITEM */
+/* ============================================ */
+.filtro-item {
+    display: inline-block;
+    background: var(--bg-card);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+}
+.filtro-item strong {
+    color: var(--text-primary);
+}
+
+/* ============================================ */
+/* STATS GRID */
+/* ============================================ */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin: 10px 0;
+}
+.stat-card {
+    background: var(--bg-card);
+    padding: 12px;
+    border-radius: var(--radius);
+    text-align: center;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+.stat-card strong {
+    display: block;
+    font-size: 20px;
+    color: var(--text-primary);
+    margin-top: 4px;
+}
+
+/* ============================================ */
 /* RESULTADOS - BOLAS DOS NÚMEROS */
 /* ============================================ */
 .bolas { display: flex; flex-wrap: wrap; gap: 8px; margin: 15px 0; }
@@ -485,13 +621,28 @@ body.light-mode {
 /* ============================================ */
 /* TOAST */
 /* ============================================ */
-.toast { position: fixed; bottom: 20px; right: 20px; background: var(--bg-card); border-left: 4px solid var(--success); padding: 10px 18px; border-radius: 8px; z-index: 1100; animation: slideInRight 0.3s; font-size: 13px; }
+.toast-custom {
+    position: fixed; 
+    bottom: 20px; 
+    right: 20px;
+    padding: 12px 20px; 
+    border-radius: 8px;
+    z-index: 9999; 
+    font-size: 13px; 
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    animation: slideInRight 0.3s ease;
+    max-width: 90%;
+}
+.toast-custom.success { background: #22c55e; color: white; }
+.toast-custom.error { background: #ef4444; color: white; }
+.toast-custom.warning { background: #f59e0b; color: #1e293b; }
 
 /* ============================================ */
 /* RESPONSIVIDADE */
 /* ============================================ */
 @media (max-width: 768px) {
-    .lottery-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .lottery-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
     .filtro-btn { padding: 5px 10px; font-size: 11px; }
     .bola { width: 30px; height: 30px; font-size: 12px; }
     .user-panel { flex-direction: column; text-align: center; margin: 10px; }
@@ -507,6 +658,16 @@ body.light-mode {
     .config-grid { grid-template-columns: 1fr; gap: 15px; }
     .btn-pro { padding: 6px 12px; font-size: 11px; }
     .config-label-ia { font-size: 11px; }
+    .toast-custom { bottom: 10px; right: 10px; max-width: 95%; font-size: 12px; padding: 10px 15px; }
+}
+
+@media (max-width: 480px) {
+    .lottery-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .lottery-card { padding: 10px; }
+    .lottery-card h3 { font-size: 13px; }
+    .lottery-card .rules { font-size: 9px; }
+    .header-logo img { width: 60px; }
+    .header h1 { font-size: 14px; }
 }
 
 /* ============================================ */
@@ -520,55 +681,46 @@ body.light-mode {
     border-left: 4px solid #8b5cf6;
     animation: fadeIn 0.3s ease;
 }
-
 .bolao-range-container {
     display: flex;
     align-items: center;
     gap: 15px;
     flex-wrap: wrap;
 }
-
 .bolao-range-container input {
     flex: 1;
     min-width: 150px;
 }
-
 .bolao-value {
     font-weight: 700;
     color: #f59e0b;
     font-size: 16px;
 }
-
 .bolao-hint {
     font-size: 11px;
     color: var(--text-secondary);
     margin-top: 8px;
 }
-
 .modo-bolao-checkbox {
     display: flex;
     align-items: center;
     gap: 10px;
     cursor: pointer;
 }
-
 .modo-bolao-checkbox input {
     width: 18px;
     height: 18px;
     cursor: pointer;
 }
-
 .modo-bolao-checkbox span {
     font-size: 13px;
     color: var(--text-primary);
 }
-
 .modo-bolao-checkbox .pro-only {
     font-size: 10px;
     color: #f59e0b;
     margin-left: 5px;
 }
-
 .modo-bolao-checkbox input:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -582,14 +734,12 @@ body.light-mode {
     margin: 0 auto;
     padding: 20px;
 }
-
 .stats-grid-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 20px;
     margin-top: 20px;
 }
-
 .stats-card {
     background: var(--bg-card);
     border-radius: var(--radius);
@@ -597,11 +747,9 @@ body.light-mode {
     border: 2px solid var(--border);
     transition: transform 0.2s;
 }
-
 .stats-card:hover {
     transform: translateY(-3px);
 }
-
 .stats-card h4 {
     font-size: 14px;
     color: var(--text-secondary);
@@ -612,12 +760,10 @@ body.light-mode {
     align-items: center;
     gap: 8px;
 }
-
 .stats-numbers-list {
     max-height: 300px;
     overflow-y: auto;
 }
-
 .stats-number-item {
     display: flex;
     justify-content: space-between;
@@ -625,20 +771,16 @@ body.light-mode {
     border-bottom: 1px solid var(--border);
     font-size: 13px;
 }
-
 .stats-number-item .numero {
     font-weight: 600;
     color: #38bdf8;
 }
-
 .stats-number-item .quantidade {
     color: #f59e0b;
 }
-
 .stats-number-item:hover {
     background: rgba(56, 189, 248, 0.1);
 }
-
 .stats-pair-item, .stats-trio-item {
     font-family: monospace;
     font-size: 12px;
@@ -647,17 +789,14 @@ body.light-mode {
     display: flex;
     justify-content: space-between;
 }
-
 .stats-pair-item .pair, .stats-trio-item .trio {
     color: #22c55e;
 }
-
 .stats-loading {
     text-align: center;
     padding: 40px;
     color: var(--text-secondary);
 }
-
 .stats-error {
     background: rgba(239, 68, 68, 0.1);
     border: 2px solid #ef4444;
@@ -667,16 +806,29 @@ body.light-mode {
     color: #fca5a5;
 }
 
-@media (max-width: 768px) {
-    .stats-grid-cards {
-        grid-template-columns: 1fr;
-        gap: 15px;
-    }
-    .stats-card h4 {
-        font-size: 12px;
-    }
-    .stats-number-item, .stats-pair-item, .stats-trio-item {
-        font-size: 11px;
-        padding: 4px 6px;
-    }
+/* ============================================ */
+/* FOOTER */
+/* ============================================ */
+.footer-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0 10px 0;
+}
+.regras-oficiais {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 15px;
+    border: 1px solid var(--border);
+    margin-top: 20px;
+}
+.regras-oficiais h4 {
+    color: #f59e0b;
+    margin-bottom: 8px;
+}
+.regras-oficiais p {
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.6;
 }
