@@ -17,7 +17,7 @@ let isTraining = false;
 let iaTreinada = false;
 let aiModel = null;
 let filtrosTreinamento = null;
-let iaSelecionada = 'hybrid';
+// let iaSelecionada = 'hybrid';
 
 // Cache persistente em memória
 const cacheProcessamento = {};
@@ -808,6 +808,8 @@ function atualizarQuantidadeNumerosBolao(valor) {
 // ============================================
 // EXPORTAÇÕES PARA O WINDOW
 // ============================================
+// Adicionar no início do arquivo, após as variáveis
+window.iaSelecionada = 'hybrid';
 window.carregarGridLoterias = carregarGridLoterias;
 window.selecionarLoteria = selecionarLoteria;
 window.renderizarConteudo = renderizarConteudo;
