@@ -1,8 +1,23 @@
 // ============================================
 // CAMINHO: public/js/loterias.js
 // ============================================
-// VERSÃO 2.3 - COMPLETA (COM BOTÕES IA RESTAURADOS)
+// VERSÃO 3.0 - ESTADO CENTRALIZADO (window.appState)
 // ============================================
+
+// ============================================
+// ESTADO CENTRALIZADO DA APLICAÇÃO
+// ============================================
+if (!window.appState) {
+    window.appState = {
+        iaSelecionada: 'hybrid',
+        loteriaAtual: 'megasena',
+        periodo: 'all',
+        dispersao: 15,
+        usuario: null,
+        isPro: false,
+        creditos: 0
+    };
+}
 
 // ============================================
 // VARIÁVEIS LOCAIS
@@ -17,12 +32,56 @@ let isTraining = false;
 let iaTreinada = false;
 let aiModel = null;
 let filtrosTreinamento = null;
-// let iaSelecionada = 'hybrid';
 
 // Cache persistente em memória
 const cacheProcessamento = {};
 let debouncePeriodo = null;
 let debounceDispersao = null;
+
+// ============================================
+// EVENTO DE MUDANÇA DE IA
+// ============================================
+let onIAChangedListeners = [];
+
+function onIAChanged(callback) {
+    if (typeof callback === 'function') {
+        onIAChangedListeners.push(callback);
+    }
+}
+
+// ============================================
+// FUNÇÕES DE ACESSO AO ESTADO (IA)
+// ============================================
+function getIAAtual() {
+    return window.appState.iaSelecionada || 'hybrid';
+}
+
+function setIAAtual(ia) {
+    window.appState.iaSelecionada = ia;
+    sincronizarIASelecionada();
+    // Disparar listeners
+    onIAChangedListeners.forEach(cb => {
+        try { cb(ia); } catch (e) { console.error('Erro no listener onIAChanged:', e); }
+    });
+    // Atualizar visualização das configurações
+    if (typeof window.atualizarVisualizacaoConfiguracoes === 'function') {
+        window.atualizarVisualizacaoConfiguracoes();
+    }
+    console.log('🤖 IA selecionada:', ia);
+}
+
+// ============================================
+// SINCRONIZAR IA SELECIONADA
+// ============================================
+function sincronizarIASelecionada() {
+    const ia = window.getIAAtual();
+    document.querySelectorAll('.ia-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector(`.ia-btn[data-ia="${ia}"]`);
+    if (btn) {
+        btn.classList.add('active');
+    }
+    console.log('🔄 IA sincronizada:', ia);
+}
 
 // ============================================
 // FUNÇÃO DE DEBOUNCE
@@ -34,26 +93,6 @@ function debounce(func, wait) {
         }, wait);
         return timeoutId;
     };
-}
-
-// ============================================
-// FUNÇÃO PARA PEGAR IA SELECIONADA
-// ============================================
-// ✅ CORRETO - Retorna a IA selecionada
-function getIAAtual() {
-    return window.iaSelecionada || 'hybrid';
-}
-
-// ✅ CORRETO - Define a IA selecionada
-function setIAAtual(ia) {
-    window.iaSelecionada = ia;
-    // Atualizar botões visualmente
-    document.querySelectorAll('.ia-btn').forEach(b => b.classList.remove('active'));
-    const btn = document.querySelector(`.ia-btn[data-ia="${ia}"]`);
-    if (btn) {
-        btn.classList.add('active');
-    }
-    console.log('🤖 IA selecionada:', ia);
 }
 
 // ============================================
@@ -152,13 +191,14 @@ function getDatasPeriodo() {
 }
 
 // ============================================
-// GET FILTROS ATIVOS
+// GET FILTROS ATIVOS (USANDO getIAAtual)
 // ============================================
 function getFiltrosAtivos() {
     const config = window.LOTERIAS ? window.LOTERIAS[loteriaAtual] : null;
     if (!config) return [];
     
-    const modo = document.getElementById('modoGeracao')?.value || 'ia_especialista';
+    // ✅ USAR getIAAtual() em vez do select
+    const modo = window.getIAAtual();
     const periodoTexto = getPeriodoTexto();
     const qtdJogos = document.getElementById('qtdJogos')?.value || 1;
     const dadosFiltrados = filtrarDados();
@@ -168,11 +208,11 @@ function getFiltrosAtivos() {
     let filtros = [
         { label: 'Loteria', valor: `${config.icone} ${config.nome}` },
         { label: 'Período', valor: periodoTexto },
-        { label: 'Modo IA', valor: window.getModoTexto ? window.getModoTexto(modo) : modo },
+        { label: 'Modo IA', valor: modo },
         { label: 'Quantidade', valor: `${qtdJogos} jogos` },
         { label: 'Base dados', valor: `${dadosFiltrados.length} concursos` }
     ];
-    if (modoBolaoAtivo && config.permiteBolao && window.isUserPro) {
+    if (modoBolaoAtivo && config.permiteBolao && window.appState.isPro) {
         filtros.push({ label: 'Modo Bolão', valor: `${qtdNumerosBolao} números por jogo` });
     }
     if (config.temDispersao) filtros.push({ label: 'Dispersão', valor: `${dispersaoAtual} concursos` });
@@ -434,6 +474,7 @@ async function selecionarLoteria(loteria) {
     if (resultadosDiv) resultadosDiv.innerHTML = '';
     
     loteriaAtual = loteria;
+    window.appState.loteriaAtual = loteria;
     iaTreinada = false;
     aiModel = null;
     
@@ -466,6 +507,7 @@ async function selecionarLoteria(loteria) {
 // ============================================
 const setPeriodoDebounced = debounce((p) => {
     periodoSelecionado = p;
+    window.appState.periodo = p;
     iaTreinada = false;
     aiModel = null;
     renderizarConteudo(loteriaAtual);
@@ -490,6 +532,7 @@ function setPeriodo(p) {
 // ============================================
 const atualizarDispersaoDebounced = debounce((v) => {
     dispersaoAtual = parseInt(v);
+    window.appState.dispersao = parseInt(v);
     const valorDisplay = document.getElementById('dispersaoValor');
     if (valorDisplay) valorDisplay.textContent = `${v} concursos`;
     iaTreinada = false;
@@ -534,7 +577,26 @@ function atualizarAnimacaoTreinamento(status) {
 }
 
 // ============================================
-// RENDERIZAR CONTEÚDO DA LOTERIA (COM BOTÕES IA)
+// ATUALIZAR BOTÕES PRO
+// ============================================
+function atualizarBotoesPro() {
+    const isProUser = window.appState.isPro || false;
+    document.querySelectorAll('.ia-btn.pro-only').forEach(btn => {
+        if (isProUser) {
+            btn.classList.remove('pro-only');
+            btn.title = btn.title.replace('🔒 ', '');
+        } else {
+            btn.classList.add('pro-only');
+            if (!btn.title.includes('🔒')) {
+                btn.title = '🔒 ' + btn.title;
+            }
+        }
+    });
+    sincronizarIASelecionada();
+}
+
+// ============================================
+// RENDERIZAR CONTEÚDO DA LOTERIA
 // ============================================
 function renderizarConteudo(loteria) {
     const div = document.getElementById('conteudoLoteria');
@@ -549,7 +611,7 @@ function renderizarConteudo(loteria) {
     const dadosCount = dadosAtuais.length;
     const dadosFiltradosCount = filtrarDados().length;
     const datasPeriodo = getDatasPeriodo();
-    const isPro = window.isUserPro || false;
+    const isPro = window.appState.isPro || false;
     
     let html = `
         <div class="card">
@@ -620,14 +682,14 @@ function renderizarConteudo(loteria) {
             <h4>🎲 Configurar e Gerar Jogos</h4>
             
             <!-- ============================================
-                 BOTÕES DE IA (DENTRO DO CARD)
+                 BOTÕES DE IA - SEM ACTIVE NO HTML
             ============================================ -->
             <label class="config-label-ia">🤖 Selecione o Motor de IA</label>
             <div class="ia-selector-container" id="iaSelectorCard">
                 <button class="ia-btn" data-ia="statistical" title="Análise de frequência, atraso e dispersão">
                     📊 Estatística
                 </button>
-                <button class="ia-btn active" data-ia="hybrid" title="Combina estatística, probabilidade e tendência">
+                <button class="ia-btn" data-ia="hybrid" title="Combina estatística, probabilidade e tendência">
                     🧠 Híbrida
                     <span class="badge-free">REC</span>
                 </button>
@@ -727,43 +789,40 @@ function renderizarConteudo(loteria) {
     `;
     
     div.innerHTML = html;
-    // Dentro de renderizarConteudo(), após div.innerHTML = html;
-    setTimeout(() => {
-        // Reatachar eventos dos botões IA
-        document.querySelectorAll('#iaSelectorCard .ia-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const ia = this.dataset.ia;
-                
-                // Verificar se é PRO
-                if (this.classList.contains('pro-only')) {
-                    const isProUser = window.isUserPro || false;
-                    if (!isProUser) {
-                        window.mostrarToast('⭐ Essa IA é exclusiva para assinantes PRO!', 'warning');
-                        return;
-                    }
+    
+    // ============================================
+    // DELEGAÇÃO DE EVENTOS PARA OS BOTÕES IA
+    // ============================================
+    const container = document.getElementById('iaSelectorCard');
+    if (container) {
+        container.removeEventListener('click', window._iaClickHandler);
+        window._iaClickHandler = function(e) {
+            const btn = e.target.closest('.ia-btn');
+            if (!btn) return;
+            const ia = btn.dataset.ia;
+            if (!ia) return;
+            if (btn.classList.contains('pro-only')) {
+                const isProUser = window.appState.isPro || false;
+                if (!isProUser) {
+                    window.mostrarToast('⭐ Essa IA é exclusiva para assinantes PRO!', 'warning');
+                    return;
                 }
-                
-                // Atualizar seleção
-                document.querySelectorAll('#iaSelectorCard .ia-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Atualizar variável global
-                window.setIAAtual(ia);
-            });
-        });
-    }, 50);
+            }
+            window.setIAAtual(ia);
+        };
+        container.addEventListener('click', window._iaClickHandler);
+    }
     
-    // Restaurar IA selecionada
-    setTimeout(() => {
-        const btn = document.querySelector(`.ia-btn[data-ia="${iaSelecionada}"]`);
-        if (btn) {
-            document.querySelectorAll('.ia-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        }
-    }, 50);
+    // ============================================
+    // SINCRONIZAR IA SELECIONADA
+    // ============================================
+    sincronizarIASelecionada();
     
+    // ============================================
+    // ATUALIZAR CONFIGURAÇÕES VISUAIS
+    // ============================================
     if (typeof window.atualizarVisualizacaoConfiguracoes === 'function') {
-        setTimeout(() => window.atualizarVisualizacaoConfiguracoes(), 100);
+        setTimeout(() => window.atualizarVisualizacaoConfiguracoes(), 50);
     }
 }
 
@@ -787,7 +846,7 @@ function toggleModoBolao() {
     const bolaoContainer = document.getElementById('bolaoContainer');
     const config = window.LOTERIAS ? window.LOTERIAS[loteriaAtual] : null;
     
-    if (checkbox && checkbox.checked && window.isUserPro && config && config.permiteBolao) {
+    if (checkbox && checkbox.checked && window.appState.isPro && config && config.permiteBolao) {
         if (bolaoContainer) bolaoContainer.style.display = 'block';
         const qtdInput = document.getElementById('qtdNumerosBolao');
         if (qtdInput) {
@@ -808,8 +867,6 @@ function atualizarQuantidadeNumerosBolao(valor) {
 // ============================================
 // EXPORTAÇÕES PARA O WINDOW
 // ============================================
-// Adicionar no início do arquivo, após as variáveis
-window.iaSelecionada = 'hybrid';
 window.carregarGridLoterias = carregarGridLoterias;
 window.selecionarLoteria = selecionarLoteria;
 window.renderizarConteudo = renderizarConteudo;
@@ -824,6 +881,9 @@ window.atualizarQuantidadeNumerosBolao = atualizarQuantidadeNumerosBolao;
 window.atualizarAnimacaoTreinamento = atualizarAnimacaoTreinamento;
 window.getIAAtual = getIAAtual;
 window.setIAAtual = setIAAtual;
+window.sincronizarIASelecionada = sincronizarIASelecionada;
+window.atualizarBotoesPro = atualizarBotoesPro;
+window.onIAChanged = onIAChanged;
 
 // Getters para outros módulos
 window.loteriaAtual = () => loteriaAtual;
@@ -845,4 +905,4 @@ window.setDadosAtuais = (dados) => { dadosAtuais = dados; };
 window.setDadosExtrasAtuais = (dados) => { dadosExtrasAtuais = dados; };
 window.setDatasAtuais = (datas) => { datasAtuais = datas; };
 
-console.log('✅ LOTERIAS.js carregado (V2.3 - COMPLETA COM BOTÕES IA)');
+console.log('✅ LOTERIAS.js carregado (VERSÃO 3.0 - ESTADO CENTRALIZADO)');
