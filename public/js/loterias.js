@@ -725,6 +725,31 @@ function renderizarConteudo(loteria) {
     `;
     
     div.innerHTML = html;
+    // Dentro de renderizarConteudo(), após div.innerHTML = html;
+    setTimeout(() => {
+        // Reatachar eventos dos botões IA
+        document.querySelectorAll('#iaSelectorCard .ia-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const ia = this.dataset.ia;
+                
+                // Verificar se é PRO
+                if (this.classList.contains('pro-only')) {
+                    const isProUser = window.isUserPro || false;
+                    if (!isProUser) {
+                        window.mostrarToast('⭐ Essa IA é exclusiva para assinantes PRO!', 'warning');
+                        return;
+                    }
+                }
+                
+                // Atualizar seleção
+                document.querySelectorAll('#iaSelectorCard .ia-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Atualizar variável global
+                window.setIAAtual(ia);
+            });
+        });
+    }, 50);
     
     // Restaurar IA selecionada
     setTimeout(() => {
