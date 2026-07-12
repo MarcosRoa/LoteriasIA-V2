@@ -132,6 +132,21 @@ function abrirModalComprar() {
     }
 }
 
+// Atualizar appState
+window.appState.usuario = usuario;
+window.appState.creditos = credits;
+window.appState.isPro = proStatus.isPro;
+window.appState.proDaysLeft = proStatus.daysLeft || 0;
+window.appState.proExpiresAt = proStatus.proExpiresAt || null;
+
+// Sincronizar variáveis temporárias
+window.usuarioAtual = window.appState.usuario;
+window.creditosUsuario = window.appState.creditos;
+window.isUserPro = window.appState.isPro;
+// ✅ DISPARAR EVENTO
+document.dispatchEvent(new CustomEvent('appStateChanged'));
+
+
 // ============================================
 // EXPORTAÇÃO PARA O WINDOW
 // ============================================
