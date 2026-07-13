@@ -5,7 +5,7 @@
 // ============================================
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { StatisticsEngine } from './engine/StatisticsEngine.js';
+import { StatisticsEngine } from './engine/StatisticsEngine';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // CORS
