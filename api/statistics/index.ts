@@ -1,11 +1,11 @@
 // ============================================
 // CAMINHO: api/statistics/index.ts
 // ============================================
-// ROTA HTTP PARA ESTATÍSTICAS
+// ROTA HTTP PARA ESTATÍSTICAS - ÚNICA SERVERLESS FUNCTION
 // ============================================
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { StatisticsEngine } from './StatisticsEngine.js';
+import { StatisticsEngine } from './engine/StatisticsEngine.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // CORS
