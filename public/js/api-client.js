@@ -176,6 +176,7 @@ class ApiClient {
             throw error;
         }
     }
+
     // ============================================
     // 🔥 ESTATÍSTICAS: Vai para /api/statistics (Vercel)
     // ============================================
@@ -188,8 +189,7 @@ class ApiClient {
             console.error('❌ Erro ao buscar estatísticas:', error);
             throw error;
         }
-    }    
-    
+    }
 }
 
 const apiClient = new ApiClient();
@@ -201,4 +201,5 @@ window.generateGames = (request) => apiClient.generateGames(request);
 window.createPayment = (amount) => apiClient.createPayment(amount);
 window.getHistory = (limit) => apiClient.getHistory(limit);
 window.getStatistics = (lottery, period) => apiClient.getStatistics(lottery, period);
-console.log('✅ API Client V2.2 carregado (Vercel + Railway)');
+
+console.log('✅ API Client V2.3 carregado (Vercel + Railway + Statistics)');
