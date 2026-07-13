@@ -1,7 +1,7 @@
 // ============================================
 // CAMINHO: public/js/api-client.js
 // ============================================
-// VERSÃO 2.2 - CORRIGIDA (APENAS IA VAI PARA O PROXY)
+// VERSÃO 2.3 - COM ESTATÍSTICAS
 // ============================================
 
 const API_BASE = '/api';
@@ -79,9 +79,9 @@ class ApiClient {
                     'X-User-Name': user.displayName || ''
                 }
             });
-            return { 
-                isPro: data.isPro || false, 
-                daysLeft: data.daysLeft || 0 
+            return {
+                isPro: data.isPro || false,
+                daysLeft: data.daysLeft || 0
             };
         } catch (error) {
             console.error('Erro ao buscar status PRO:', error);
@@ -92,16 +92,16 @@ class ApiClient {
     async getUserStatus() {
         const user = firebase.auth().currentUser;
         if (!user) {
-            return { 
-                success: false, 
-                error: 'Usuário não logado', 
-                isPro: false, 
+            return {
+                success: false,
+                error: 'Usuário não logado',
+                isPro: false,
                 credits: 0,
                 proExpiresAt: null,
                 daysLeft: 0
             };
         }
-        
+
         try {
             return await this.request('/user/status', {
                 method: 'POST',
@@ -109,10 +109,10 @@ class ApiClient {
             });
         } catch (error) {
             console.error('Erro ao buscar status do usuário:', error);
-            return { 
-                success: false, 
-                error: error.message, 
-                isPro: false, 
+            return {
+                success: false,
+                error: error.message,
+                isPro: false,
                 credits: 0,
                 proExpiresAt: null,
                 daysLeft: 0
@@ -126,7 +126,7 @@ class ApiClient {
     async generateGames(request) {
         const user = firebase.auth().currentUser;
         if (!user) throw new Error('User not logged in');
-        
+
         try {
             const body = {
                 uid: user.uid,
@@ -137,15 +137,29 @@ class ApiClient {
                 period: request.filters?.periodo || 'all',
                 dispersao: request.filters?.dispersao || 15
             };
-            
+
             console.log('📤 Enviando requisição para IA (Railway):', body);
-            
+
             return await this.request('/generate', {
                 method: 'POST',
                 body: JSON.stringify(body)
             });
         } catch (error) {
             console.error('❌ Erro ao gerar jogos:', error);
+            throw error;
+        }
+    }
+
+    // ============================================
+    // 🔥 ESTATÍSTICAS: Vai para /api/statistics (Vercel → Railway)
+    // ============================================
+    async getStatistics(lottery, period = 'all') {
+        try {
+            return await this.request(`/statistics?lottery=${lottery}&period=${period}`, {
+                method: 'GET'
+            });
+        } catch (error) {
+            console.error('❌ Erro ao buscar estatísticas:', error);
             throw error;
         }
     }
@@ -173,20 +187,6 @@ class ApiClient {
             });
         } catch (error) {
             console.error('Erro ao buscar histórico:', error);
-            throw error;
-        }
-    }
-
-    // ============================================
-    // 🔥 ESTATÍSTICAS: Vai para /api/statistics (Vercel)
-    // ============================================
-    async getStatistics(lottery, period = 'all') {
-        try {
-            return await this.request(`/statistics?lottery=${lottery}&period=${period}`, {
-                method: 'GET'
-            });
-        } catch (error) {
-            console.error('❌ Erro ao buscar estatísticas:', error);
             throw error;
         }
     }
