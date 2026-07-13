@@ -251,9 +251,11 @@ async function carregarEstatisticas() {
     container.innerHTML = '<div class="loading-stats">📊 Carregando estatísticas...</div>';
     
     try {
-        const url = `${API_URL}/statistics?lottery=${loteriaAtualStats}&period=${periodoSelecionadoStats}`;
-        const response = await fetch(url);
-        const data = await response.json();
+        // ✅ USAR API CLIENT (NOVO MÉTODO)
+        const data = await window.apiClient.getStatistics(
+            loteriaAtualStats, 
+            periodoSelecionadoStats
+        );
         
         if (!data.success) {
             throw new Error(data.error || 'Erro ao carregar estatísticas');
