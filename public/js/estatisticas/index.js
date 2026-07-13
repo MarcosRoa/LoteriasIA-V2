@@ -100,7 +100,7 @@ const LOTERIAS_STATS = {
         nomeElemento: 'Time do Coração'
     },
     milionaria: { 
-        nome: '+Milionária', 
+        nome: '+Milonária', 
         icone: '💎', 
         numerosCSV: 6, 
         maxNumero: 50, 
