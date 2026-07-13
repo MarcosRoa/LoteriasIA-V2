@@ -249,24 +249,24 @@ async function atualizarPeriodoInfo(data) {
 async function carregarEstatisticas() {
     const container = document.getElementById('estatisticasContent');
     container.innerHTML = '<div class="loading-stats">📊 Carregando estatísticas...</div>';
-    
+
     try {
-        // ✅ USAR API CLIENT (NOVO MÉTODO)
+        // ✅ USAR API CLIENT (chama Vercel → Railway)
         const data = await window.apiClient.getStatistics(
-            loteriaAtualStats, 
+            loteriaAtualStats,
             periodoSelecionadoStats
         );
-        
+
         if (!data.success) {
             throw new Error(data.error || 'Erro ao carregar estatísticas');
         }
-        
+
         await atualizarPeriodoInfo(data);
-        
+
         const config = LOTERIAS_STATS[loteriaAtualStats];
         const html = renderizarEstatisticas(loteriaAtualStats, data, config, userData, periodoSelecionadoStats);
         container.innerHTML = html;
-        
+
     } catch (error) {
         console.error('❌ Erro ao carregar estatísticas:', error);
         container.innerHTML = `
