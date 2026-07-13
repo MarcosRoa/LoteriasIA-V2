@@ -4,20 +4,20 @@
 // MOTOR PRINCIPAL DE ESTATÍSTICAS - ORQUESTRADOR
 // ============================================
 
-import { CsvParser } from './utils/CsvParser.js';
-import { Normalizer } from './utils/Normalizer.js';
-import { FrequencyAnalyzer } from './analyzers/FrequencyAnalyzer.js';
-import { DelayAnalyzer } from './analyzers/DelayAnalyzer.js';
-import { PairsAnalyzer } from './analyzers/PairsAnalyzer.js';
-import { TriplesAnalyzer } from './analyzers/TriplesAnalyzer.js';
-import { HeatmapAnalyzer } from './analyzers/HeatmapAnalyzer.js';
-import { TrendAnalyzer } from './analyzers/TrendAnalyzer.js';
-import { EntropyAnalyzer } from './analyzers/EntropyAnalyzer.js';
-import { DistributionAnalyzer } from './analyzers/DistributionAnalyzer.js';
-import { GroupAnalyzer } from './analyzers/GroupAnalyzer.js';
-import { ParityAnalyzer } from './analyzers/ParityAnalyzer.js';
-import { SequenceAnalyzer } from './analyzers/SequenceAnalyzer.js';
-import type { StatisticsResult, LotteryContext } from './models/StatisticsResult.js';
+import { CsvParser } from './utils/CsvParser';
+import { Normalizer } from './utils/Normalizer';
+import { FrequencyAnalyzer } from './analyzers/FrequencyAnalyzer';
+import { DelayAnalyzer } from './analyzers/DelayAnalyzer';
+import { PairsAnalyzer } from './analyzers/PairsAnalyzer';
+import { TriplesAnalyzer } from './analyzers/TriplesAnalyzer';
+import { HeatmapAnalyzer } from './analyzers/HeatmapAnalyzer';
+import { TrendAnalyzer } from './analyzers/TrendAnalyzer';
+import { EntropyAnalyzer } from './analyzers/EntropyAnalyzer';
+import { DistributionAnalyzer } from './analyzers/DistributionAnalyzer';
+import { GroupAnalyzer } from './analyzers/GroupAnalyzer';
+import { ParityAnalyzer } from './analyzers/ParityAnalyzer';
+import { SequenceAnalyzer } from './analyzers/SequenceAnalyzer';
+import type { StatisticsResult, LotteryContext } from './models/StatisticsResult';
 
 export class StatisticsEngine {
     private csvParser: CsvParser;
