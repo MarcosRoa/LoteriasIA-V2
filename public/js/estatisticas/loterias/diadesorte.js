@@ -4,7 +4,8 @@
 // DIA DE SORTE - COM MÊS (VERSÃO CORRIGIDA)
 // ============================================
 
-import { renderizarBase, renderizarExtras, renderizarHeatmap, renderizarResumoIA } from '../renderers/base.js';
+import { renderizarBase, renderizarHeatmap, renderizarResumoIA } from '../renderers/base.js';
+import { renderizarExtras } from '../renderers/components/extras.js';
 
 export function renderizar(data, config, userData, periodo) {
     const base = renderizarBase(data, config, userData, periodo);
