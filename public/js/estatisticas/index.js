@@ -13,8 +13,7 @@
 // IMPORTS
 // ============================================
 
-import * as core from './core/calculos.js';
-import * as utils from './core/utils.js';
+
 
 import * as megasena from './loterias/megasena.js';
 import * as quina from './loterias/quina.js';
