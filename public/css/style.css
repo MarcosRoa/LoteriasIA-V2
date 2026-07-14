@@ -832,3 +832,227 @@ body.light-mode {
     font-size: 13px;
     line-height: 1.6;
 }
+/* ============================================ */
+/* ESTATÍSTICAS - ELEMENTOS EXTRAS */
+/* ============================================ */
+
+/* Cards de elementos extras (meses, trevos) */
+.milionaria-trevos-card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 15px;
+    border: 2px solid var(--border);
+    margin-top: 20px;
+    display: block !important;
+}
+
+.milionaria-trevos-card h4 {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Heatmap - Super Sete */
+.heatmap-container {
+    background: #1e293b;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+
+.heatmap-container table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 400px;
+}
+
+.heatmap-container th {
+    padding: 8px;
+    text-align: center;
+    color: #94a3b8;
+}
+
+.heatmap-container td {
+    padding: 6px 8px;
+    text-align: center;
+    border-radius: 4px;
+}
+
+/* Análise por coluna - Super Sete */
+.coluna-analise {
+    background: #1e293b;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    border-left: 4px solid #8b5cf6;
+}
+
+.coluna-analise .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.coluna-analise .header h5 {
+    font-size: 16px;
+    margin: 0;
+}
+
+.coluna-analise .bar-container {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.coluna-analise .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.coluna-analise .bar-row .label {
+    font-size: 12px;
+    width: 20px;
+    text-align: center;
+    color: #e2e8f0;
+}
+
+.coluna-analise .bar-row .bar-track {
+    flex: 1;
+    height: 20px;
+    background: #0f172a;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.coluna-analise .bar-row .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+    min-width: 2px;
+}
+
+.coluna-analise .bar-row .value {
+    color: #94a3b8;
+    font-size: 11px;
+    width: 30px;
+    text-align: right;
+}
+
+.coluna-analise .bar-row .percent {
+    font-size: 11px;
+    width: 60px;
+    text-align: right;
+    font-weight: 600;
+}
+
+.coluna-analise .bar-row .status {
+    font-size: 10px;
+    color: #64748b;
+    width: 80px;
+    text-align: right;
+}
+
+/* Ranking por coluna - Super Sete */
+.ranking-container {
+    background: #1e293b;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 20px;
+    overflow-x: auto;
+}
+
+.ranking-container table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    min-width: 600px;
+}
+
+.ranking-container th {
+    padding: 8px;
+    text-align: center;
+    color: #94a3b8;
+    background: #334155;
+}
+
+.ranking-container td {
+    padding: 6px 8px;
+    text-align: center;
+    border-bottom: 1px solid #1e293b;
+}
+
+/* Trevo Heatmap - +Milionária */
+.trevo-heatmap-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 0;
+}
+
+.trevo-heatmap-item .label {
+    width: 70px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.trevo-heatmap-item .bar {
+    flex: 1;
+    height: 20px;
+    background: #0f172a;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.trevo-heatmap-item .bar .fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+    min-width: 2px;
+}
+
+.trevo-heatmap-item .qtd {
+    width: 50px;
+    text-align: right;
+    font-size: 13px;
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+/* Lista de estatísticas */
+.stats-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.stats-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+
+.stats-item .numero {
+    font-weight: 600;
+    color: #38bdf8;
+}
+
+.stats-item .quantidade {
+    color: #f59e0b;
+}
+
+.stats-item:hover {
+    background: rgba(56, 189, 248, 0.1);
+}
