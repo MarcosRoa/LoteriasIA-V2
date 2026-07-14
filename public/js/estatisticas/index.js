@@ -333,17 +333,6 @@ window.renderizarEstatisticas = renderizarEstatisticas;
 window.selecionarLoteriaStats = selecionarLoteriaStats;
 window.carregarEstatisticas = carregarEstatisticas;
 
-// Exportar core para compatibilidade
-window.calcularFrequencia = core.calcularFrequencia;
-window.calcularDuplas = core.calcularDuplas;
-window.calcularTriplas = core.calcularTriplas;
-window.calcularAtraso = core.calcularAtraso;
-window.calcularDistribuicao = core.calcularDistribuicao;
-window.calcularParesImpares = core.calcularParesImpares;
-window.calcularHeatmap = core.calcularHeatmap;
-window.calcularTendencia = core.calcularTendencia;
-window.extrairUF = core.extrairUF;
-window.agruparPorCategoria = core.agruparPorCategoria;
 
 console.log('✅ Estatísticas carregadas com sucesso!');
 
