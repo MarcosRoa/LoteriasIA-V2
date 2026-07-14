@@ -1,10 +1,7 @@
-// public/js/estatisticas/loterias/diadesorte.js
-
 // ============================================
-// DIA DE SORTE - COM MÊS  02/07/2026
+// CAMINHO: public/js/estatisticas/loterias/diadesorte.js
 // ============================================
-// ============================================
-// DIA DE SORTE - COM MÊS
+// DIA DE SORTE - COM MÊS (VERSÃO CORRIGIDA)
 // ============================================
 
 import { renderizarBase, renderizarExtras, renderizarHeatmap, renderizarResumoIA } from '../renderers/base.js';
@@ -15,10 +12,10 @@ export function renderizar(data, config, userData, periodo) {
     const elementosExtras = data.elementosExtras || [];
     const nomeElemento = data.nomeElemento || 'Mês de Sorte';
     
-    // Meses extras
+    // Meses extras (será exibido como um card)
     const mesesHtml = renderizarExtras(elementosExtras, nomeElemento, '📅', userData.isPro);
     
-    // Heatmap dos meses
+    // Heatmap dos meses (será exibido como uma seção)
     const mesesHeatmap = elementosExtras.map(item => ({
         nome: item.nome,
         quantidade: item.quantidade
