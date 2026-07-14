@@ -1,18 +1,8 @@
-// public/js/estatisticas/renderers/base.js
 // ============================================
-// RENDERIZADOR BASE - PADRÃO PARA LOTERIAS 01/07/2026
+// CAMINHO: public/js/estatisticas/renderers/base.js
 // ============================================
-
+// RENDERIZADOR BASE - APENAS ORQUESTRA DADOS
 // ============================================
-// RENDERIZADOR BASE - ORQUESTRADOR
-// ============================================
-
-import { 
-    calcularFrequencia,
-    calcularDuplas,
-    calcularTriplas,
-    calcularRanking
-} from '../core/calculos.js';
 
 import { criarResumo, criarProBanner } from './components/resumo.js';
 import { criarFooter } from './components/footer.js';
@@ -41,7 +31,6 @@ export function renderizarBase(data, config, userData, periodo) {
     const triplas = data.triplas || [];
     
     return {
-        // Componentes individuais (NÃO STRING ÚNICA)
         proBanner: !isPro ? criarProBanner() : '',
         resumo: criarResumo(totalDraws, dataInicio, dataFim, periodo),
         cards: criarCards(maisSorteados, menosSorteados, duplas, triplas, isPro, incluirZero),
