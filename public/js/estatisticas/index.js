@@ -88,7 +88,7 @@ const LOTERIAS_STATS = {
         nomeElemento: 'Time do Coração'
     },
     milionaria: { 
-        nome: '+Milonária', 
+        nome: '+Milionária', 
         icone: '💎', 
         numerosCSV: 6, 
         maxNumero: 50, 
@@ -128,7 +128,7 @@ function renderizarEstatisticas(loteria, data, config, userData, periodo) {
 
 async function buscarDadosUsuario(uid) {
     try {
-        const response = await fetch(`/api/user/status`, {
+        const response = await fetch('/api/user/status', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ uid: uid })
@@ -239,7 +239,13 @@ async function carregarEstatisticas() {
     container.innerHTML = '<div class="loading-stats">📊 Carregando estatísticas...</div>';
     
     try {
-        // ✅ USAR API CLIENT (chama Vercel → Railway)
+        // ✅ VERIFICAR SE API CLIENT ESTÁ DISPONÍVEL
+        if (!window.apiClient || typeof window.apiClient.getStatistics !== 'function') {
+            console.warn('⏳ API Client não disponível. Aguardando...');
+            setTimeout(carregarEstatisticas, 500);
+            return;
+        }
+        
         const data = await window.apiClient.getStatistics(
             loteriaAtualStats, 
             periodoSelecionadoStats
@@ -248,6 +254,12 @@ async function carregarEstatisticas() {
         if (!data.success) {
             throw new Error(data.error || 'Erro ao carregar estatísticas');
         }
+        
+        // ✅ SALVAR DADOS GLOBAIS (para os testes e renderizadores)
+        window.dadosAtuais = data;
+        window.estatisticas = data;
+        window.resultadoAtual = data;
+        window.estatisticasAtual = data;
         
         await atualizarPeriodoInfo(data);
         
