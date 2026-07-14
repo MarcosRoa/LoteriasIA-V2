@@ -1,19 +1,10 @@
-//public/js/estatisticas/index.js
-
-// ============================================
-// PONTO DE ENTRADA - ESTATÍSTICAS  01/07/2026
-// ============================================
-
-
 // ============================================
 // PONTO DE ENTRADA - ESTATÍSTICAS
 // ============================================
 
 // ============================================
-// IMPORTS
+// IMPORTS (APENAS RENDERIZADORES)
 // ============================================
-
-
 
 import * as megasena from './loterias/megasena.js';
 import * as quina from './loterias/quina.js';
@@ -68,8 +59,6 @@ if (!firebase.apps || firebase.apps.length === 0) {
 // ============================================
 // CONFIGURAÇÕES DA APLICAÇÃO
 // ============================================
-
-const API_URL = 'https://loterias-ia.vercel.app/api';
 
 let userData = {
     nome: 'Carregando...',
@@ -139,7 +128,7 @@ function renderizarEstatisticas(loteria, data, config, userData, periodo) {
 
 async function buscarDadosUsuario(uid) {
     try {
-        const response = await fetch(`${API_URL}/user/status`, {
+        const response = await fetch(`/api/user/status`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ uid: uid })
@@ -248,24 +237,24 @@ async function atualizarPeriodoInfo(data) {
 async function carregarEstatisticas() {
     const container = document.getElementById('estatisticasContent');
     container.innerHTML = '<div class="loading-stats">📊 Carregando estatísticas...</div>';
-
+    
     try {
         // ✅ USAR API CLIENT (chama Vercel → Railway)
         const data = await window.apiClient.getStatistics(
-            loteriaAtualStats,
+            loteriaAtualStats, 
             periodoSelecionadoStats
         );
-
+        
         if (!data.success) {
             throw new Error(data.error || 'Erro ao carregar estatísticas');
         }
-
+        
         await atualizarPeriodoInfo(data);
-
+        
         const config = LOTERIAS_STATS[loteriaAtualStats];
         const html = renderizarEstatisticas(loteriaAtualStats, data, config, userData, periodoSelecionadoStats);
         container.innerHTML = html;
-
+        
     } catch (error) {
         console.error('❌ Erro ao carregar estatísticas:', error);
         container.innerHTML = `
@@ -332,7 +321,6 @@ function init() {
 window.renderizarEstatisticas = renderizarEstatisticas;
 window.selecionarLoteriaStats = selecionarLoteriaStats;
 window.carregarEstatisticas = carregarEstatisticas;
-
 
 console.log('✅ Estatísticas carregadas com sucesso!');
 
