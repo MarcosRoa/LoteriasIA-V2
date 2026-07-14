@@ -1,19 +1,31 @@
-//public/js/estatisticas/renderers/components/cards.js
-
 // ============================================
-// COMPONENTE: CARDS DE ESTATÍSTICAS  01/07/2026
-// ============================================
-
+// CAMINHO: public/js/estatisticas/renderers/components/cards.js
 // ============================================
 // COMPONENTE: CARDS DE ESTATÍSTICAS
 // ============================================
 
-import { formatarNumero, formatarDupla, formatarTripla } from '../../core/utils.js';
+// ============================================
+// FUNÇÃO DE FORMATAÇÃO (LOCAL)
+// ============================================
 
-/**
- * Cria um item de estatística individual
- */
-export function criarItemStats(label, quantidade, isPro = false) {
+function formatarNumero(num, incluirZero = false) {
+    if (num === 0 && incluirZero) return '00';
+    return String(num).padStart(2, '0');
+}
+
+function formatarDupla(dupla, incluirZero = false) {
+    return `(${formatarNumero(dupla[0], incluirZero)}, ${formatarNumero(dupla[1], incluirZero)})`;
+}
+
+function formatarTripla(tripla, incluirZero = false) {
+    return `(${formatarNumero(tripla[0], incluirZero)}, ${formatarNumero(tripla[1], incluirZero)}, ${formatarNumero(tripla[2], incluirZero)})`;
+}
+
+// ============================================
+// CRIA ITEM DE ESTATÍSTICA
+// ============================================
+
+function criarItemStats(label, quantidade, isPro = false) {
     const labelClass = isPro ? 'numero' : 'numero-pro';
     const labelDisplay = isPro ? label : '⭐⭐ PRO ⭐⭐';
     return `
@@ -24,9 +36,10 @@ export function criarItemStats(label, quantidade, isPro = false) {
     `;
 }
 
-/**
- * Cria os cards de estatísticas (Mais/Menos/Duplas/Triplas)
- */
+// ============================================
+// CRIA CARDS DE ESTATÍSTICAS
+// ============================================
+
 export function criarCards(maisSorteados, menosSorteados, duplas, triplas, isPro, incluirZero) {
     return `
         <div class="stats-cards-grid">
