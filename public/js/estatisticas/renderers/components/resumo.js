@@ -1,18 +1,27 @@
-// public/js/estatisticas/renderers/components/resumo.js
-
-
 // ============================================
-// COMPONENTE: RESUMO  01/07/2026
-// ============================================
+// CAMINHO: public/js/estatisticas/renderers/components/resumo.js
 // ============================================
 // COMPONENTE: RESUMO
 // ============================================
 
-import { formatarPeriodo, formatarData } from '../../core/utils.js';
+// ============================================
+// FUNÇÕES DE FORMATAÇÃO (LOCAL)
+// ============================================
 
-/**
- * Cria o banner PRO
- */
+function formatarPeriodo(periodo) {
+    if (periodo === 'all') return 'Todos';
+    return `${periodo} anos`;
+}
+
+function formatarData(data) {
+    if (!data || data === 'N/A') return 'N/A';
+    return data;
+}
+
+// ============================================
+// CRIA BANNER PRO
+// ============================================
+
 export function criarProBanner() {
     return `
         <div class="pro-overlay" style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; margin-bottom: 20px;">
@@ -23,9 +32,10 @@ export function criarProBanner() {
     `;
 }
 
-/**
- * Cria o resumo com informações dos concursos
- */
+// ============================================
+// CRIA RESUMO
+// ============================================
+
 export function criarResumo(totalDraws, dataInicio, dataFim, periodo) {
     const periodoTexto = formatarPeriodo(periodo);
     
