@@ -5,7 +5,7 @@
 // ============================================
 
 // ============================================
-// FUNÇÃO DE FORMATAÇÃO (LOCAL)
+// FUNÇÕES DE FORMATAÇÃO (LOCAL)
 // ============================================
 
 function formatarNumero(num, incluirZero = false) {
@@ -22,10 +22,10 @@ function formatarTripla(tripla, incluirZero = false) {
 }
 
 // ============================================
-// CRIA ITEM DE ESTATÍSTICA
+// CRIA ITEM DE ESTATÍSTICA (EXPORTADO)
 // ============================================
 
-function criarItemStats(label, quantidade, isPro = false) {
+export function criarItemStats(label, quantidade, isPro = false) {
     const labelClass = isPro ? 'numero' : 'numero-pro';
     const labelDisplay = isPro ? label : '⭐⭐ PRO ⭐⭐';
     return `
