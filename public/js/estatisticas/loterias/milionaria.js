@@ -1,10 +1,7 @@
-//public/js/estatisticas/loterias/milionaria.js
-
 // ============================================
-// +MILIONÁRIA - COM TREVOS  02/07/2026
+// CAMINHO: public/js/estatisticas/loterias/milionaria.js
 // ============================================
-// ============================================
-// +MILIONÁRIA - COM TREVOS
+// +MILIONÁRIA - COM TREVOS (VERSÃO CORRIGIDA)
 // ============================================
 
 import { renderizarBase, renderizarBarraHorizontal, renderizarResumoIA, renderizarExtras } from '../renderers/base.js';
@@ -41,12 +38,32 @@ export function renderizar(data, config, userData, periodo) {
     // Resumo IA
     const resumoIA = renderizarResumoIA(trevos.resumoIA || []);
     
+    // Montar HTML final com estrutura clara
+    let extraHtml = '';
+    
+    if (freqHtml) {
+        extraHtml += `
+            <div style="margin-top: 20px; background: var(--bg-card); border-radius: var(--radius); padding: 15px; border: 2px solid var(--border);">
+                <h4 style="color: #f59e0b; font-size: 16px; margin-bottom: 12px;">🍀 Frequência dos Trevos</h4>
+                ${freqHtml}
+            </div>
+        `;
+    }
+    
+    if (paresHtml) {
+        extraHtml += `
+            <div style="margin-top: 20px; background: var(--bg-card); border-radius: var(--radius); padding: 15px; border: 2px solid var(--border);">
+                <h4 style="color: #f59e0b; font-size: 16px; margin-bottom: 12px;">🍀🍀 Pares de Trevos</h4>
+                ${paresHtml}
+            </div>
+        `;
+    }
+    
     return `
         ${base.proBanner}
         ${base.resumo}
         ${base.cards}
-        ${freqHtml ? `<div style="margin-top: 20px;"><h4 style="color: #f59e0b; font-size: 16px;">🍀 Frequência dos Trevos</h4>${freqHtml}</div>` : ''}
-        ${paresHtml ? `<div style="margin-top: 20px;"><h4 style="color: #f59e0b; font-size: 16px;">🍀🍀 Pares de Trevos</h4>${paresHtml}</div>` : ''}
+        ${extraHtml}
         ${resumoIA}
         ${base.footer}
     `;
