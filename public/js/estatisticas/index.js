@@ -318,7 +318,13 @@ function init() {
         btn.addEventListener('click', async () => {
             document.querySelectorAll('.periodo-btn').forEach(b => b.classList.remove('ativo'));
             btn.classList.add('ativo');
-            periodoSelecionadoStats = btn.dataset.periodo;
+
+            // ✅ CONVERTER "1" → "1y", "3" → "3y", etc.
+            let periodo = btn.dataset.periodo;
+            if (periodo !== 'all' && !isNaN(periodo)) {
+                periodo = periodo + 'y';
+            }
+            periodoSelecionadoStats = periodo;
             await carregarEstatisticas();
         });
     });
