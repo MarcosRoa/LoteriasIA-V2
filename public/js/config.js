@@ -89,13 +89,13 @@ const CONCURSOS_POR_ANO = {
 //const cacheDatas = {};
 
 Object.keys(LOTERIAS).forEach(key => { 
-    cacheDados[key] = { dados: [], carregado: false, nomeArquivo: null }; 
-    cacheDatas[key] = { datas: [] }; 
+    //cacheDados[key] = { dados: [], carregado: false, nomeArquivo: null }; 
+    //cacheDatas[key] = { datas: [] }; 
 });
 
 window.LOTERIAS = LOTERIAS;
 window.REGRAS_OFICIAIS = REGRAS_OFICIAIS;
 window.VALORES_PIX = VALORES_PIX;
 window.CONCURSOS_POR_ANO = CONCURSOS_POR_ANO;
-window.cacheDados = cacheDados;
-window.cacheDatas = cacheDatas;
+//window.cacheDados = cacheDados;
+//window.cacheDatas = cacheDatas;
