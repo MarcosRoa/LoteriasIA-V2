@@ -1,4 +1,7 @@
-/// js/jogos.js - VERSÃO 2.4 (CORRIGIDA COM getIAAtual)
+// ============================================
+// CAMINHO: public/js/jogos.js
+// ============================================
+// VERSÃO 2.5 - CORRIGIDA (NÃO ENVIA HISTORY)
 // ============================================
 
 // ============================================
@@ -38,7 +41,7 @@ function getNomeMes(mes) {
 }
 
 // ============================================
-// FUNÇÃO PRINCIPAL: GERAR JOGOS
+// FUNÇÃO PRINCIPAL: GERAR JOGOS (CORRIGIDA)
 // ============================================
 async function gerarJogos() {
     if (!window.usuarioAtual) {
@@ -55,9 +58,7 @@ async function gerarJogos() {
     
     const loteria = window.loteriaAtual ? window.loteriaAtual() : 'megasena';
     
-    // ============================================
-    // 🔥 PEGAR IA SELECIONADA (RESTAURADO)
-    // ============================================
+    // ✅ PEGAR IA SELECIONADA
     const modo = window.getIAAtual ? window.getIAAtual() : 'hybrid';
     
     const config = window.LOTERIAS ? window.LOTERIAS[loteria] : null;
@@ -85,9 +86,8 @@ async function gerarJogos() {
     try {
         const periodo = window.periodoSelecionado ? window.periodoSelecionado() : 'all';
         const dispersao = window.dispersaoAtual ? window.dispersaoAtual() : 15;
-        const dados = window.dadosAtuais ? window.dadosAtuais() : [];
-        const dadosExtras = window.dadosExtrasAtuais ? window.dadosExtrasAtuais() : [];
         
+        // ✅ CORRIGIDO: NÃO enviar history e extras - o Railway vai buscar os CSVs localmente
         const response = await fetch('/api/proxy-ia?action=generate', {
             method: 'POST',
             headers: {
@@ -98,8 +98,8 @@ async function gerarJogos() {
                 lotteryType: loteria,
                 count: qtd,
                 method: modo,
-                history: dados,
-                extras: dadosExtras,
+                // ❌ REMOVIDO: history: dados
+                // ❌ REMOVIDO: extras: dadosExtras
                 isPro: window.isUserPro || false,
                 filters: {
                     periodo: periodo,
@@ -205,4 +205,4 @@ window.gerarJogos = gerarJogos;
 window.validarSaldoEAcesso = validarSaldoEAcesso;
 window.getNomeMes = getNomeMes;
 
-console.log('✅ JOGOS.js carregado (VERSÃO 2.4 - CORRIGIDA)');
+console.log('✅ JOGOS.js carregado (VERSÃO 2.5 - CORRIGIDA)');
