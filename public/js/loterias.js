@@ -231,19 +231,16 @@ async function carregarCSV(loteria) {
         
         console.log(`✅ ${loteria} carregado do Railway: ${data.dados.length} registros`);
         
-        // ✅ DIRETO: JSON → dadosAtuais (SEM CONVERSÃO)
         const { numeros, extras, datas } = processarDadosRailway(data, loteria);
         
         dadosAtuais = numeros;
         dadosExtrasAtuais = extras;
         datasAtuais = datas;
         
-        // Salvar no cache
         cacheDados[loteria] = { dados: numeros, carregado: true };
         cacheDatas[loteria] = { datas };
         cacheDadosExtras[loteria] = extras;
         
-        // Renderizar
         if (loteriaAtual === loteria) {
             renderizarConteudo(loteria);
             if (numeros.length >= 10 && !iaTreinada && !isTraining) {
@@ -257,14 +254,20 @@ async function carregarCSV(loteria) {
         } else if (loteria === 'diadesorte') {
             msgExtras = ` (${extras.filter(t => t !== null).length} meses)`;
         }
-        window.mostrarToast(`${config.nome}: ${numeros.length} concursos carregados!${msgExtras}`, 'success');
+        
+        // ✅ CORRIGIDO: Definir config antes de usar
+        const config = window.LOTERIAS ? window.LOTERIAS[loteria] : null;
+        if (config) {
+            window.mostrarToast(`${config.nome}: ${numeros.length} concursos carregados!${msgExtras}`, 'success');
+        } else {
+            window.mostrarToast(`${loteria}: ${numeros.length} concursos carregados!`, 'success');
+        }
         
     } catch (error) {
         console.log(`❌ Erro ao carregar ${loteria} do Railway:`, error);
         window.mostrarToast(`Erro ao carregar ${loteria}`, 'error');
     }
 }
-
 // ============================================
 // ✅ PROCESSAR DADOS DO RAILWAY (SEM CONVERSÃO)
 // ============================================
