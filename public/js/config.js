@@ -85,8 +85,8 @@ const CONCURSOS_POR_ANO = {
     loteca: 26, diadesorte: 52, supersete: 52
 };
 
-const cacheDados = {};
-const cacheDatas = {};
+//const cacheDados = {};
+//const cacheDatas = {};
 
 Object.keys(LOTERIAS).forEach(key => { 
     //cacheDados[key] = { dados: [], carregado: false, nomeArquivo: null }; 
