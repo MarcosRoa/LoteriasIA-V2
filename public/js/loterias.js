@@ -216,7 +216,7 @@ function getFiltrosAtivos() {
 async function carregarCSV(loteria) {
     try {
         console.log(`📤 Carregando ${loteria} do Railway...`);
-        const response = await fetch(`/api/proxy-ia?action=csv&lottery=${loteria}`);
+        const response = await fetch(`https://loterias-ia-core-production.up.railway.app/api/csv/${loteria}`);
         
         if (!response.ok) {
             console.log(`❌ Erro ao carregar ${loteria}: ${response.status}`);
