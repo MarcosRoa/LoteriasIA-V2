@@ -41,12 +41,32 @@ function atualizarQuantidadePorInput(valor) {
     const qtdRange = document.getElementById('qtdRange');
     if (qtdRange) qtdRange.value = valor;
 }
+// ============================================
+// FUNÇÃO getModoTexto
+// ============================================
+function getModoTexto(modo) {
+    const modos = {
+        'manual': '🧠 Manual',
+        'automatico': '🤖 Automático',
+        'ia': '🧠 IA',
+        'ml': '🤖 Machine Learning',
+        'frequency': '📊 Frequência',
+        'smart': '🧠 Inteligente',
+        'hybrid': '🔀 Híbrido',
+        'statistical': '📊 Estatística',
+        'specialist': '🎯 Especialista',
+        'smartrandom': '🎲 Aleatório',
+        'probability': '📈 Probabilística',
+        'predictive': '🔮 Preditiva'
+    };
+    return modos[modo] || modo;
+}
 
 window.mostrarToast = mostrarToast;
 window.toggleTema = toggleTema;
 window.carregarTema = carregarTema;
 window.atualizarQuantidadePorRange = atualizarQuantidadePorRange;
 window.atualizarQuantidadePorInput = atualizarQuantidadePorInput;
-window.getModoTexto = getModoTexto;
+window.getModoTexto = getModoTexto;  // ← AGORA EXISTE
 
-console.log('✅ UTILS.js carregado (V2.0)');
+console.log('✅ UTILS.js carregado (V2.1)');
