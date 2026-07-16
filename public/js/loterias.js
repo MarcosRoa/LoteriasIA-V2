@@ -1,7 +1,7 @@
 // ============================================
 // CAMINHO: public/js/loterias.js
 // ============================================
-// VERSÃO 4.0 - REFATORADA (SEM CONVERSÃO DESNECESSÁRIA)
+// VERSÃO 5.0 - COMPLETA (RAILWAY + RENDERIZAÇÃO)
 // ============================================
 
 // ============================================
@@ -211,7 +211,7 @@ function getFiltrosAtivos() {
 }
 
 // ============================================
-// ✅ CARREGAR CSV DO RAILWAY (DIRETO, SEM CONVERSÃO)
+// ✅ CARREGAR CSV DO RAILWAY
 // ============================================
 async function carregarCSV(loteria) {
     try {
@@ -255,7 +255,6 @@ async function carregarCSV(loteria) {
             msgExtras = ` (${extras.filter(t => t !== null).length} meses)`;
         }
         
-        // ✅ CORRIGIDO: Definir config antes de usar
         const config = window.LOTERIAS ? window.LOTERIAS[loteria] : null;
         if (config) {
             window.mostrarToast(`${config.nome}: ${numeros.length} concursos carregados!${msgExtras}`, 'success');
@@ -268,8 +267,9 @@ async function carregarCSV(loteria) {
         window.mostrarToast(`Erro ao carregar ${loteria}`, 'error');
     }
 }
+
 // ============================================
-// ✅ PROCESSAR DADOS DO RAILWAY (SEM CONVERSÃO)
+// ✅ PROCESSAR DADOS DO RAILWAY
 // ============================================
 function processarDadosRailway(data, loteria) {
     const config = window.LOTERIAS ? window.LOTERIAS[loteria] : null;
@@ -283,12 +283,8 @@ function processarDadosRailway(data, loteria) {
     const datas = [];
     
     data.dados.forEach(row => {
-        // Extrair números (adaptar conforme formato do Railway)
         const numerosLinha = [];
         let extra = null;
-        
-        // Cada linha tem os campos do CSV
-        // Exemplo: { "Data Sorteio": "19/05/2018", "Bola1": "3", "Bola2": "5", ... }
         
         // 1. Extrair data
         const dataStr = row['Data Sorteio'] || row['Data'] || '';
@@ -296,7 +292,7 @@ function processarDadosRailway(data, loteria) {
             datas.push(dataStr);
         }
         
-        // 2. Extrair números (Bola1 a Bola7)
+        // 2. Extrair números
         for (let i = 1; i <= config.numeros; i++) {
             const bola = row[`Bola${i}`] || row[`Numero${i}`] || row[`N${i}`] || '';
             const num = parseInt(bola);
@@ -305,7 +301,7 @@ function processarDadosRailway(data, loteria) {
             }
         }
         
-        // 3. Extrair elementos extras (Timemania, Dia de Sorte)
+        // 3. Extrair elementos extras
         if (loteria === 'timemania') {
             extra = row['Time'] || row['Time do Coração'] || null;
         } else if (loteria === 'diadesorte') {
@@ -313,7 +309,6 @@ function processarDadosRailway(data, loteria) {
             const numMes = parseInt(mes);
             extra = !isNaN(numMes) && numMes >= 1 && numMes <= 12 ? numMes : null;
         } else if (loteria === 'milionaria') {
-            // Pode ter trevos
             const trevo1 = row['Trevo1'] || row['Trevo 1'] || '';
             const trevo2 = row['Trevo2'] || row['Trevo 2'] || '';
             if (trevo1 && trevo2) {
@@ -321,7 +316,7 @@ function processarDadosRailway(data, loteria) {
             }
         }
         
-        // 4. Ordenar números
+        // 4. Validar e ordenar
         if (numerosLinha.length >= config.numeros) {
             numeros.push(numerosLinha.slice(0, config.numeros).sort((a, b) => a - b));
             extras.push(extra);
@@ -332,7 +327,7 @@ function processarDadosRailway(data, loteria) {
 }
 
 // ============================================
-// ✅ PROCESSAR CSV (APENAS PARA UPLOAD MANUAL)
+// ✅ PROCESSAR CSV (UPLOAD MANUAL)
 // ============================================
 function processarCSV(loteria, texto, nome) {
     const config = window.LOTERIAS ? window.LOTERIAS[loteria] : null;
@@ -679,25 +674,181 @@ function atualizarBotoesPro() {
 }
 
 // ============================================
-// RENDERIZAR CONTEÚDO DA LOTERIA
+// RENDERIZAR CONTEÚDO DA LOTERIA (COMPLETA)
 // ============================================
 function renderizarConteudo(loteria) {
-    // ... (mesmo código de renderização, sem alterações)
-    // Apenas garantir que usa as variáveis corretas
+    const config = window.LOTERIAS[loteria];
     const div = document.getElementById('conteudoLoteria');
     if (!div) return;
     
-    const config = window.LOTERIAS ? window.LOTERIAS[loteria] : null;
-    if (!config) {
-        div.innerHTML = `<div class="mensagem-erro">⚠️ Loteria não encontrada</div>`;
-        return;
+    const cache = cacheDados[loteria] || { carregado: false, dados: [] };
+    const dadosCount = dadosAtuais.length;
+    const dadosFiltradosCount = filtrarDados().length;
+    const datasPeriodo = getDatasPeriodo();
+    
+    let html = `<div class="card"><h3 style="color:${config ? config.cor : '#fff'};">${config ? config.icone : '🎲'} ${config ? config.nome : loteria} - IA V.7.0 PRO</h3>`;
+    
+    if (!cache.carregado) {
+        html += `<div class="mensagem-erro"><strong>⚠️ Nenhum dado!</strong><br>📁 Upload do CSV (pasta /csv/)</div>`;
     }
     
-    // ... resto da renderização (mantido igual)
+    html += `<div style="display:flex;gap:15px;flex-wrap:wrap;margin:15px 0;">
+        <h4>📁 ${dadosCount} concursos</h4>
+        <span id="trainingStatus" class="status-badge ${iaTreinada?'status-ready':'status-error'}">${iaTreinada?'✓ Treinada':'Pendente'}</span>
+        <button class="btn btn-upload" onclick="document.getElementById('uploadManual').click()">📁 Upload CSV</button>
+        <input type="file" id="uploadManual" accept=".csv" onchange="importarArquivo(this,'${loteria}')" style="display:none;">
+    </div>
+    <div class="stats-grid">
+        <div class="stat-card">Concursos: ${dadosCount}</div>
+        <div class="stat-card">Período: ${dadosFiltradosCount}</div>
+        <div class="stat-card">Engine: 🧠 V.7.0 PRO</div>
+    </div>
+    </div>`;
+    
+    html += `<div class="card"><h4>📅 Período (Baseado em data real)</h4>
+    <div class="filtros">
+        <button class="filtro-btn ${periodoSelecionado === 'all' ? 'ativo' : ''}" onclick="window.setPeriodo('all')">Todos</button>
+        <button class="filtro-btn ${periodoSelecionado === 1 ? 'ativo' : ''}" onclick="window.setPeriodo(1)">1 Ano</button>
+        <button class="filtro-btn ${periodoSelecionado === 3 ? 'ativo' : ''}" onclick="window.setPeriodo(3)">3 Anos</button>
+        <button class="filtro-btn ${periodoSelecionado === 5 ? 'ativo' : ''}" onclick="window.setPeriodo(5)">5 Anos</button>
+        <button class="filtro-btn ${periodoSelecionado === 7 ? 'ativo' : ''}" onclick="window.setPeriodo(7)">7 Anos</button>
+        <button class="filtro-btn ${periodoSelecionado === 9 ? 'ativo' : ''}" onclick="window.setPeriodo(9)">9 Anos</button>
+    </div>
+    <p>📊 ${getPeriodoTexto()}</p>
+    <div class="info-periodo">
+        <div class="info-periodo-item">
+            <div class="info-periodo-label">📅 DATA INÍCIO</div>
+            <div class="info-periodo-valor">${datasPeriodo.inicio}</div>
+        </div>
+        <div class="info-periodo-item">
+            <div class="info-periodo-label">📅 DATA FIM</div>
+            <div class="info-periodo-valor">${datasPeriodo.fim}</div>
+        </div>
+    </div>
+    </div>`;
+    
+    const animacaoStatus = iaTreinada ? 'trained' : (isTraining ? 'training' : 'none');
+    let animacaoHtml = '';
+    if (animacaoStatus === 'training') {
+        animacaoHtml = `<div id="iaTrainingAnimation" class="ia-training-animation">
+            <div class="ia-training-text">🧠 INTELIGÊNCIA ARTIFICIAL EM TREINAMENTO...</div>
+            <div class="ia-training-subtext">Analisando padrões e processando dados históricos</div>
+        </div>`;
+    } else if (animacaoStatus === 'trained') {
+        animacaoHtml = `<div id="iaTrainingAnimation" class="ia-training-animation treinado">
+            <div class="ia-training-text treinado">✅ INTELIGÊNCIA ARTIFICIAL TREINADA!</div>
+            <div class="ia-training-subtext">Pronto para gerar palpites com alta precisão</div>
+        </div>`;
+    } else {
+        animacaoHtml = `<div id="iaTrainingAnimation" style="display: none;"></div>`;
+    }
+    
+    html += `<div class="training-section">
+        <h4>🧠 Treinamento da IA</h4>
+        <div style="display:flex;gap:15px;flex-wrap:wrap;">
+            <span id="trainingStatus2" class="status-badge ${iaTreinada?'status-ready':'status-error'}">${iaTreinada?'Treinado ✓':'Não Treinado'}</span>
+            <button class="btn btn-treinar" onclick="window.treinarIAComFiltrosAtuais()">🚀 Treinar IA</button>
+            <button class="btn btn-backtest" onclick="window.executarBacktesting()">🔬 Backtest</button>
+            <button class="btn btn-relatorio" onclick="window.mostrarRelatorioPadroes()">📋 Relatório</button>
+        </div>
+        <div class="training-progress">
+            <div class="training-progress-bar" id="trainingProgressBar" style="width:${iaTreinada?'100%':'0%'};"></div>
+        </div>
+        <div class="training-log" id="trainingLog">${iaTreinada?'✅ IA pronta!':'⏳ Clique em Treinar'}</div>
+        ${animacaoHtml}
+    </div>`;
+    
+    html += `<div id="configVisualizacao" style="background: rgba(56, 189, 248, 0.1); border-radius: 12px; padding: 12px; margin: 15px 0; border-left: 4px solid #38bdf8;">
+        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">📋 CONFIGURAÇÕES ATUAIS:</div>
+        <div id="configTags" style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <span class="filtro-item">⚙️ Aguardando configurações...</span>
+        </div>
+    </div>`;
+    
+    html += `<div class="card"><h4>🎲 Configurar e Gerar Jogos</h4>
+    <div class="config-card-grid">
+        <div>
+            <label class="config-label">📊 Quantidade de Jogos</label>
+            <input type="range" id="qtdRange" class="quantidade-range" min="1" max="20" value="1" oninput="window.atualizarQuantidadePorRange(this.value); window.atualizarVisualizacaoConfiguracoes?.()">
+            <input type="number" id="qtdJogos" class="quantidade-input" value="1" min="1" max="20" oninput="window.atualizarQuantidadePorInput(this.value); window.atualizarVisualizacaoConfiguracoes?.()">
+        </div>
+        <div>
+            <label class="config-label">🎓 Modo de IA</label>
+            <select id="modoGeracao" class="modo-select" onchange="window.atualizarVisualizacaoConfiguracoes?.()">
+                <option value="ia_especialista">🎓 IA Especialista</option>
+                <option value="aleatorio_inteligente">🎲 Aleatório Inteligente</option>
+                <option value="probabilistico">📊 Probabilístico</option>
+                <option value="aleatorio_puro">🎯 Aleatório Puro (RNG)</option>
+            </select>
+        </div>`;
+    
+    if (config && config.temDispersao) {
+        html += `<div>
+            <label class="config-label">🎯 Dispersão</label>
+            <input type="range" id="dispersaoSlider" min="${config.dispersaoMin || 5}" max="${config.dispersaoMax || 30}" value="${dispersaoAtual}" oninput="window.atualizarDispersao(this.value); window.atualizarVisualizacaoConfiguracoes?.()">
+            <div class="dispersao-valor">Bloquear números recentes: <strong id="dispersaoValor">${dispersaoAtual} concursos</strong></div>
+        </div>`;
+    }
+    
+    if (config && config.permiteBolao) {
+        html += `<div>
+            <label class="config-label">⭐ MODO BOLÃO (PRO)</label>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <input type="checkbox" id="modoBolaoCheckbox" onchange="window.toggleModoBolao()" ${!window.appState.isPro ? 'disabled' : ''}>
+                <span style="font-size: 12px; color: var(--text-secondary);">Ativar Bolão</span>
+                ${!window.appState.isPro ? '<span style="font-size: 10px; color: #f59e0b;">⭐ Exclusivo para PRO</span>' : ''}
+            </div>
+        </div>`;
+    }
+    
+    html += `</div>`;
+    
+    if (config && config.permiteBolao) {
+        html += `<div id="bolaoContainer" style="display: none; margin-top: 15px; padding: 15px; background: rgba(139, 92, 246, 0.1); border-radius: 12px; border-left: 4px solid #8b5cf6;">
+            <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
+                <div style="flex: 2; min-width: 200px;">
+                    <label class="config-label">🔢 Quantidade de Números por Jogo</label>
+                    <input type="range" id="qtdNumerosBolao" class="quantidade-range" min="${config.minNumeros || config.jogoSimples}" max="${config.maxNumeros || config.jogoSimples * 2}" value="${config.jogoSimples}" oninput="window.atualizarQuantidadeNumerosBolao(this.value); window.atualizarVisualizacaoConfiguracoes?.()">
+                    <div style="text-align: center; margin-top: 8px;">
+                        <strong id="qtdNumerosValue">${config.jogoSimples}</strong>
+                        <span style="font-size: 12px; color: var(--text-secondary);">números por jogo</span>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+    
+    html += `<button class="btn btn-primary" onclick="window.gerarJogos()" style="margin-top: 20px; width: 100%; max-width: 300px; display: block; margin-left: auto; margin-right: auto;">
+        ${config ? config.icone : '🎲'} GERAR JOGOS (R$ 3,00/jogo)
+    </button>
+    <div id="backtestResultados" style="margin-top:15px;"></div>
+    <div id="resultados" style="margin-top:20px;"></div>
+    </div>`;
+    
+    if (window.REGRAS_OFICIAIS && window.REGRAS_OFICIAIS[loteria]) {
+        html += `<div class="regras-oficiais"><h4>📜 Regras</h4><p>${window.REGRAS_OFICIAIS[loteria]}</p></div>`;
+    }
+    
+    html += `
+    <div class="footer-buttons">
+        <button onclick="window.open('politica.html', '_blank')" style="background: linear-gradient(135deg, #8b5cf6, #06b6d4); border: none; border-radius: 30px; color: white; font-weight: 600; cursor: pointer; padding: 10px 20px;">🔒 Política</button>
+        <button onclick="window.open('sobre.html', '_blank')" style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; border-radius: 30px; color: #1e293b; font-weight: 600; cursor: pointer; padding: 10px 20px;">📖 Sobre Nós</button>
+        <button onclick="window.open('contatos.html', '_blank')" style="background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 30px; color: white; font-weight: 600; cursor: pointer; padding: 10px 20px;">📞 Contatos</button>
+        <button onclick="window.location.href='estatisticas.html'" style="background: linear-gradient(135deg, #ec4899, #8b5cf6); border: none; border-radius: 30px; color: white; font-weight: 600; cursor: pointer; padding: 10px 20px;">📊 Estatísticas</button>
+    </div>
+    <div style="text-align: center; margin-top: 15px; margin-bottom: 20px; font-size: 11px; color: var(--text-secondary);">
+        © 2025 Loterias IA - Sistema Profissional com Inteligência Artificial | Versão 7.0 PRO
+    </div>`;
+    
+    div.innerHTML = html;
+    
+    if (typeof window.atualizarVisualizacaoConfiguracoes === 'function') {
+        setTimeout(() => window.atualizarVisualizacaoConfiguracoes(), 100);
+    }
 }
 
 // ============================================
-// IMPORTAÇÃO MANUAL DE ARQUIVO (MANTIDO)
+// IMPORTAÇÃO MANUAL DE ARQUIVO
 // ============================================
 function importarArquivo(input, loteria) {
     const file = input.files[0];
@@ -775,4 +926,4 @@ window.setDadosAtuais = (dados) => { dadosAtuais = dados; };
 window.setDadosExtrasAtuais = (dados) => { dadosExtrasAtuais = dados; };
 window.setDatasAtuais = (datas) => { datasAtuais = datas; };
 
-console.log('✅ LOTERIAS.js carregado (VERSÃO 4.0 - REFATORADA)');
+console.log('✅ LOTERIAS.js carregado (VERSÃO 5.0 - COMPLETA)');
