@@ -2,16 +2,13 @@
 // CAMINHO: api/generate/index.js
 // ============================================
 // REDIRECIONA PARA O RAILWAY (APENAS IA)
-// VERSÃO 2.0 - COM TIMEOUT E TRATAMENTO DE ERROS
+// VERSÃO 2.1 - CORRIGIDA (COM TIMEOUT)
 // ============================================
 
 const RAILWAY_URL = process.env.RAILWAY_URL || 'https://loterias-ia-core-production.up.railway.app';
 const API_SECRET_KEY = process.env.RAILWAY_API_KEY || 'loterias-ia-2024-segura';
-const TIMEOUT_MS = 20000; // 20 segundos
+const TIMEOUT_MS = 30000; // 30 segundos
 
-// ============================================
-// LOG CONDICIONAL (apenas em desenvolvimento)
-// ============================================
 function log(...args) {
     if (process.env.NODE_ENV !== 'production') {
         console.log(...args);
@@ -19,7 +16,7 @@ function log(...args) {
 }
 
 function logError(...args) {
-    console.error(...args); // Erros sempre devem ser logados
+    console.error(...args);
 }
 
 export default async function handler(req, res) {
@@ -39,13 +36,9 @@ export default async function handler(req, res) {
     try {
         log('📥 /api/generate (proxy) chamado');
 
-        // Buscar o token do header
         const authHeader = req.headers.authorization;
         const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
 
-        // ============================================
-        // 🔥 TIMEOUT COM ABORTCONTROLLER
-        // ============================================
         const controller = new AbortController();
         const timeoutId = setTimeout(() => {
             controller.abort();
@@ -70,16 +63,12 @@ export default async function handler(req, res) {
 
         clearTimeout(timeoutId);
 
-        // ============================================
-        // 🔥 TRATAMENTO DE RESPOSTA (pode ser HTML)
-        // ============================================
         const texto = await response.text();
         let data;
 
         try {
             data = JSON.parse(texto);
         } catch (e) {
-            // Se não for JSON, retorna erro formatado
             logError('⚠️ Railway respondeu com HTML/Texto:', texto.substring(0, 200));
             data = {
                 success: false,
@@ -94,11 +83,8 @@ export default async function handler(req, res) {
         return res.status(response.status).json(data);
 
     } catch (error) {
-        // ============================================
-        // 🔥 TRATAMENTO DE TIMEOUT
-        // ============================================
         if (error.name === 'AbortError') {
-            logError('⏰ Timeout ao chamar o Railway (20s)');
+            logError('⏰ Timeout ao chamar o Railway (30s)');
             return res.status(504).json({
                 success: false,
                 error: 'Tempo limite excedido. O servidor de IA demorou muito para responder.'
