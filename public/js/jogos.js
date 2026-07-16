@@ -88,7 +88,7 @@ async function gerarJogos() {
         const dispersao = window.dispersaoAtual ? window.dispersaoAtual() : 15;
         
         // ✅ CORRIGIDO: NÃO enviar history e extras - o Railway vai buscar os CSVs localmente
-        const response = await fetch('/api/proxy-ia?action=generate', {
+        const response = await fetch('/api/generate', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
