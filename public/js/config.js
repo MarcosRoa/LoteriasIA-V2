@@ -89,8 +89,8 @@ const cacheDados = {};
 const cacheDatas = {};
 
 Object.keys(LOTERIAS).forEach(key => { 
-    cacheDados[key] = { dados: [], carregado: false, nomeArquivo: null }; 
-    cacheDatas[key] = { datas: [] }; 
+    //cacheDados[key] = { dados: [], carregado: false, nomeArquivo: null }; 
+    //cacheDatas[key] = { datas: [] }; 
 });
 
 window.LOTERIAS = LOTERIAS;
