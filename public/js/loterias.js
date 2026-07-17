@@ -32,10 +32,6 @@ let isTraining = false;
 let iaTreinada = false;
 let aiModel = null;
 let filtrosTreinamento = null;
-// ✅ ADICIONAR ESTAS LINHAS
-let debouncePeriodo = null;
-let debounceDispersao = null;
-
 
 // ============================================
 // CACHE (APENAS PARA O FRONTEND)
@@ -215,7 +211,65 @@ function getFiltrosAtivos() {
 }
 
 // ============================================
-// ✅ PROCESSAR DADOS DO RAILWAY (CORRIGIDO)
+// ✅ CARREGAR CSV DO RAILWAY
+// ============================================
+async function carregarCSV(loteria) {
+    try {
+        console.log(`📤 Carregando ${loteria} do Railway...`);
+        const response = await fetch(`https://loterias-ia-core-production.up.railway.app/api/csv/${loteria}`);
+        
+        if (!response.ok) {
+            console.log(`❌ Erro ao carregar ${loteria}: ${response.status}`);
+            return;
+        }
+        
+        const data = await response.json();
+        if (!data.success || !data.dados || data.dados.length === 0) {
+            console.log(`❌ Dados inválidos para ${loteria}`);
+            return;
+        }
+        
+        console.log(`✅ ${loteria} carregado do Railway: ${data.dados.length} registros`);
+        
+        const { numeros, extras, datas } = processarDadosRailway(data, loteria);
+        
+        dadosAtuais = numeros;
+        dadosExtrasAtuais = extras;
+        datasAtuais = datas;
+        
+        cacheDados[loteria] = { dados: numeros, carregado: true };
+        cacheDatas[loteria] = { datas };
+        cacheDadosExtras[loteria] = extras;
+        
+        if (loteriaAtual === loteria) {
+            renderizarConteudo(loteria);
+            if (numeros.length >= 10 && !iaTreinada && !isTraining) {
+                setTimeout(() => window.treinarIAComFiltrosAtuais ? window.treinarIAComFiltrosAtuais() : null, 500);
+            }
+        }
+        
+        let msgExtras = '';
+        if (loteria === 'timemania') {
+            msgExtras = ` (${extras.filter(t => t !== null).length} times)`;
+        } else if (loteria === 'diadesorte') {
+            msgExtras = ` (${extras.filter(t => t !== null).length} meses)`;
+        }
+        
+        const config = window.LOTERIAS ? window.LOTERIAS[loteria] : null;
+        if (config) {
+            window.mostrarToast(`${config.nome}: ${numeros.length} concursos carregados!${msgExtras}`, 'success');
+        } else {
+            window.mostrarToast(`${loteria}: ${numeros.length} concursos carregados!`, 'success');
+        }
+        
+    } catch (error) {
+        console.log(`❌ Erro ao carregar ${loteria} do Railway:`, error);
+        window.mostrarToast(`Erro ao carregar ${loteria}`, 'error');
+    }
+}
+
+// ============================================
+// ✅ PROCESSAR DADOS DO RAILWAY
 // ============================================
 function processarDadosRailway(data, loteria) {
     const config = window.LOTERIAS ? window.LOTERIAS[loteria] : null;
@@ -233,27 +287,14 @@ function processarDadosRailway(data, loteria) {
         let extra = null;
         
         // 1. Extrair data
-        const dataStr = row['Data do Sorteio'] || row['Data Sorteio'] || row['Data'] || '';
+        const dataStr = row['Data Sorteio'] || row['Data'] || '';
         if (dataStr) {
             datas.push(dataStr);
         }
         
-        // 2. Extrair números (com suporte para diferentes formatos)
+        // 2. Extrair números
         for (let i = 1; i <= config.numeros; i++) {
-            let bola = '';
-            
-            // 🔥 CORREÇÃO PARA DUPLA SENA
-            if (loteria === 'duplasena') {
-                // Tenta os diferentes formatos da Dupla Sena
-                bola = row[`Bola${i} sorteio 1`] || 
-                       row[`Bola${i} Sorteio 1`] || 
-                       row[`Bola${i}`] || 
-                       '';
-            } else {
-                // Para as demais loterias
-                bola = row[`Bola${i}`] || row[`Numero${i}`] || row[`N${i}`] || '';
-            }
-            
+            const bola = row[`Bola${i}`] || row[`Numero${i}`] || row[`N${i}`] || '';
             const num = parseInt(bola);
             if (!isNaN(num) && num >= (config.incluirZero ? 0 : 1) && num <= config.maxNumero) {
                 numerosLinha.push(num);
