@@ -284,64 +284,6 @@ function processarDadosRailway(data, loteria) {
     
     return { numeros, extras, datas };
 }
-// ============================================
-// ✅ PROCESSAR DADOS DO RAILWAY
-// ============================================
-function processarDadosRailway(data, loteria) {
-    const config = window.LOTERIAS ? window.LOTERIAS[loteria] : null;
-    if (!config) {
-        console.error(`❌ Configuração não encontrada para: ${loteria}`);
-        return { numeros: [], extras: [], datas: [] };
-    }
-    
-    const numeros = [];
-    const extras = [];
-    const datas = [];
-    
-    data.dados.forEach(row => {
-        const numerosLinha = [];
-        let extra = null;
-        
-        // 1. Extrair data
-        //const dataStr = row['Data Sorteio'] || row['Data'] || '';
-        const dataStr = row['Data do Sorteio'] || row['Data Sorteio'] || row['Data'] || '';
-        if (dataStr) {
-            datas.push(dataStr);
-        }
-        
-        // 2. Extrair números
-        for (let i = 1; i <= config.numeros; i++) {
-            const bola = row[`Bola${i}`] || row[`Numero${i}`] || row[`N${i}`] || '';
-            const num = parseInt(bola);
-            if (!isNaN(num) && num >= (config.incluirZero ? 0 : 1) && num <= config.maxNumero) {
-                numerosLinha.push(num);
-            }
-        }
-        
-        // 3. Extrair elementos extras
-        if (loteria === 'timemania') {
-            extra = row['Time'] || row['Time do Coração'] || null;
-        } else if (loteria === 'diadesorte') {
-            const mes = row['Mes da Sorte'] || row['Mes'] || '';
-            const numMes = parseInt(mes);
-            extra = !isNaN(numMes) && numMes >= 1 && numMes <= 12 ? numMes : null;
-        } else if (loteria === 'milionaria') {
-            const trevo1 = row['Trevo1'] || row['Trevo 1'] || '';
-            const trevo2 = row['Trevo2'] || row['Trevo 2'] || '';
-            if (trevo1 && trevo2) {
-                extra = { trevos: [parseInt(trevo1), parseInt(trevo2)] };
-            }
-        }
-        
-        // 4. Validar e ordenar
-        if (numerosLinha.length >= config.numeros) {
-            numeros.push(numerosLinha.slice(0, config.numeros).sort((a, b) => a - b));
-            extras.push(extra);
-        }
-    });
-    
-    return { numeros, extras, datas };
-}
 
 // ============================================
 // ✅ PROCESSAR CSV (UPLOAD MANUAL)
