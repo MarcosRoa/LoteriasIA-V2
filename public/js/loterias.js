@@ -32,6 +32,10 @@ let isTraining = false;
 let iaTreinada = false;
 let aiModel = null;
 let filtrosTreinamento = null;
+// ✅ ADICIONAR ESTAS LINHAS
+let debouncePeriodo = null;
+let debounceDispersao = null;
+
 
 // ============================================
 // CACHE (APENAS PARA O FRONTEND)
