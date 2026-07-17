@@ -1,7 +1,7 @@
 // ============================================
 // CAMINHO: public/js/loterias.js
 // ============================================
-// VERSÃO 5.0 - COMPLETA (RAILWAY + RENDERIZAÇÃO)
+// VERSÃO 6.0 - COMPLETA (RAILWAY + BOTÕES IA MODERNOS)
 // ============================================
 
 // ============================================
@@ -674,7 +674,7 @@ function atualizarBotoesPro() {
 }
 
 // ============================================
-// RENDERIZAR CONTEÚDO DA LOTERIA (COMPLETA)
+// RENDERIZAR CONTEÚDO DA LOTERIA (COMPLETA + BOTÕES IA MODERNOS)
 // ============================================
 function renderizarConteudo(loteria) {
     const config = window.LOTERIAS[loteria];
@@ -685,6 +685,7 @@ function renderizarConteudo(loteria) {
     const dadosCount = dadosAtuais.length;
     const dadosFiltradosCount = filtrarDados().length;
     const datasPeriodo = getDatasPeriodo();
+    const isPro = window.appState.isPro || false;
     
     let html = `<div class="card"><h3 style="color:${config ? config.cor : '#fff'};">${config ? config.icone : '🎲'} ${config ? config.nome : loteria} - IA V.7.0 PRO</h3>`;
     
@@ -766,20 +767,42 @@ function renderizarConteudo(loteria) {
     </div>`;
     
     html += `<div class="card"><h4>🎲 Configurar e Gerar Jogos</h4>
+    
+    <!-- ============================================
+         BOTÕES DE IA - VERSÃO MODERNA
+    ============================================ -->
+    <label class="config-label-ia">🤖 Selecione o Motor de IA</label>
+    <div class="ia-selector-container" id="iaSelectorCard">
+        <button class="ia-btn" data-ia="statistical" title="Análise de frequência, atraso e dispersão">
+            📊 Estatística
+        </button>
+        <button class="ia-btn" data-ia="hybrid" title="Combina estatística, probabilidade e tendência">
+            🧠 Híbrida
+            <span class="badge-free">REC</span>
+        </button>
+        <button class="ia-btn" data-ia="specialist" title="Avalia e seleciona os melhores jogos">
+            🎯 Especialista
+        </button>
+        <button class="ia-btn" data-ia="smartrandom" title="Aleatório com ponderação estatística">
+            🎲 Aleatório
+        </button>
+        <button class="ia-btn pro-only" data-ia="probability" title="${isPro ? 'Distribuição binomial, entropia e variância' : '🔒 Exclusivo PRO'}">
+            📈 Probabilística
+            <span class="badge-pro">⭐PRO</span>
+        </button>
+        <button class="ia-btn pro-only" data-ia="predictive" title="${isPro ? 'Detecta padrões e tenta prever os próximos números' : '🔒 Exclusivo PRO'}">
+            🔮 Preditiva
+            <span class="badge-pro">⭐PRO</span>
+        </button>
+    </div>
+    
+    <hr style="border-color: var(--border); margin: 15px 0;">
+    
     <div class="config-card-grid">
         <div>
             <label class="config-label">📊 Quantidade de Jogos</label>
             <input type="range" id="qtdRange" class="quantidade-range" min="1" max="20" value="1" oninput="window.atualizarQuantidadePorRange(this.value); window.atualizarVisualizacaoConfiguracoes?.()">
             <input type="number" id="qtdJogos" class="quantidade-input" value="1" min="1" max="20" oninput="window.atualizarQuantidadePorInput(this.value); window.atualizarVisualizacaoConfiguracoes?.()">
-        </div>
-        <div>
-            <label class="config-label">🎓 Modo de IA</label>
-            <select id="modoGeracao" class="modo-select" onchange="window.atualizarVisualizacaoConfiguracoes?.()">
-                <option value="ia_especialista">🎓 IA Especialista</option>
-                <option value="aleatorio_inteligente">🎲 Aleatório Inteligente</option>
-                <option value="probabilistico">📊 Probabilístico</option>
-                <option value="aleatorio_puro">🎯 Aleatório Puro (RNG)</option>
-            </select>
         </div>`;
     
     if (config && config.temDispersao) {
@@ -794,9 +817,9 @@ function renderizarConteudo(loteria) {
         html += `<div>
             <label class="config-label">⭐ MODO BOLÃO (PRO)</label>
             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <input type="checkbox" id="modoBolaoCheckbox" onchange="window.toggleModoBolao()" ${!window.appState.isPro ? 'disabled' : ''}>
+                <input type="checkbox" id="modoBolaoCheckbox" onchange="window.toggleModoBolao()" ${!isPro ? 'disabled' : ''}>
                 <span style="font-size: 12px; color: var(--text-secondary);">Ativar Bolão</span>
-                ${!window.appState.isPro ? '<span style="font-size: 10px; color: #f59e0b;">⭐ Exclusivo para PRO</span>' : ''}
+                ${!isPro ? '<span style="font-size: 10px; color: #f59e0b;">⭐ Exclusivo para PRO</span>' : ''}
             </div>
         </div>`;
     }
@@ -841,6 +864,31 @@ function renderizarConteudo(loteria) {
     </div>`;
     
     div.innerHTML = html;
+    
+    // ============================================
+    // DELEGAÇÃO DE EVENTOS PARA OS BOTÕES IA
+    // ============================================
+    const container = document.getElementById('iaSelectorCard');
+    if (container) {
+        container.removeEventListener('click', window._iaClickHandler);
+        window._iaClickHandler = function(e) {
+            const btn = e.target.closest('.ia-btn');
+            if (!btn) return;
+            const ia = btn.dataset.ia;
+            if (!ia) return;
+            if (btn.classList.contains('pro-only')) {
+                const isProUser = window.appState.isPro || false;
+                if (!isProUser) {
+                    window.mostrarToast('⭐ Essa IA é exclusiva para assinantes PRO!', 'warning');
+                    return;
+                }
+            }
+            window.setIAAtual(ia);
+        };
+        container.addEventListener('click', window._iaClickHandler);
+    }
+    
+    sincronizarIASelecionada();
     
     if (typeof window.atualizarVisualizacaoConfiguracoes === 'function') {
         setTimeout(() => window.atualizarVisualizacaoConfiguracoes(), 100);
@@ -926,4 +974,4 @@ window.setDadosAtuais = (dados) => { dadosAtuais = dados; };
 window.setDadosExtrasAtuais = (dados) => { dadosExtrasAtuais = dados; };
 window.setDatasAtuais = (datas) => { datasAtuais = datas; };
 
-console.log('✅ LOTERIAS.js carregado (VERSÃO 5.0 - COMPLETA)');
+console.log('✅ LOTERIAS.js carregado (VERSÃO 6.0 - COMPLETA)');
