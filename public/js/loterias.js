@@ -275,6 +275,9 @@ async function carregarCSV(loteria) {
 // ============================================
 // ✅ PROCESSAR DADOS DO RAILWAY
 // ============================================
+// ============================================
+// ✅ PROCESSAR DADOS DO RAILWAY (CORRIGIDO - FINAL)
+// ============================================
 function processarDadosRailway(data, loteria) {
     const config = window.LOTERIAS ? window.LOTERIAS[loteria] : null;
     if (!config) {
@@ -287,49 +290,200 @@ function processarDadosRailway(data, loteria) {
     const datas = [];
     
     data.dados.forEach(row => {
-        const numerosLinha = [];
-        let extra = null;
+        // 1. Extrair data (UMA VEZ POR CONCURSO)
+        const dataStr = row['Data do Sorteio'] || row['Data Sorteio'] || row['Data'] || '';
         
-        // 1. Extrair data
-        const dataStr = row['Data Sorteio'] || row['Data'] || '';
-        if (dataStr) {
-            datas.push(dataStr);
-        }
-        
-        // 2. Extrair números
-        for (let i = 1; i <= config.numeros; i++) {
-            const bola = row[`Bola${i}`] || row[`Numero${i}`] || row[`N${i}`] || '';
-            const num = parseInt(bola);
-            if (!isNaN(num) && num >= (config.incluirZero ? 0 : 1) && num <= config.maxNumero) {
-                numerosLinha.push(num);
+        // ============================================
+        // 🔥 DUPLA SENA - DOIS SORTEIOS POR CONCURSO
+        // ============================================
+        if (loteria === 'duplasena') {
+            // Sorteio 1
+            const numerosSorteio1 = [];
+            for (let i = 1; i <= config.numeros; i++) {
+                const bola = row[`Bola${i} sorteio 1`] || row[`Bola${i} Sorteio 1`] || '';
+                const num = parseInt(bola);
+                if (!isNaN(num) && num >= 1 && num <= config.maxNumero) {
+                    numerosSorteio1.push(num);
+                }
+            }
+            
+            // Sorteio 2
+            const numerosSorteio2 = [];
+            for (let i = 1; i <= config.numeros; i++) {
+                const bola = row[`Bola${i} sorteio 2`] || row[`Bola${i} Sorteio 2`] || '';
+                const num = parseInt(bola);
+                if (!isNaN(num) && num >= 1 && num <= config.maxNumero) {
+                    numerosSorteio2.push(num);
+                }
+            }
+            
+            // ✅ ADICIONAR SORTEIO 1 (com data)
+            if (numerosSorteio1.length >= config.numeros && dataStr) {
+                numeros.push(numerosSorteio1.slice(0, config.numeros).sort((a, b) => a - b));
+                extras.push(null);
+                datas.push(dataStr);  // ← MESMA DATA
+            }
+            
+            // ✅ ADICIONAR SORTEIO 2 (com a MESMA data)
+            if (numerosSorteio2.length >= config.numeros && dataStr) {
+                numeros.push(numerosSorteio2.slice(0, config.numeros).sort((a, b) => a - b));
+                extras.push(null);
+                datas.push(dataStr);  // ← MESMA DATA
             }
         }
         
-        // 3. Extrair elementos extras
-        if (loteria === 'timemania') {
-            extra = row['Time'] || row['Time do Coração'] || null;
-        } else if (loteria === 'diadesorte') {
+        // ============================================
+        // 🔥 LOTECA - 14 JOGOS
+        // ============================================
+        else if (loteria === 'loteca') {
+            const numerosLinha = [];
+            for (let i = 1; i <= config.numeros; i++) {
+                const bola = row[`Jogo ${i}`] || row[`Jogo${i}`] || '';
+                // Converter "Coluna 1" → 1, "Coluna do meio" → 0, "Coluna 2" → 2
+                if (bola === 'Coluna 1') {
+                    numerosLinha.push(1);
+                } else if (bola === 'Coluna do meio') {
+                    numerosLinha.push(0);
+                } else if (bola === 'Coluna 2') {
+                    numerosLinha.push(2);
+                } else {
+                    const num = parseInt(bola);
+                    if (!isNaN(num) && num >= 0 && num <= 2) {
+                        numerosLinha.push(num);
+                    }
+                }
+            }
+            
+            if (numerosLinha.length >= config.numeros && dataStr) {
+                numeros.push(numerosLinha.slice(0, config.numeros)); // Mantém ordem original
+                extras.push(null);
+                datas.push(dataStr);
+            }
+        }
+        
+        // ============================================
+        // 🔥 SUPER SETE - 7 COLUNAS (0-9)
+        // ============================================
+        else if (loteria === 'supersete') {
+            const numerosLinha = [];
+            for (let i = 1; i <= config.numeros; i++) {
+                const bola = row[`Coluna ${i}`] || row[`Coluna${i}`] || row[`Bola${i}`] || '';
+                const num = parseInt(bola);
+                if (!isNaN(num) && num >= 0 && num <= 9) {
+                    numerosLinha.push(num);
+                }
+            }
+            
+            if (numerosLinha.length >= config.numeros && dataStr) {
+                numeros.push(numerosLinha.slice(0, config.numeros)); // Mantém ordem original
+                extras.push(null);
+                datas.push(dataStr);
+            }
+        }
+        
+        // ============================================
+        // 🔥 TIMEMANIA - 7 NÚMEROS + TIME
+        // ============================================
+        else if (loteria === 'timemania') {
+            const numerosLinha = [];
+            let extra = null;
+            
+            for (let i = 1; i <= config.numeros; i++) {
+                const bola = row[`Bola${i}`] || row[`Numero${i}`] || row[`N${i}`] || '';
+                const num = parseInt(bola);
+                if (!isNaN(num) && num >= 1 && num <= config.maxNumero) {
+                    numerosLinha.push(num);
+                }
+            }
+            
+            extra = row['Time Coração'] || row['Time'] || row['Time do Coração'] || null;
+            
+            if (numerosLinha.length >= config.numeros && dataStr) {
+                numeros.push(numerosLinha.slice(0, config.numeros).sort((a, b) => a - b));
+                extras.push(extra);
+                datas.push(dataStr);
+            }
+        }
+        
+        // ============================================
+        // 🔥 DIA DE SORTE - 7 NÚMEROS + MÊS
+        // ============================================
+        else if (loteria === 'diadesorte') {
+            const numerosLinha = [];
+            let extra = null;
+            
+            for (let i = 1; i <= config.numeros; i++) {
+                const bola = row[`Bola${i}`] || row[`Numero${i}`] || row[`N${i}`] || '';
+                const num = parseInt(bola);
+                if (!isNaN(num) && num >= 1 && num <= config.maxNumero) {
+                    numerosLinha.push(num);
+                }
+            }
+            
             const mes = row['Mes da Sorte'] || row['Mes'] || '';
             const numMes = parseInt(mes);
             extra = !isNaN(numMes) && numMes >= 1 && numMes <= 12 ? numMes : null;
-        } else if (loteria === 'milionaria') {
+            
+            if (numerosLinha.length >= config.numeros && dataStr) {
+                numeros.push(numerosLinha.slice(0, config.numeros).sort((a, b) => a - b));
+                extras.push(extra);
+                datas.push(dataStr);
+            }
+        }
+        
+        // ============================================
+        // 🔥 +MILIONÁRIA - 6 NÚMEROS + 2 TREVOS
+        // ============================================
+        else if (loteria === 'milionaria') {
+            const numerosLinha = [];
+            let extra = null;
+            
+            for (let i = 1; i <= config.numeros; i++) {
+                const bola = row[`Bola${i}`] || row[`Numero${i}`] || row[`N${i}`] || '';
+                const num = parseInt(bola);
+                if (!isNaN(num) && num >= 1 && num <= config.maxNumero) {
+                    numerosLinha.push(num);
+                }
+            }
+            
             const trevo1 = row['Trevo1'] || row['Trevo 1'] || '';
             const trevo2 = row['Trevo2'] || row['Trevo 2'] || '';
             if (trevo1 && trevo2) {
                 extra = { trevos: [parseInt(trevo1), parseInt(trevo2)] };
             }
+            
+            if (numerosLinha.length >= config.numeros && dataStr) {
+                numeros.push(numerosLinha.slice(0, config.numeros).sort((a, b) => a - b));
+                extras.push(extra);
+                datas.push(dataStr);
+            }
         }
         
-        // 4. Validar e ordenar
-        if (numerosLinha.length >= config.numeros) {
-            numeros.push(numerosLinha.slice(0, config.numeros).sort((a, b) => a - b));
-            extras.push(extra);
+        // ============================================
+        // 🔥 DEMAIS LOTERIAS (Mega-Sena, Quina, Lotofácil, Lotomania)
+        // ============================================
+        else {
+            const numerosLinha = [];
+            let extra = null;
+            
+            for (let i = 1; i <= config.numeros; i++) {
+                const bola = row[`Bola${i}`] || row[`Numero${i}`] || row[`N${i}`] || '';
+                const num = parseInt(bola);
+                if (!isNaN(num) && num >= (config.incluirZero ? 0 : 1) && num <= config.maxNumero) {
+                    numerosLinha.push(num);
+                }
+            }
+            
+            if (numerosLinha.length >= config.numeros && dataStr) {
+                numeros.push(numerosLinha.slice(0, config.numeros).sort((a, b) => a - b));
+                extras.push(null);
+                datas.push(dataStr);
+            }
         }
     });
     
     return { numeros, extras, datas };
 }
-
 // ============================================
 // ✅ PROCESSAR CSV (UPLOAD MANUAL)
 // ============================================
