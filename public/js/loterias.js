@@ -215,63 +215,75 @@ function getFiltrosAtivos() {
 }
 
 // ============================================
-// ✅ CARREGAR CSV DO RAILWAY
+// ✅ PROCESSAR DADOS DO RAILWAY (CORRIGIDO)
 // ============================================
-async function carregarCSV(loteria) {
-    try {
-        console.log(`📤 Carregando ${loteria} do Railway...`);
-        const response = await fetch(`https://loterias-ia-core-production.up.railway.app/api/csv/${loteria}`);
+function processarDadosRailway(data, loteria) {
+    const config = window.LOTERIAS ? window.LOTERIAS[loteria] : null;
+    if (!config) {
+        console.error(`❌ Configuração não encontrada para: ${loteria}`);
+        return { numeros: [], extras: [], datas: [] };
+    }
+    
+    const numeros = [];
+    const extras = [];
+    const datas = [];
+    
+    data.dados.forEach(row => {
+        const numerosLinha = [];
+        let extra = null;
         
-        if (!response.ok) {
-            console.log(`❌ Erro ao carregar ${loteria}: ${response.status}`);
-            return;
+        // 1. Extrair data
+        const dataStr = row['Data do Sorteio'] || row['Data Sorteio'] || row['Data'] || '';
+        if (dataStr) {
+            datas.push(dataStr);
         }
         
-        const data = await response.json();
-        if (!data.success || !data.dados || data.dados.length === 0) {
-            console.log(`❌ Dados inválidos para ${loteria}`);
-            return;
-        }
-        
-        console.log(`✅ ${loteria} carregado do Railway: ${data.dados.length} registros`);
-        
-        const { numeros, extras, datas } = processarDadosRailway(data, loteria);
-        
-        dadosAtuais = numeros;
-        dadosExtrasAtuais = extras;
-        datasAtuais = datas;
-        
-        cacheDados[loteria] = { dados: numeros, carregado: true };
-        cacheDatas[loteria] = { datas };
-        cacheDadosExtras[loteria] = extras;
-        
-        if (loteriaAtual === loteria) {
-            renderizarConteudo(loteria);
-            if (numeros.length >= 10 && !iaTreinada && !isTraining) {
-                setTimeout(() => window.treinarIAComFiltrosAtuais ? window.treinarIAComFiltrosAtuais() : null, 500);
+        // 2. Extrair números (com suporte para diferentes formatos)
+        for (let i = 1; i <= config.numeros; i++) {
+            let bola = '';
+            
+            // 🔥 CORREÇÃO PARA DUPLA SENA
+            if (loteria === 'duplasena') {
+                // Tenta os diferentes formatos da Dupla Sena
+                bola = row[`Bola${i} sorteio 1`] || 
+                       row[`Bola${i} Sorteio 1`] || 
+                       row[`Bola${i}`] || 
+                       '';
+            } else {
+                // Para as demais loterias
+                bola = row[`Bola${i}`] || row[`Numero${i}`] || row[`N${i}`] || '';
+            }
+            
+            const num = parseInt(bola);
+            if (!isNaN(num) && num >= (config.incluirZero ? 0 : 1) && num <= config.maxNumero) {
+                numerosLinha.push(num);
             }
         }
         
-        let msgExtras = '';
+        // 3. Extrair elementos extras
         if (loteria === 'timemania') {
-            msgExtras = ` (${extras.filter(t => t !== null).length} times)`;
+            extra = row['Time'] || row['Time do Coração'] || null;
         } else if (loteria === 'diadesorte') {
-            msgExtras = ` (${extras.filter(t => t !== null).length} meses)`;
+            const mes = row['Mes da Sorte'] || row['Mes'] || '';
+            const numMes = parseInt(mes);
+            extra = !isNaN(numMes) && numMes >= 1 && numMes <= 12 ? numMes : null;
+        } else if (loteria === 'milionaria') {
+            const trevo1 = row['Trevo1'] || row['Trevo 1'] || '';
+            const trevo2 = row['Trevo2'] || row['Trevo 2'] || '';
+            if (trevo1 && trevo2) {
+                extra = { trevos: [parseInt(trevo1), parseInt(trevo2)] };
+            }
         }
         
-        const config = window.LOTERIAS ? window.LOTERIAS[loteria] : null;
-        if (config) {
-            window.mostrarToast(`${config.nome}: ${numeros.length} concursos carregados!${msgExtras}`, 'success');
-        } else {
-            window.mostrarToast(`${loteria}: ${numeros.length} concursos carregados!`, 'success');
+        // 4. Validar e ordenar
+        if (numerosLinha.length >= config.numeros) {
+            numeros.push(numerosLinha.slice(0, config.numeros).sort((a, b) => a - b));
+            extras.push(extra);
         }
-        
-    } catch (error) {
-        console.log(`❌ Erro ao carregar ${loteria} do Railway:`, error);
-        window.mostrarToast(`Erro ao carregar ${loteria}`, 'error');
-    }
+    });
+    
+    return { numeros, extras, datas };
 }
-
 // ============================================
 // ✅ PROCESSAR DADOS DO RAILWAY
 // ============================================
