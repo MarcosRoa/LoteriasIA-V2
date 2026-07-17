@@ -287,7 +287,8 @@ function processarDadosRailway(data, loteria) {
         let extra = null;
         
         // 1. Extrair data
-        const dataStr = row['Data Sorteio'] || row['Data'] || '';
+        //const dataStr = row['Data Sorteio'] || row['Data'] || '';
+        const dataStr = row['Data do Sorteio'] || row['Data Sorteio'] || row['Data'] || '';
         if (dataStr) {
             datas.push(dataStr);
         }
