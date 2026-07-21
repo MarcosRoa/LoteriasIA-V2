@@ -1,6 +1,6 @@
 // services/GenerateService.ts
 // ============================================
-// VERSÃO COMPLETA - COM RESERVA E ESTORNO
+// VERSÃO CORRIGIDA - ESTORNO APENAS SE IA FALHAR
 // ============================================
 
 import { CreditsService } from './CreditsService';
@@ -18,6 +18,16 @@ export interface GenerateRequest {
     filters?: any;
 }
 
+export interface GenerateResponse {
+    games: number[][];
+    creditsSpent: number;
+    creditsRemaining: number;
+    mode: string;
+    engineName: string;
+    confidence: number;
+    explanation: string[];
+}
+
 export class GenerateService {
     private creditsService: CreditsService;
     private gameRepository: GameRepository;
@@ -29,7 +39,7 @@ export class GenerateService {
         this.railwayClient = new RailwayClient();
     }
 
-    async generateGames(request: GenerateRequest) {
+    async generateGames(request: GenerateRequest): Promise<GenerateResponse> {
         const { uid, lottery, quantity, method = 'hybrid', extraNumbers = 0, filters = {} } = request;
 
         console.log(`🔍 GenerateService: uid=${uid}, lottery=${lottery}, quantity=${quantity}`);
@@ -71,11 +81,12 @@ export class GenerateService {
             console.log(`🔒 Créditos reservados: ${custoTotal}, Saldo: ${novoSaldo}`);
         }
 
+        // ============================================
+        // 5. CHAMAR RAILWAY (IA)
+        // ============================================
+        let result;
         try {
-            // ============================================
-            // 5. CHAMAR RAILWAY
-            // ============================================
-            const result = await this.railwayClient.generateGames({
+            result = await this.railwayClient.generateGames({
                 lotteryType: lottery,
                 count: quantity,
                 method: method,
@@ -83,40 +94,10 @@ export class GenerateService {
                 extraNumbers: numerosPorJogo,
                 filters
             });
-
-            console.log(`✅ ${result.games?.length || 0} jogos gerados`);
-
-            // ============================================
-            // 6. CONFIRMAR RESERVA
-            // ============================================
-            if (custoTotal > 0) {
-                await this.creditsService.confirmReservation(uid, custoTotal, referenceId);
-                console.log(`✅ Desconto confirmado: ${custoTotal}`);
-            }
-
-            // ============================================
-            // 7. SALVAR HISTÓRICO
-            // ============================================
-            const jogos = result.games || [];
-            if (jogos.length > 0) {
-                await this.gameRepository.saveMany(uid, lottery, jogos, method, numerosPorJogo, custoPorJogo);
-                console.log(`📝 ${jogos.length} jogos salvos`);
-            }
-
-            return {
-                games: jogos,
-                creditsSpent: custoTotal,
-                creditsRemaining: novoSaldo,
-                mode: method,
-                engineName: result.engineName || 'IA',
-                confidence: result.confidence || 0,
-                explanation: result.explanation || []
-            };
-
         } catch (error) {
-            // ============================================
-            // 8. ESTORNAR RESERVA (ROLLBACK)
-            // ============================================
+            // ✅ SÓ ESTORNA SE A IA FALHAR
+            console.error('❌ Railway falhou:', error);
+            
             if (custoTotal > 0) {
                 try {
                     await this.creditsService.refundReservation(uid, custoTotal, referenceId);
@@ -127,5 +108,43 @@ export class GenerateService {
             }
             throw error;
         }
+
+        console.log(`✅ ${result.games?.length || 0} jogos gerados`);
+
+        // ============================================
+        // 6. CONFIRMAR RESERVA (APÓS IA OK)
+        // ============================================
+        if (custoTotal > 0) {
+            await this.creditsService.confirmReservation(uid, custoTotal, referenceId);
+            console.log(`✅ Desconto confirmado: ${custoTotal}`);
+        }
+
+        // ============================================
+        // 7. SALVAR HISTÓRICO (NÃO ESTORNA SE FALHAR)
+        // ============================================
+        const jogos = result.games || [];
+        if (jogos.length > 0) {
+            try {
+                await this.gameRepository.saveMany(uid, lottery, jogos, method, numerosPorJogo, custoPorJogo);
+                console.log(`📝 ${jogos.length} jogos salvos`);
+            } catch (saveError) {
+                // ⚠️ NÃO ESTORNAR! O usuário já recebeu os jogos
+                console.error('❌ Erro ao salvar histórico:', saveError);
+                // Apenas log, não estorna
+            }
+        }
+
+        // ============================================
+        // 8. RETORNAR RESPOSTA
+        // ============================================
+        return {
+            games: jogos,
+            creditsSpent: custoTotal,
+            creditsRemaining: novoSaldo,
+            mode: method,
+            engineName: result.engineName || 'IA',
+            confidence: result.confidence || 0,
+            explanation: result.explanation || []
+        };
     }
 }
