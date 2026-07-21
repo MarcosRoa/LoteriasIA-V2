@@ -2,7 +2,7 @@
 // CAMINHO: api/generate/index.js
 // ============================================
 
-import { GenerateService } from '../../dist/services/GenerateService.js';
+import { GenerateService } from '../../services/GenerateService.js';
 
 export default async function handler(req, res) {
     // CORS (já está no vercel.json, mas mantido por segurança)
