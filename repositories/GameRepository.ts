@@ -25,7 +25,7 @@ export class GameRepository {
         return data;
     }
 
-    // ✅ NOVO: SALVAR EM LOTE
+    // ✅ SALVAR EM LOTE
     async saveMany(userUid: string, lottery: string, games: number[][], mode: string, extraNumbers: number, cost: number): Promise<JogoGerado[]> {
         if (!games || games.length === 0) return [];
 
