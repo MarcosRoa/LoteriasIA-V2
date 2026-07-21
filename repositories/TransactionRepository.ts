@@ -34,7 +34,7 @@ export class TransactionRepository {
         return data;
     }
 
-    // ✅ NOVO: ATUALIZAR STATUS DA TRANSAÇÃO
+    // ✅ ATUALIZAR STATUS DA TRANSAÇÃO (para reservas)
     async updateStatus(referenceId: string, status: string): Promise<void> {
         const { error } = await supabase
             .from('transacoes')
