@@ -1,6 +1,6 @@
 // clients/RailwayClient.ts
 // ============================================
-// VERSÃO CORRIGIDA - SEM getConfig()
+// CLIENTE PARA COMUNICAÇÃO COM O RAILWAY (IA PURA)
 // ============================================
 
 import { env } from '../core/config/env';
@@ -22,8 +22,10 @@ export class RailwayClient {
         extraNumbers: number;
         filters: any;
     }) {
+        console.log(`📤 RailwayClient: chamando Railway para ${params.lotteryType}`);
+
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), env.railwayTimeout);
+        const timeoutId = setTimeout(() => controller.abort(), env.railwayTimeout || 30000);
 
         try {
             const response = await fetch(`${this.url}/api/generate`, {
@@ -32,27 +34,38 @@ export class RailwayClient {
                     'Content-Type': 'application/json',
                     'x-api-key': this.apiKey
                 },
-                body: JSON.stringify(params),
+                body: JSON.stringify({
+                    lotteryType: params.lotteryType,
+                    count: params.count,
+                    method: params.method,
+                    extraNumbers: params.extraNumbers,
+                    filters: params.filters || {}
+                }),
                 signal: controller.signal
             });
 
-            if (!response.ok) {
-                // ✅ Separar erros: 404 = inválida, 500 = servidor
-                if (response.status === 404) {
-                    throw new Error(`Loteria não encontrada no Railway: ${params.lotteryType}`);
-                }
-                if (response.status === 500) {
-                    throw new Error('Servidor de IA indisponível. Tente novamente mais tarde.');
-                }
-                const errorText = await response.text();
-                throw new Error(`Railway error: ${response.status} - ${errorText.substring(0, 200)}`);
+            clearTimeout(timeoutId);
+
+            // ✅ TRATAR RESPOSTA (pode ser HTML)
+            const texto = await response.text();
+            let data;
+
+            try {
+                data = JSON.parse(texto);
+            } catch {
+                console.error('⚠️ Railway respondeu com HTML/Texto:', texto.substring(0, 200));
+                throw new Error(`Resposta inválida do servidor de IA: ${texto.substring(0, 200)}`);
             }
 
-            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || `Railway error: ${response.status}`);
+            }
 
             if (!data.success) {
                 throw new Error(data.error || 'Railway returned success: false');
             }
+
+            console.log(`✅ RailwayClient: ${data.games?.length || 0} jogos recebidos`);
 
             return {
                 games: data.games || [],
