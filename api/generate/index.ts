@@ -1,9 +1,10 @@
-import { GameRepository } from '../../repositories/GameRepository';
+import { env } from '../../core/config/env';
 
 export default async function handler(req, res) {
-    new GameRepository();
-
     return res.status(200).json({
-        ok: "GameRepository"
+        node: env.nodeEnv,
+        railway: env.railwayUrl,
+        hasSupabaseUrl: !!env.supabaseUrl,
+        hasServiceKey: !!env.supabaseServiceKey
     });
 }
