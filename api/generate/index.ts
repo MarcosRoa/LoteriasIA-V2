@@ -1,11 +1,9 @@
-import { CreditsService } from '../../services/CreditsService';
+import { RailwayClient } from '../../clients/RailwayClient';
 
 export default async function handler(req, res) {
+    new RailwayClient();
 
-    new CreditsService();
-
-    return res.json({
-        ok: "Credits"
+    return res.status(200).json({
+        ok: "Railway"
     });
-
 }
