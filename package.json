@@ -3,7 +3,7 @@
     "version": "2.0.0",
     "type": "module",
     "scripts": {
-        "type": "module",
+        "build": "tsc",
         "start": "node dist/api/generate/index.js"
     },
     "dependencies": {
