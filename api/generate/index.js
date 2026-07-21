@@ -1,14 +1,11 @@
 // ============================================
 // CAMINHO: api/generate/index.js
 // ============================================
-// ORQUESTRADOR COMPLETO (Vercel = Negócio, Railway = IA)
-// VERSÃO 3.3 - CORRIGIDA
-// ============================================
 
-import { GenerateService } from '../../services/GenerateService';
+import { GenerateService } from '../../dist/services/GenerateService.js';
 
 export default async function handler(req, res) {
-    // CORS
+    // CORS (já está no vercel.json, mas mantido por segurança)
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -22,11 +19,8 @@ export default async function handler(req, res) {
     }
 
     try {
-        console.log('📥 /api/generate (orquestrador) chamado');
+        console.log('📥 /api/generate chamado');
 
-        // ============================================
-        // 1. EXTRAIR DADOS
-        // ============================================
         const {
             lotteryType,
             count = 1,
@@ -35,7 +29,6 @@ export default async function handler(req, res) {
             extraNumbers
         } = req.body;
 
-        // ✅ UID vem do Firebase (header)
         const uid = req.headers['x-user-id'] || req.body?.uid;
 
         if (!uid) {
@@ -45,9 +38,6 @@ export default async function handler(req, res) {
             });
         }
 
-        // ============================================
-        // 2. CHAMAR GENERATE SERVICE
-        // ============================================
         const generateService = new GenerateService();
         
         const result = await generateService.generateGames({
@@ -59,9 +49,6 @@ export default async function handler(req, res) {
             filters
         });
 
-        // ============================================
-        // 3. RETORNAR RESPOSTA
-        // ============================================
         return res.status(200).json({
             success: true,
             games: result.games,
@@ -76,22 +63,14 @@ export default async function handler(req, res) {
     } catch (error) {
         console.error('❌ Erro no /api/generate:', error);
         
-        // ✅ Erros de negócio (400)
-        if (error.message?.includes('Saldo insuficiente')) {
-            return res.status(400).json({
-                success: false,
-                error: error.message
-            });
-        }
-        
-        if (error.message?.includes('Loteria inválida')) {
+        if (error.message?.includes('Saldo insuficiente') || 
+            error.message?.includes('Loteria inválida')) {
             return res.status(400).json({
                 success: false,
                 error: error.message
             });
         }
 
-        // ✅ Erros de servidor (500)
         return res.status(500).json({
             success: false,
             error: error.message || 'Erro ao gerar jogos'
