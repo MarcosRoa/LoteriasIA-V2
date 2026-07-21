@@ -27,10 +27,11 @@ export type Usuario = {
     updated_at: string;
 };
 
+// ✅ ADICIONAR 'reserva' e 'estorno'
 export type Transacao = {
     id: string;
     usuario_uid: string;
-    tipo: 'compra' | 'uso' | 'pro_ativacao';
+    tipo: 'compra' | 'uso' | 'pro_ativacao' | 'reserva' | 'estorno';
     quantidade: number;
     saldo_apos: number;
     reference_id: string | null;
