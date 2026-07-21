@@ -1,14 +1,13 @@
 // services/GenerateService.ts
 // ============================================
-// VERSÃO 3.3 - CORRIGIDA
+// VERSÃO COMPLETA - COM RESERVA E ESTORNO
 // ============================================
 
 import { CreditsService } from './CreditsService';
 import { GameRepository } from '../repositories/GameRepository';
 import { RailwayClient } from '../clients/RailwayClient';
-import { getLotteryConfig, isValidLottery } from '../../shared/lotteries';
+import { getLotteryConfig, isValidLottery } from '../shared/lotteries';
 import { env } from '../core/config/env';
-import { InsufficientCreditsError, InvalidLotteryError } from '../errors/LotteryErrors';
 
 export interface GenerateRequest {
     uid: string;
@@ -36,10 +35,10 @@ export class GenerateService {
         console.log(`🔍 GenerateService: uid=${uid}, lottery=${lottery}, quantity=${quantity}`);
 
         // ============================================
-        // 1. VALIDAR LOTERIA (USANDO SHARED)
+        // 1. VALIDAR LOTERIA
         // ============================================
         if (!isValidLottery(lottery)) {
-            throw new InvalidLotteryError(`Loteria inválida: ${lottery}`);
+            throw new Error(`Loteria inválida: ${lottery}`);
         }
 
         const config = getLotteryConfig(lottery)!;
@@ -58,20 +57,16 @@ export class GenerateService {
         // 3. VALIDAR SALDO
         // ============================================
         if (custoTotal > 0 && credits < custoTotal) {
-            throw new InsufficientCreditsError({
-                credits,
-                needed: custoTotal
-            });
+            throw new Error(`Saldo insuficiente: ${credits} < ${custoTotal}`);
         }
 
         // ============================================
-        // 4. RESERVAR CRÉDITOS (REAL)
+        // 4. RESERVAR CRÉDITOS
         // ============================================
         const referenceId = `${lottery}_${Date.now()}_${uid}`;
         let novoSaldo = credits;
 
         if (custoTotal > 0) {
-            // ✅ Reserva REAL (operação atômica)
             novoSaldo = await this.creditsService.reserveCredits(uid, custoTotal, referenceId);
             console.log(`🔒 Créditos reservados: ${custoTotal}, Saldo: ${novoSaldo}`);
         }
@@ -92,7 +87,7 @@ export class GenerateService {
             console.log(`✅ ${result.games?.length || 0} jogos gerados`);
 
             // ============================================
-            // 6. CONFIRMAR DESCONTO (COMMIT)
+            // 6. CONFIRMAR RESERVA
             // ============================================
             if (custoTotal > 0) {
                 await this.creditsService.confirmReservation(uid, custoTotal, referenceId);
@@ -100,7 +95,7 @@ export class GenerateService {
             }
 
             // ============================================
-            // 7. SALVAR HISTÓRICO (EM LOTE)
+            // 7. SALVAR HISTÓRICO
             // ============================================
             const jogos = result.games || [];
             if (jogos.length > 0) {
