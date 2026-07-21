@@ -3,7 +3,8 @@
     "version": "2.0.0",
     "type": "module",
     "scripts": {
-        "build": "echo 'Build completed'"
+        "build": "tsc",
+        "start": "node dist/api/generate/index.js"
     },
     "dependencies": {
         "@supabase/supabase-js": "^2.57.4",
