@@ -1,10 +1,25 @@
+import { RailwayClient } from '../../clients/RailwayClient';
+
 export default async function handler(req, res) {
     try {
-        throw new Error("TESTE_ERRO");
-    } catch (err) {
+        console.log('1');
+
+        const client = new RailwayClient();
+
+        console.log('2');
+
+        return res.json({
+            ok: true
+        });
+
+    } catch (e) {
+        console.error(e);
+
         return res.status(500).json({
-            success: false,
-            error: err instanceof Error ? err.message : String(err)
+            error: e instanceof Error ? {
+                message: e.message,
+                stack: e.stack
+            } : String(e)
         });
     }
 }
