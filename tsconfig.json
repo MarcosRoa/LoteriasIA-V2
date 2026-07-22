@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    "strict": false,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "allowJs": false,
+
+    "skipLibCheck": true,
+    "sourceMap": false,
+    "declaration": false
+  },
+
+  "include": [
+    "api/**/*.ts",
+    "clients/**/*.ts",
+    "core/**/*.ts",
+    "repositories/**/*.ts",
+    "services/**/*.ts",
+    "shared/**/*.ts",
+    "errors/**/*.ts"
+  ]
+}
