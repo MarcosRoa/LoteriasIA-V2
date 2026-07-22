@@ -94,8 +94,18 @@ export default async function handler(req, res) {
         });
         
     } catch (error) {
-        // ✅ Tratamento correto para unknown
-        const message = error instanceof Error ? error.message : String(error);
+        /// ✅ TRATAMENTO CORRETO PARA QUALQUER TIPO DE ERRO
+        let message = 'Erro desconhecido';
+        
+        if (error instanceof Error) {
+            message = error.message;
+        } else if (typeof error === 'string') {
+            message = error;
+        } else if (error && typeof error === 'object') {
+            // ✅ Se for um objeto, tenta extrair a mensagem
+            message = (error as any).message || (error as any).error || JSON.stringify(error);
+        }
+        
         console.error('❌ Erro no /api/generate:', message);
         
         if (message.includes('Saldo insuficiente') || 
