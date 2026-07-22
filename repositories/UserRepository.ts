@@ -1,5 +1,5 @@
 // repositories/UserRepository.ts
-import { supabase, Usuario } from '../core/database/supabase';
+import { supabase, Usuario } from '../core/database/supabase.js';
 import { env } from '../core/config/env';
 
 export class UserRepository {
