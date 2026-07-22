@@ -1,8 +1,5 @@
-import { teste } from '../../shared/test.js';
+import { RailwayClient } from '../../clients/RailwayClient';
 
 export default function handler(req, res) {
-    return res.json({
-        ok: true,
-        teste
-    });
+    return res.json({ ok: true });
 }
