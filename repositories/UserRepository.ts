@@ -1,6 +1,6 @@
 // repositories/UserRepository.ts
 import { supabase, Usuario } from '../core/database/supabase.js';
-import { env } from '../core/config/env';
+import { env } from '../core/config/env.js';
 
 export class UserRepository {
     async findByUid(uid: string): Promise<Usuario | null> {
