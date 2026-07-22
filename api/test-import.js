@@ -1,4 +1,4 @@
-import { teste } from '../shared/test.js';
+import { RailwayClient } from '../clients/RailwayClient';
 
 export default function handler(req, res) {
     return res.json({
