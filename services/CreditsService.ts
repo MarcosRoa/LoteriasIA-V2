@@ -3,9 +3,9 @@
 // SERVIÇO DE CRÉDITOS - COM RESERVA E ESTORNO
 // ============================================
 
-import { UserRepository } from '../repositories/UserRepository';
-import { TransactionRepository } from '../repositories/TransactionRepository';
-import { env } from '../core/config/env';
+import { UserRepository } from '../repositories/UserRepository.js';
+import { TransactionRepository } from '../repositories/TransactionRepository.js';
+import { env } from '../core/config/env.js';
 
 export class CreditsService {
     private userRepo: UserRepository;
