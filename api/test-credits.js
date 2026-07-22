@@ -1,5 +1,5 @@
 // api/test-credits.js
-import { CreditsService } from '../../services/CreditsService.js';
+import { CreditsService } from '../services/CreditsService.js';
 
 export default async function handler(req, res) {
     try {
