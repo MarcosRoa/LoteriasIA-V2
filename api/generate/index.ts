@@ -1,12 +1,12 @@
 // api/generate/index.ts
 // ============================================
 // ORQUESTRADOR DE GERAÇÃO (Vercel)
-// VERSÃO 4.1 - COM CORREÇÕES DE SEGURANÇA
+// VERSÃO 3.3 - CORRIGIDA (SEM FIREBASE ADMIN)
 // ============================================
 
-import { authenticate } from '../../middleware/auth.js';
-import { rateLimit, RATE_LIMIT } from '../../middleware/rateLimit.js';
 import { GenerateService } from '../../services/GenerateService.js';
+import { authenticate } from '../../middleware/auth.js';
+import { rateLimit } from '../../middleware/rateLimit.js';
 
 export default async function handler(req, res) {
     // ============================================
@@ -28,29 +28,27 @@ export default async function handler(req, res) {
 
     try {
         // ============================================
-        // 2. AUTENTICAÇÃO (HÍBRIDA)
+        // 2. AUTENTICAÇÃO (SIMPLES)
         // ============================================
-        const auth = await authenticate(req, res);
+        const auth = authenticate(req, res);
         if (!auth) return; // Já enviou 401
         
-        const { uid, method: authMethod } = auth;
-        console.log(`🔐 Usuário autenticado: ${uid} (método: ${authMethod})`);
+        const uid = auth.uid;
         
         // ============================================
-        // 3. RATE LIMIT (USANDO CONSTANTES)
+        // 3. RATE LIMIT
         // ============================================
-        if (!rateLimit(uid, RATE_LIMIT.MAX_REQUESTS, RATE_LIMIT.WINDOW_MS)) {
+        if (!rateLimit(uid, 30, 60000)) {
             return res.status(429).json({
                 success: false,
-                error: `Muitas requisições. Aguarde ${RATE_LIMIT.WINDOW_MS / 1000} segundos.`
+                error: 'Muitas requisições. Aguarde alguns segundos.'
             });
         }
         
         // ============================================
-        // 4. EXTRAIR DADOS DA REQUISIÇÃO (COM SEGURANÇA)
+        // 4. EXTRAIR DADOS DA REQUISIÇÃO (CORRIGIDO)
         // ============================================
-        // ✅ Evitar erro se req.body for undefined
-        const body = req.body ?? {};
+        const body = req.body ?? {};  // ✅ Evita erro se body for undefined
         
         const {
             lotteryType,
@@ -92,8 +90,7 @@ export default async function handler(req, res) {
             mode: result.mode || method,
             engineName: result.engineName || 'IA',
             confidence: result.confidence || 0,
-            explanation: result.explanation || [],
-            _authMethod: authMethod // debug
+            explanation: result.explanation || []
         });
         
     } catch (error) {
