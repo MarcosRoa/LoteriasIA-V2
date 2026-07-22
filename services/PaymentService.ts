@@ -1,5 +1,5 @@
-import { CreditsService } from './CreditsService';
-import { TransactionRepository } from '../repositories/TransactionRepository';
+import { CreditsService } from './CreditsService.js';
+import { TransactionRepository } from '../repositories/TransactionRepository.js';
 
 export class PaymentService {
     private creditsService: CreditsService;
