@@ -3,7 +3,7 @@
 // VERSÃO CORRIGIDA - COM saveMany()
 // ============================================
 
-import { supabase, JogoGerado } from '../core/database/supabase';
+import { supabase, JogoGerado } from '../core/database/supabase.js';
 
 export class GameRepository {
     async save(userUid: string, lottery: string, numbers: number[], mode: string, extraNumbers: number, cost: number): Promise<JogoGerado> {
