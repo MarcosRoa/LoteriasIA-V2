@@ -4,7 +4,7 @@
     "type": "module",
     "scripts": {
         "build": "tsc",
-        "start": "node dist/api/generate/index.js"
+        
     },
     "dependencies": {
         "@supabase/supabase-js": "^2.57.4",
