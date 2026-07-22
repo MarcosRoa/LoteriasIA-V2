@@ -3,7 +3,7 @@
 // CLIENTE PARA COMUNICAÇÃO COM O RAILWAY (IA PURA)
 // ============================================
 
-import { env } from '../core/config/env';
+import { env } from '../../core/config/env';
 
 export class RailwayClient {
     private url: string;
