@@ -1,6 +1,8 @@
+import { teste } from '../../shared/test.js';
+
 export default function handler(req, res) {
-    return res.status(200).json({
+    return res.json({
         ok: true,
-        node: process.version
+        teste
     });
 }
