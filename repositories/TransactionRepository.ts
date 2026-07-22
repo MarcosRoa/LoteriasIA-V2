@@ -3,7 +3,7 @@
 // VERSÃO CORRIGIDA - COM updateStatus()
 // ============================================
 
-import { supabase, Transacao } from '../core/database/supabase';
+import { supabase, Transacao } from '../core/database/supabase.js';
 
 export class TransactionRepository {
     async create(transaction: Omit<Transacao, 'id' | 'created_at'>): Promise<Transacao> {
