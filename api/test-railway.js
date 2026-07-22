@@ -1,5 +1,5 @@
 // api/test-railway.js
-import { RailwayClient } from '../../clients/RailwayClient.js';
+import { RailwayClient } from '../clients/RailwayClient.js';
 
 export default async function handler(req, res) {
     try {
