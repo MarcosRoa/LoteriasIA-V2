@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { CreditsService } from '../../services/CreditsService';
+import { CreditsService } from '../../services/CreditsService.js';
 
 const creditsService = new CreditsService();
 
