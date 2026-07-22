@@ -5,7 +5,7 @@
 
 import { CreditsService } from '../CreditsService.js';
 import { GameRepository } from '../repositories/GameRepository.js';
-import { RailwayClient } from '../clients/RailwayClient';
+import { RailwayClient } from '../clients/RailwayClient.js';
 import { getLotteryConfig, isValidLottery } from '../shared/lotteries.js';
 import { env } from '../core/config/env.js';
 
