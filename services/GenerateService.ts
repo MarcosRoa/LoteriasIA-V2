@@ -3,7 +3,7 @@
 // VERSÃO CORRIGIDA - ESTORNO APENAS SE IA FALHAR
 // ============================================
 
-import { CreditsService } from '../CreditsService.js';
+import { CreditsService } from './CreditsService.js';
 import { GameRepository } from '../repositories/GameRepository.js';
 import { RailwayClient } from '../clients/RailwayClient.js';
 import { getLotteryConfig, isValidLottery } from '../shared/lotteries.js';
