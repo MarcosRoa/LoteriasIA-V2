@@ -1,5 +1,5 @@
 // api/test-generate.js
-import { GenerateService } from '../../services/GenerateService.js';
+import { GenerateService } from '../services/GenerateService.js';
 
 export default async function handler(req, res) {
     try {
