@@ -3,11 +3,11 @@
 // VERSÃO CORRIGIDA - ESTORNO APENAS SE IA FALHAR
 // ============================================
 
-import { CreditsService } from './CreditsService';
-import { GameRepository } from '../repositories/GameRepository';
+import { CreditsService } from '../CreditsService.js';
+import { GameRepository } from '../repositories/GameRepository.js';
 import { RailwayClient } from '../clients/RailwayClient';
-import { getLotteryConfig, isValidLottery } from '../shared/lotteries';
-import { env } from '../core/config/env';
+import { getLotteryConfig, isValidLottery } from '../shared/lotteries.js';
+import { env } from '../core/config/env.js';
 
 export interface GenerateRequest {
     uid: string;
