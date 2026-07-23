@@ -22,7 +22,18 @@
 <body>
     <!-- Container principal (tudo renderizado pelo JavaScript) -->
     <div id="app"></div>
-
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCA_FoID7Ch8LkcwK5TbQSK23lU7BxQMuE",
+            authDomain: "loteriasia.firebaseapp.com",
+            projectId: "loteriasia",
+            storageBucket: "loteriasia.firebasestorage.app",
+            messagingSenderId: "124650527048",
+            appId: "1:124650527048:web:bc335922cb9e1586c3fb7d"
+        };
+        firebase.initializeApp(firebaseConfig);
+        console.log('🔥 Firebase inicializado no perfil');
+    </script>
     <!-- Script principal do perfil -->
     <script type="module" src="js/perfil.js"></script>
 </body>
