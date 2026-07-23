@@ -13,9 +13,9 @@ export class GameRepository {
                 usuario_uid: userUid,
                 loteria: lottery,
                 jogos: numbers,
-                modo: mode,
+                //modo: mode,
                 quantidade_numeros: extraNumbers,
-                custo: cost,
+                //custo: cost,
                 created_at: new Date().toISOString()
             })
             .select('*')
