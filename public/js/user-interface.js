@@ -87,6 +87,9 @@ function atualizarInterfaceUsuario() {
                             style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; padding: 6px 16px; border-radius: 20px; color: #1e293b; font-weight: 600; font-size: 12px; cursor: pointer;">
                         💳 Comprar
                     </button>
+                    <a href="/perfil.html" style="background: linear-gradient(135deg, #8b5cf6, #06b6d4); border: none; padding: 6px 16px; border-radius: 20px; color: white; font-weight: 600; font-size: 12px; text-decoration: none; cursor: pointer; display: inline-block;">
+                        👤 Meu Perfil
+                    </a>
                     <button onclick="window.deslogar()" 
                             style="background: transparent; border: 1px solid #ef4444; padding: 6px 16px; border-radius: 20px; color: #ef4444; font-weight: 600; font-size: 12px; cursor: pointer;">
                         Sair
