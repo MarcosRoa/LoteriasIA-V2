@@ -125,6 +125,7 @@ export class GenerateService {
         const jogos = result.games || [];
         if (jogos.length > 0) {
             try {
+                console.log(`📝 Salvando ${jogos.length} jogos para ${uid}...`);
                 await this.gameRepository.saveMany(uid, lottery, jogos, method, numerosPorJogo, custoPorJogo);
                 console.log(`📝 ${jogos.length} jogos salvos`);
             } catch (saveError) {
