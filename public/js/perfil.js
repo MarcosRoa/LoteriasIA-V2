@@ -11,7 +11,21 @@
 // ✅ Máscara de configurações para FREE
 // ✅ Interface moderna e responsiva
 // ============================================
-
+// ============================================
+// 0. INICIALIZAR FIREBASE (ANTES DE TUDO)
+// ============================================
+if (typeof firebase !== 'undefined' && (!firebase.apps || firebase.apps.length === 0)) {
+    const firebaseConfig = {
+        apiKey: "AIzaSyCA_FoID7Ch8LkcwK5TbQSK23lU7BxQMuE",
+        authDomain: "loteriasia.firebaseapp.com",
+        projectId: "loteriasia",
+        storageBucket: "loteriasia.firebasestorage.app",
+        messagingSenderId: "124650527048",
+        appId: "1:124650527048:web:bc335922cb9e1586c3fb7d"
+    };
+    firebase.initializeApp(firebaseConfig);
+    console.log('🔥 Firebase inicializado no perfil.js');
+}
 // ============================================
 // 1. CONFIGURAÇÃO INICIAL
 // ============================================
