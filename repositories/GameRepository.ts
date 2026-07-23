@@ -14,8 +14,8 @@ export class GameRepository {
                 loteria: lottery,
                 jogos: numbers,
                 quantidade_numeros: extraNumbers,
-                filtros: JSON.stringify({ modo: mode, custo: cost }), // ← Salva modo e custo em filtros
-                data: new Date().toISOString() // ← USAR 'data' em vez de 'created_at'
+                filtros: JSON.stringify({ modo: mode, custo: cost }),
+                data: new Date().toISOString()
             })
             .select('*')
             .single();
