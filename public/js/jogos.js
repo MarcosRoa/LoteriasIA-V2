@@ -93,6 +93,7 @@ async function gerarJogos() {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${await window.apiClient.getFirebaseToken()}`
+                'X-User-Id': window.usuarioAtual?.uid  // ← ADICIONAR ESTA LINHA
             },
             body: JSON.stringify({
                 lotteryType: loteria,
