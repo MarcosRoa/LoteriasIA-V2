@@ -1,6 +1,6 @@
 // repositories/GameRepository.ts
 // ============================================
-// VERSÃO CORRIGIDA - COM saveMany()
+// VERSÃO CORRIGIDA - USANDO COLUNAS EXISTENTES
 // ============================================
 
 import { supabase, JogoGerado } from '../core/database/supabase.js';
@@ -13,10 +13,9 @@ export class GameRepository {
                 usuario_uid: userUid,
                 loteria: lottery,
                 jogos: numbers,
-                //modo: mode,
                 quantidade_numeros: extraNumbers,
-                //custo: cost,
-                created_at: new Date().toISOString()
+                filtros: JSON.stringify({ modo: mode, custo: cost }), // ← Salva modo e custo em filtros
+                data: new Date().toISOString() // ← USAR 'data' em vez de 'created_at'
             })
             .select('*')
             .single();
@@ -33,10 +32,9 @@ export class GameRepository {
             usuario_uid: userUid,
             loteria: lottery,
             jogos: numbers,
-            modo: mode,
             quantidade_numeros: extraNumbers,
-            custo: cost,
-            created_at: new Date().toISOString()
+            filtros: JSON.stringify({ modo: mode, custo: cost }),
+            data: new Date().toISOString()
         }));
 
         const { data, error } = await supabase
@@ -44,7 +42,10 @@ export class GameRepository {
             .insert(records)
             .select('*');
 
-        if (error) throw error;
+        if (error) {
+            console.error('❌ Erro ao salvar jogos:', error);
+            throw error;
+        }
         return data || [];
     }
 
@@ -53,7 +54,7 @@ export class GameRepository {
             .from('historico_palpites')
             .select('*')
             .eq('usuario_uid', userUid)
-            .order('created_at', { ascending: false })
+            .order('data', { ascending: false })
             .limit(limit);
         
         if (error) throw error;
