@@ -108,6 +108,32 @@ export class GenerateService {
             }
             throw error;
         }
+        // ============================================
+        // 5. CHAMAR RAILWAY (IA)
+        // ============================================
+        let result;
+        try {
+            result = await this.railwayClient.generateGames({
+                lotteryType: lottery,
+                count: quantity,
+                method: method,
+                isPro: isPro,
+                extraNumbers: numerosPorJogo,
+                filters
+            });
+            
+            // ✅ ADICIONAR ESTE LOG
+            console.log("========== RAILWAY RESPONSE ==========");
+            console.log("Loteria:", lottery);
+            console.log("Quantidade:", quantity);
+            console.log("Resposta completa:");
+            console.log(JSON.stringify(result, null, 2));
+            console.log("======================================");
+            
+        } catch (error) {
+            // ... resto do código
+        }
+        
 
         console.log(`✅ ${result.games?.length || 0} jogos gerados`);
 
