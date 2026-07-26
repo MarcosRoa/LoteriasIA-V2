@@ -1,31 +1,11 @@
 // ============================================
-// perfil.js - PÁGINA DE PERFIL (VERSÃO MODULAR)
+// perfil.js - PÁGINA DE PERFIL (VERSÃO COMPLETA)
 // ============================================
-// Funcionalidades:
-// ✅ Exibe dados do usuário (nome, email, avatar)
-// ✅ Exibe saldo e status PRO
-// ✅ Histórico de jogos (30 dias PRO / 10 dias FREE)
-// ✅ Transações do usuário
-// ✅ Seleção de palpites para PDF
-// ✅ Exportação PDF (exclusivo PRO)
-// ✅ Máscara de configurações para FREE
-// ✅ Interface moderna e responsiva
+
 // ============================================
+// 0. INICIALIZAR FIREBASE (JÁ ESTÁ NO HTML)
 // ============================================
-// 0. INICIALIZAR FIREBASE (ANTES DE TUDO)
-// ============================================
-if (typeof firebase !== 'undefined' && (!firebase.apps || firebase.apps.length === 0)) {
-    const firebaseConfig = {
-        apiKey: "AIzaSyCA_FoID7Ch8LkcwK5TbQSK23lU7BxQMuE",
-        authDomain: "loteriasia.firebaseapp.com",
-        projectId: "loteriasia",
-        storageBucket: "loteriasia.firebasestorage.app",
-        messagingSenderId: "124650527048",
-        appId: "1:124650527048:web:bc335922cb9e1586c3fb7d"
-    };
-    firebase.initializeApp(firebaseConfig);
-    console.log('🔥 Firebase inicializado no perfil.js');
-}
+
 // ============================================
 // 1. CONFIGURAÇÃO INICIAL
 // ============================================
@@ -33,9 +13,7 @@ const CONFIG = {
     APP_NAME: 'Loterias IA',
     VERSION: '6.1',
     DIAS_PRO: 30,
-    DIAS_FREE: 10,
-    SUPABASE_URL: 'https://fuiaikymhsjdgdhojjhq.supabase.co',
-    SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1aWFpa3ltaHNqZGdkaG9qamhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwODI1NTEsImV4cCI6MjA5MzY1ODU1MX0.X9Qa1eJ6ut-QdKEZdjX2Ttm2STgJqOkEdNyohDpH3bk'
+    DIAS_FREE: 10
 };
 
 // ============================================
@@ -80,7 +58,6 @@ async function initPerfil() {
     try {
         console.log('🚀 Carregando perfil...');
         
-        // 1. Verificar autenticação
         const user = await getCurrentUser();
         if (!user) {
             renderizarLogin();
@@ -88,11 +65,7 @@ async function initPerfil() {
         }
         
         usuario = user;
-        
-        // 2. Buscar dados do usuário
         await carregarDadosUsuario(usuario.uid);
-        
-        // 3. Renderizar perfil
         await renderizarPerfil();
         
         console.log('✅ Perfil carregado com sucesso!');
@@ -130,16 +103,14 @@ function getCurrentUser() {
 // ============================================
 async function carregarDadosUsuario(uid) {
     try {
-        // Buscar créditos
         const creditsResponse = await fetch(`/api/credits?uid=${uid}`);
         const creditsData = await creditsResponse.json();
         creditos = creditsData.credits || 0;
         isUserPro = creditsData.isPro || false;
         
-        // Buscar status PRO
         const proResponse = await fetch(`/api/pro/status?uid=${uid}`);
         const proData = await proResponse.json();
-        proExpiresAt = proData.expira_em || null;
+        proExpiresAt = proData.proExpiresAt || null;
         isUserPro = proData.isPro || isUserPro;
         
     } catch (error) {
@@ -153,24 +124,17 @@ async function carregarDadosUsuario(uid) {
 // ============================================
 async function renderizarPerfil() {
     const dias = isUserPro ? CONFIG.DIAS_PRO : CONFIG.DIAS_FREE;
-    const dataLimite = new Date();
-    dataLimite.setDate(dataLimite.getDate() - dias);
-    const dataLimiteStr = dataLimite.toISOString();
     
     try {
-        // Buscar histórico de palpites
-        const historicoResponse = await fetch(`/api/user/history?uid=${usuario.uid}&dias=${dias}`);
+        const historicoResponse = await fetch(`/api/user/history?uid=${usuario.uid}&limit=50`);
         const historico = await historicoResponse.json();
         
-        // Buscar transações
         const transacoesResponse = await fetch(`/api/user/transactions?uid=${usuario.uid}&dias=${dias}`);
         const transacoes = await transacoesResponse.json();
         
-        // Renderizar
         const app = document.getElementById('app');
         app.innerHTML = criarHTML(usuario, creditos, isUserPro, proExpiresAt, historico.history || [], transacoes.transactions || [], dias);
         
-        // Atualizar eventos
         atualizarEventos();
         
     } catch (error) {
@@ -187,7 +151,6 @@ function criarHTML(user, credits, isPro, expiresAt, historico, transacoes, dias)
     const proBadge = isPro ? '<span class="pro-badge">⭐ PRO</span>' : '<span class="free-badge">🔓 Grátis</span>';
     const proExpires = isPro && expiresAt ? `<div class="pro-expires">✨ Válido até ${new Date(expiresAt).toLocaleDateString()}</div>` : '';
     
-    // Calcular total de jogos
     let totalJogos = 0;
     historico.forEach(item => {
         const jogosArray = item.jogos || [];
@@ -289,7 +252,7 @@ function criarHTML(user, credits, isPro, expiresAt, historico, transacoes, dias)
 }
 
 // ============================================
-// 9. RENDERIZAR HISTÓRICO
+// 9. RENDERIZAR HISTÓRICO (CORRIGIDO)
 // ============================================
 function renderizarHistorico(historico) {
     let html = '<div class="historico-grid">';
@@ -320,6 +283,26 @@ function renderizarHistorico(historico) {
                 bolaoDisplay = `<div class="bolao-info">⭐ BOLÃO: ${quantidadeNumeros} números</div>`;
             }
             
+            // ✅ CORREÇÃO: EXIBIR EXTRAS
+            let extrasDisplay = '';
+            
+            // Timemania: times
+            if (item.times && Array.isArray(item.times) && item.times.length > 0) {
+                extrasDisplay += `<div class="historico-extra">⚽ Time: <strong>${item.times[0]}</strong></div>`;
+            }
+            
+            // Dia de Sorte: meses
+            if (item.meses && Array.isArray(item.meses) && item.meses.length > 0) {
+                const mesNomeDisplay = getNomeMes(item.meses[0]);
+                extrasDisplay += `<div class="historico-extra">📅 Mês: <strong>${mesNomeDisplay}</strong></div>`;
+            }
+            
+            // +Milionária: trevos
+            if (item.extras && typeof item.extras === 'object' && item.extras.trevos) {
+                const trevosDisplay = item.extras.trevos.join(' - ');
+                extrasDisplay += `<div class="historico-extra">🍀 Trevos: <strong>${trevosDisplay}</strong></div>`;
+            }
+            
             html += `
                 <div class="historico-item" id="historico-item-${id}">
                     <div class="historico-header">
@@ -331,6 +314,7 @@ function renderizarHistorico(historico) {
                         ${ehDiaDaSorte && mesNome ? `<br>📅 Mês da Sorte: ${mesNome} (${formatarNumeroZero(mesNumero)})` : ''}
                         ${item.extras && !temMeses && !ehDiaDaSorte ? `<br>📌 ${item.extras}` : ''}
                     </div>
+                    ${extrasDisplay}
                     ${bolaoDisplay}
                     ${configDisplay}
                     <div class="historico-selecao">
@@ -451,26 +435,27 @@ window.exportarSelecionadosPDF = async function() {
                 const dataElem = item.querySelector('.historico-data');
                 const configElem = item.querySelector('.config-texto');
                 const bolaoElem = item.querySelector('.bolao-info');
+                const extraElem = item.querySelector('.historico-extra');
                 
                 let numerosTexto = numerosElem ? numerosElem.innerText.replace(/[📊🎲💰📜✨📅📌]/g, '').replace('Números:', '').trim() : '';
                 let loteriaTexto = loteriaElem ? loteriaElem.innerText.replace(/[🎲]/g, '').trim() : 'Loteria';
                 let dataTexto = dataElem ? dataElem.innerText.replace(/[📅]/g, '').trim() : '';
                 let configTexto = configElem ? configElem.innerText : '';
                 let bolaoTexto = bolaoElem ? bolaoElem.innerText : '';
+                let extraTexto = extraElem ? extraElem.innerText : '';
                 
                 palpites.push({
                     loteria: loteriaTexto,
                     numeros: numerosTexto,
                     data: dataTexto,
                     config: configTexto,
-                    bolao: bolaoTexto
+                    bolao: bolaoTexto,
+                    extra: extraTexto
                 });
             }
         });
         
-        // Usar html2canvas e jspdf para gerar PDF
         await gerarPDF(palpites);
-        
         mostrarToast(`${palpites.length} palpites exportados com sucesso!`, 'success');
     } catch (error) {
         console.error('Erro ao exportar PDF:', error);
@@ -481,7 +466,6 @@ window.exportarSelecionadosPDF = async function() {
 };
 
 async function gerarPDF(palpites) {
-    // Criar elemento temporário para renderizar o PDF
     const divPDF = document.createElement('div');
     divPDF.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:800px;padding:30px;background:white;font-family:Arial,sans-serif;';
     
@@ -500,6 +484,7 @@ async function gerarPDF(palpites) {
                 <div style="font-size:12px;color:#3b82f6;margin-top:5px;">
                     Números: ${numerosArray.map(n => `<strong>${n}</strong>`).join(' • ')}
                 </div>
+                ${p.extra ? `<div style="font-size:11px;color:#f59e0b;margin-top:5px;">${p.extra}</div>` : ''}
                 ${p.bolao ? `<div style="font-size:10px;color:#f59e0b;margin-top:5px;">⭐ ${p.bolao}</div>` : ''}
                 ${p.config ? `<div style="font-size:9px;color:#888;margin-top:8px;border-top:1px solid #eee;padding-top:5px;">⚙️ ${p.config}</div>` : ''}
             </div>
@@ -620,7 +605,6 @@ function renderizarLogin() {
 // 14. ATUALIZAR EVENTOS
 // ============================================
 function atualizarEventos() {
-    // Eventos para os checkboxes
     document.querySelectorAll('.selecionar-jogo').forEach(cb => {
         cb.addEventListener('change', function() {
             window.toggleSelecao(this.dataset.id);
@@ -633,7 +617,6 @@ function atualizarEventos() {
 // ============================================
 document.addEventListener('DOMContentLoaded', initPerfil);
 
-// Exportar funções globais
 window.mostrarToast = mostrarToast;
 window.toggleSelecao = toggleSelecao;
 window.selecionarTodos = selecionarTodos;
