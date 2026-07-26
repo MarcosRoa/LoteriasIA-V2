@@ -252,57 +252,71 @@ function criarHTML(user, credits, isPro, expiresAt, historico, transacoes, dias)
 }
 
 // ============================================
-// 9. RENDERIZAR HISTÓRICO (CORRIGIDO)
+// 9. RENDERIZAR HISTÓRICO (CORRIGIDO - JOGOS COMPLETOS)
 // ============================================
 function renderizarHistorico(historico) {
     let html = '<div class="historico-grid">';
     let itemIdx = 0;
     
     historico.forEach((item) => {
-        const jogosArray = item.jogos || [];
+        // 🔥 EXTRAIR JOGOS CORRETAMENTE
+        let jogosArray = item.jogos || [];
+        let jogosParaRenderizar = [];
+
+        // ✅ VERIFICA SE É UM ARRAY DE JOGOS OU UM ÚNICO JOGO
+        if (Array.isArray(jogosArray) && jogosArray.length > 0) {
+            // Se o primeiro elemento é um array → múltiplos jogos
+            if (Array.isArray(jogosArray[0])) {
+                jogosParaRenderizar = jogosArray;
+            } else {
+                // Caso contrário → um único jogo
+                jogosParaRenderizar = [jogosArray];
+            }
+        }
+
         const dataJogo = item.data ? new Date(item.data).toLocaleString('pt-BR') : 'Data desconhecida';
-        const ehDiaDaSorte = item.loteria?.toLowerCase().includes('dia') || item.loteria?.toLowerCase().includes('sorte');
-        const temMeses = item.meses && Array.isArray(item.meses) && item.meses.length > 0;
-        
-        jogosArray.forEach((jogo, jogoIdx) => {
+
+        // ✅ RENDERIZAR CADA JOGO COMPLETO
+        jogosParaRenderizar.forEach((jogo, jogoIdx) => {
             const id = `${itemIdx}_${jogoIdx}`;
-            const mesNumero = temMeses ? item.meses[jogoIdx] : null;
-            const mesNome = mesNumero ? getNomeMes(mesNumero) : null;
-            const numerosDisplay = Array.isArray(jogo) ? jogo.join(', ') : jogo;
-            
+            const numerosDisplay = Array.isArray(jogo) ? jogo.join(' - ') : jogo;
+
+            // 🔥 EXTRAS
+            let extrasDisplay = '';
+
+            // Timemania: times
+            if (item.times && Array.isArray(item.times) && item.times.length > 0) {
+                extrasDisplay += `<div class="historico-extra">⚽ Time: <strong>${item.times[0]}</strong></div>`;
+            }
+
+            // Dia de Sorte: meses
+            if (item.meses && Array.isArray(item.meses) && item.meses.length > 0) {
+                const mesNomeDisplay = getNomeMes(item.meses[0]);
+                extrasDisplay += `<div class="historico-extra">📅 Mês: <strong>${mesNomeDisplay}</strong></div>`;
+            }
+
+            // +Milionária: trevos
+            if (item.extras && typeof item.extras === 'object' && item.extras.trevos) {
+                const trevosDisplay = item.extras.trevos.join(' - ');
+                extrasDisplay += `<div class="historico-extra">🍀 Trevos: <strong>${trevosDisplay}</strong></div>`;
+            }
+
+            // Configurações
             let configDisplay = '';
             const filtrosTexto = item.filtros || '';
             if (filtrosTexto) {
                 configDisplay = `<div class="config-texto">⚙️ ${isUserPro ? filtrosTexto : mascararConfiguracoes(filtrosTexto)}</div>`;
             }
-            
+
+            // BOLÃO
             let bolaoDisplay = '';
             const quantidadeNumeros = item.quantidade_numeros || 0;
             const jogoSimples = window.LOTERIAS?.[item.loteria?.toLowerCase()?.replace(/[^a-z]/g, '')]?.jogoSimples || 6;
             if (quantidadeNumeros > jogoSimples) {
                 bolaoDisplay = `<div class="bolao-info">⭐ BOLÃO: ${quantidadeNumeros} números</div>`;
             }
-            
-            // ✅ CORREÇÃO: EXIBIR EXTRAS
-            let extrasDisplay = '';
-            
-            // Timemania: times
-            if (item.times && Array.isArray(item.times) && item.times.length > 0) {
-                extrasDisplay += `<div class="historico-extra">⚽ Time: <strong>${item.times[0]}</strong></div>`;
-            }
-            
-            // Dia de Sorte: meses
-            if (item.meses && Array.isArray(item.meses) && item.meses.length > 0) {
-                const mesNomeDisplay = getNomeMes(item.meses[0]);
-                extrasDisplay += `<div class="historico-extra">📅 Mês: <strong>${mesNomeDisplay}</strong></div>`;
-            }
-            
-            // +Milionária: trevos
-            if (item.extras && typeof item.extras === 'object' && item.extras.trevos) {
-                const trevosDisplay = item.extras.trevos.join(' - ');
-                extrasDisplay += `<div class="historico-extra">🍀 Trevos: <strong>${trevosDisplay}</strong></div>`;
-            }
-            
+
+            // ✅ HTML DO JOGO (COMPLETO)
             html += `
                 <div class="historico-item" id="historico-item-${id}">
                     <div class="historico-header">
@@ -311,8 +325,6 @@ function renderizarHistorico(historico) {
                     </div>
                     <div class="historico-jogos">
                         📊 Números: <strong>${numerosDisplay}</strong>
-                        ${ehDiaDaSorte && mesNome ? `<br>📅 Mês da Sorte: ${mesNome} (${formatarNumeroZero(mesNumero)})` : ''}
-                        ${item.extras && !temMeses && !ehDiaDaSorte ? `<br>📌 ${item.extras}` : ''}
                     </div>
                     ${extrasDisplay}
                     ${bolaoDisplay}
@@ -328,7 +340,7 @@ function renderizarHistorico(historico) {
             itemIdx++;
         });
     });
-    
+
     html += '</div>';
     return html;
 }
