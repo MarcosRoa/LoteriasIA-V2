@@ -6,8 +6,8 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { ProService } from '../../src/services/ProService.js';
-import { CONSTANTS } from '../../src/core/config/constants.js';
+import { ProService } from '../../services/ProService.js';
+import { CONSTANTS } from '../../core/config/constants.js';
 
 const supabase = createClient(
     process.env.SUPABASE_URL!,
