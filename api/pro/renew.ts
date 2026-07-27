@@ -6,7 +6,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { ProService } from '../../src/services/ProService.js';
+import { ProService } from '../../services/ProService.js';
 
 const supabase = createClient(
     process.env.SUPABASE_URL!,
@@ -49,7 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
         const { data: user, error } = await supabase
             .from('usuarios')
-            .select('is_pro, pro_expires_at, creditos, email')
+            .select('uid, is_pro, pro_expires_at, creditos, email')
             .eq('uid', uid)
             .maybeSingle();
         
