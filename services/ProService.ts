@@ -4,7 +4,7 @@
 // SERVIÇO DE PLANO PRO - VERSÃO COMPLETA
 // ============================================
 
-import { CONSTANTS } from '../core/config/constants';
+import { CONSTANTS } from '../core/config/constants.js';
 
 export interface ProUser {
     uid: string;
