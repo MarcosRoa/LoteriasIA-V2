@@ -32,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
         const { data: user, error } = await supabase
             .from('usuarios')
-            .select('is_pro, pro_expires_at, email, creditos')
+            .select('uid, is_pro, pro_expires_at, email, creditos')
             .eq('uid', uid)
             .maybeSingle();
         
