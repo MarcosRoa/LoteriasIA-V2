@@ -95,13 +95,19 @@
             cursor: not-allowed;
             border-style: dashed;
         }
-        
+
         .ia-btn.pro-only:hover {
             transform: none;
             box-shadow: none;
         }
         
-        .ia-btn.pro-only.active {
+        .ia-btn.pro-only:active {
+           opacity: 1;
+           cursor: pointer;
+           border-style: solid;
+        }
+        
+        .ia-btn:not(.pro-only) {
             opacity: 1;
             cursor: pointer;
             border-style: solid;
