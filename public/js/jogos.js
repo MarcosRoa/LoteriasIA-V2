@@ -119,7 +119,7 @@ async function gerarJogos() {
             window.creditosUsuario = result.creditsRemaining;
             const creditsDisplay = document.getElementById('creditosDisplay');
             if (creditsDisplay) {
-                creditsDisplay.textContent = `R$ ${result.creditsRemaining}`;
+                creditsDisplay.textContent = `Créditos ${result.creditsRemaining}`;
             }
         }
         
@@ -170,7 +170,7 @@ async function gerarJogos() {
             html += `</div>
                 <div style="margin-top: 15px; padding: 10px; background: #1e293b; border-radius: 8px; text-align: center; font-size: 11px; color: #94a3b8;">
                     💰 Créditos gastos: R$ ${result.creditsSpent || (qtd * custoPorJogo)} | 
-                    Saldo restante: R$ ${result.creditsRemaining || window.creditosUsuario}
+                    Saldo restante:Créditos ${result.creditsRemaining || window.creditosUsuario}
                     ${result.isPro ? ' ⭐ PRO' : ''}
                 </div>
             `;
