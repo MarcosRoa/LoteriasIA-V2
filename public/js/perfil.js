@@ -194,7 +194,7 @@ function criarHTML(user, credits, isPro, expiresAt, historico, transacoes, dias)
                 <div class="card">
                     <div class="card-title">💰 SALDO</div>
                     <div class="saldo-card">
-                        <strong>R$ ${credits}</strong>
+                        <strong>R$ Creditos ${credits}</strong>
                     </div>
                 </div>
 
