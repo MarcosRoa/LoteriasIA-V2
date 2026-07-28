@@ -1,6 +1,12 @@
-// api/payments/create.ts
+// ============================================
+// CAMINHO: api/payment/create.ts
+// ============================================
+// CRIA PAGAMENTO PIX - MERCADO PAGO
+// ============================================
+
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { PaymentService } from '../../services/PaymentService.js';
 
 const supabase = createClient(
     process.env.SUPABASE_URL!,
@@ -9,41 +15,105 @@ const supabase = createClient(
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-User-Id');
+
     if (req.method === 'OPTIONS') return res.status(200).end();
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-    
-    const { userId, amount } = req.body;
-    
-    if (!userId || !amount) {
-        return res.status(400).json({ error: 'Missing required fields' });
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed. Use POST.' });
     }
-    
+
     try {
-        const { data: user, error: userError } = await supabase
+        // ============================================
+        // 1. VALIDAR USUÁRIO
+        // ============================================
+        const uid = req.headers['x-user-id'] || req.body?.uid;
+        if (!uid) {
+            return res.status(400).json({ error: 'UID é obrigatório' });
+        }
+
+        const { type, amount } = req.body; // type: 'pro' | 'credits'
+        if (!type || !amount) {
+            return res.status(400).json({ error: 'Tipo e valor são obrigatórios' });
+        }
+
+        // ============================================
+        // 2. BUSCAR USUÁRIO
+        // ============================================
+        const { data: user, error } = await supabase
             .from('usuarios')
-            .select('creditos')
-            .eq('uid', userId)
+            .select('uid, email, nome')
+            .eq('uid', uid)
+            .maybeSingle();
+
+        if (error || !user) {
+            return res.status(404).json({ error: 'Usuário não encontrado' });
+        }
+
+        // ============================================
+        // 3. CRIAR PAGAMENTO NO MERCADO PAGO
+        // ============================================
+        const paymentService = new PaymentService();
+        const result = await paymentService.createPixPayment({
+            userId: uid,
+            userEmail: user.email,
+            userName: user.nome || 'Usuário',
+            amount: amount,
+            type: type, // 'pro' ou 'credits'
+            description: type === 'pro' ? 'Assinatura PRO' : `Compra de ${amount} créditos`
+        });
+
+        if (!result.success) {
+            return res.status(400).json({
+                success: false,
+                error: result.error || 'Erro ao criar pagamento'
+            });
+        }
+
+        // ============================================
+        // 4. SALVAR NO BANCO (payments)
+        // ============================================
+        const { data: payment, error: insertError } = await supabase
+            .from('payments')
+            .insert({
+                user_id: uid,
+                gateway: 'mercadopago',
+                payment_id: result.paymentId,
+                status: 'pending',
+                type: type,
+                amount: amount,
+                qr_code: result.qrCodeBase64,
+                qr_code_text: result.qrCodeText,
+                external_reference: result.externalReference,
+                payment_data: result.paymentData,
+                expires_at: result.expiresAt
+            })
+            .select('id')
             .single();
-        
-        if (userError) throw userError;
-        
-        const novoSaldo = (user.creditos || 0) + amount;
-        
-        await supabase
-            .from('usuarios')
-            .update({ creditos: novoSaldo })
-            .eq('uid', userId);
-        
+
+        if (insertError) {
+            console.error('❌ Erro ao salvar pagamento:', insertError);
+            // Não falha a requisição, apenas log
+        }
+
+        // ============================================
+        // 5. RETORNAR QR CODE
+        // ============================================
         return res.status(200).json({
             success: true,
-            mode: 'simulation',
-            newBalance: novoSaldo,
-            message: `R$ ${amount} adicionados com sucesso!`
+            paymentId: result.paymentId,
+            qrCode: result.qrCodeBase64,
+            qrCodeText: result.qrCodeText,
+            expiresAt: result.expiresAt,
+            externalReference: result.externalReference,
+            message: 'Pagamento PIX criado. Aguarde a confirmação.'
         });
-        
+
     } catch (error: any) {
-        console.error('Erro:', error);
-        return res.status(500).json({ error: error.message });
+        console.error('❌ Erro ao criar pagamento:', error);
+        return res.status(500).json({
+            success: false,
+            error: error.message || 'Erro ao criar pagamento'
+        });
     }
 }
