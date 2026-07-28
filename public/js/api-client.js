@@ -1,7 +1,7 @@
 // ============================================
 // CAMINHO: public/js/api-client.js
 // ============================================
-// VERSÃO 2.3 - COM ESTATÍSTICAS
+// VERSÃO 2.4 - SEM SIMULAÇÃO DE PAGAMENTO
 // ============================================
 
 const API_BASE = '/api';
@@ -164,20 +164,9 @@ class ApiClient {
         }
     }
 
-    async createPayment(amount) {
-        const user = firebase.auth().currentUser;
-        if (!user) throw new Error('User not logged in');
-        try {
-            return await this.request('/payments/create', {
-                method: 'POST',
-                body: JSON.stringify({ userId: user.uid, amount })
-            });
-        } catch (error) {
-            console.error('Erro ao criar pagamento:', error);
-            throw error;
-        }
-    }
-
+    // ============================================
+    // 🔥 HISTÓRICO: Vai para /api/user/history (Vercel + Supabase)
+    // ============================================
     async getHistory(limit = 50) {
         const user = firebase.auth().currentUser;
         if (!user) throw new Error('User not logged in');
@@ -190,16 +179,35 @@ class ApiClient {
             throw error;
         }
     }
+
+    // ============================================
+    // 🔥 TRANSAÇÕES: Vai para /api/user/transactions (Vercel + Supabase)
+    // ============================================
+    async getTransactions(dias = 30) {
+        const user = firebase.auth().currentUser;
+        if (!user) throw new Error('User not logged in');
+        try {
+            return await this.request(`/user/transactions?uid=${user.uid}&dias=${dias}`, {
+                method: 'GET'
+            });
+        } catch (error) {
+            console.error('Erro ao buscar transações:', error);
+            throw error;
+        }
+    }
 }
 
 const apiClient = new ApiClient();
 
+// ============================================
+// EXPORTAÇÕES (SEM createPayment)
+// ============================================
 window.apiClient = apiClient;
 window.getCredits = () => apiClient.getCredits();
 window.getProStatus = () => apiClient.getProStatus();
 window.generateGames = (request) => apiClient.generateGames(request);
-window.createPayment = (amount) => apiClient.createPayment(amount);
 window.getHistory = (limit) => apiClient.getHistory(limit);
 window.getStatistics = (lottery, period) => apiClient.getStatistics(lottery, period);
+window.getTransactions = (dias) => apiClient.getTransactions(dias);
 
-console.log('✅ API Client V2.3 carregado (Vercel + Railway + Statistics)');
+console.log('✅ API Client V2.4 carregado (Vercel + Railway + Statistics)');
