@@ -119,26 +119,301 @@ function abrirModalComprar() {
     });
 }
 
-async function comprarCreditos(valor) {
+// ============================================
+// COMPRAR CRÉDITOS (REAL - COM MERCADO PAGO)
+// ============================================
+// ============================================
+// COMPRAR CRÉDITOS (REAL - COM MERCADO PAGO)
+// ============================================
+async function comprarCreditos(packageValue) {
     if (!window.appState.usuario) {
         window.mostrarModalLogin();
         return;
     }
-    
+
+    // 🔥 Fechar o modal de seleção
+    const modal = document.querySelector('.modal-pix-overlay');
+    if (modal) modal.remove();
+
     try {
-        const result = await window.apiClient.createPayment(valor);
-        if (result.mode === 'simulation') {
-            window.mostrarToast(`✅ R$ ${valor} adicionados!`, 'success');
-            window.updateAppState({ creditos: result.newBalance });
-            
-            const creditsDisplay = document.getElementById('creditosDisplay');
-            if (creditsDisplay) creditsDisplay.textContent = `R$ ${result.newBalance}`;
+        window.mostrarToast('⏳ Gerando pagamento PIX...', 'info');
+
+        const uid = window.appState.usuario.uid;
+        const token = await window.apiClient.getFirebaseToken();
+
+        const response = await fetch('/api/payment/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'X-User-Id': uid
+            },
+            body: JSON.stringify({
+                productType: 'credits',
+                productId: `CREDITS_${packageValue}`,
+                idempotencyKey: `${uid}-credits-${packageValue}-${Date.now()}`
+            })
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.error || 'Erro ao criar pagamento');
         }
+
+        window.pagamentoAtual = {
+            paymentId: result.paymentId,
+            qrCode: result.qrCode,
+            qrCodeText: result.qrCodeText,
+            expiresAt: result.expiresAt,
+            amount: result.amount,
+            creditsToAdd: result.creditsToAdd
+        };
+
+        abrirModalPagamento(result);
+        iniciarPollingPagamento(result.paymentId);
+
+        window.mostrarToast('✅ PIX gerado! Escaneie o QR Code para pagar.', 'success');
+
     } catch (error) {
-        console.error('Erro ao comprar créditos:', error);
-        window.mostrarToast('Erro ao processar pagamento', 'error');
+        console.error('❌ Erro ao comprar créditos:', error);
+        window.mostrarToast('❌ ' + (error.message || 'Erro ao processar pagamento'), 'error');
     }
 }
+
+// ============================================
+// COMPRAR PRO (REAL - COM MERCADO PAGO)
+// ============================================
+async function comprarPro() {
+    if (!window.appState.usuario) {
+        window.mostrarModalLogin();
+        return;
+    }
+
+    try {
+        window.mostrarToast('⏳ Gerando pagamento PIX para PRO...', 'info');
+
+        const uid = window.appState.usuario.uid;
+        const token = await window.apiClient.getFirebaseToken();
+
+        const response = await fetch('/api/payment/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'X-User-Id': uid
+            },
+            body: JSON.stringify({
+                productType: 'pro',
+                productId: 'PRO',
+                idempotencyKey: `${uid}-pro-${Date.now()}`
+            })
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.error || 'Erro ao criar pagamento');
+        }
+
+        window.pagamentoAtual = {
+            paymentId: result.paymentId,
+            qrCode: result.qrCode,
+            qrCodeText: result.qrCodeText,
+            expiresAt: result.expiresAt,
+            amount: result.amount,
+            productType: 'pro'
+        };
+
+        abrirModalPagamento(result, 'pro');
+        iniciarPollingPagamento(result.paymentId);
+
+        window.mostrarToast('✅ PIX gerado! Escaneie o QR Code para ativar o PRO.', 'success');
+
+    } catch (error) {
+        console.error('❌ Erro ao comprar PRO:', error);
+        window.mostrarToast('❌ ' + (error.message || 'Erro ao processar pagamento'), 'error');
+    }
+}
+
+// ============================================
+// ABRIR MODAL COM QR CODE PIX
+// ============================================
+function abrirModalPagamento(paymentData, type = 'credits') {
+    document.querySelector('.modal-pagamento-overlay')?.remove();
+
+    const isPro = type === 'pro';
+    const title = isPro ? '⭐ Assinar PRO' : '💰 Comprar Créditos';
+    const description = isPro 
+        ? 'R$ 20,00 - 15 dias de PRO'
+        : `${paymentData.creditsToAdd || paymentData.amount} créditos`;
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-pagamento-overlay';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10001;
+        animation: fadeIn 0.3s ease;
+    `;
+
+    modal.innerHTML = `
+        <div style="
+            background: var(--bg-card, #1e293b);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 450px;
+            width: 90%;
+            text-align: center;
+            border: 1px solid var(--border, #334155);
+            position: relative;
+        ">
+            <button onclick="this.closest('.modal-pagamento-overlay').remove();" 
+                    style="position: absolute; top: 10px; right: 15px; background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer;">
+                ✕
+            </button>
+            
+            <h2 style="color: ${isPro ? '#f59e0b' : '#10b981'}; margin-bottom: 5px;">${title}</h2>
+            <p style="color: var(--text-secondary, #94a3b8); font-size: 14px; margin-bottom: 15px;">
+                Valor: <strong style="color: #f59e0b;">R$ ${paymentData.amount}</strong>
+                <br>${description}
+            </p>
+
+            <div style="background: white; padding: 20px; border-radius: 12px; margin: 15px 0;">
+                <img src="${paymentData.qrCode}" alt="QR Code PIX" style="width: 200px; height: 200px; display: block; margin: 0 auto;">
+            </div>
+
+            <div style="background: rgba(56, 189, 248, 0.1); padding: 12px; border-radius: 8px; margin: 10px 0;">
+                <p style="font-size: 12px; color: #94a3b8; margin: 0;">Código PIX (copia e cola):</p>
+                <p style="font-size: 11px; color: #38bdf8; word-break: break-all; margin: 5px 0; cursor: pointer;" 
+                   onclick="navigator.clipboard.writeText('${paymentData.qrCodeText}'); window.mostrarToast('Código copiado!', 'success')">
+                    ${paymentData.qrCodeText}
+                </p>
+            </div>
+
+            <div style="margin: 15px 0; padding: 10px; border-radius: 8px; background: rgba(251, 191, 36, 0.05); border: 1px solid #fbbf24;">
+                <p style="font-size: 12px; color: #fbbf24; margin: 0;">
+                    💡 Você pode fechar esta janela. 
+                    Assim que o pagamento for confirmado, 
+                    ${isPro ? 'seu PRO será ativado' : 'seus créditos serão adicionados'} automaticamente.
+                </p>
+            </div>
+
+            <div id="pagamentoStatus" style="margin: 15px 0; padding: 10px; border-radius: 8px; background: rgba(251, 191, 36, 0.1); border: 1px solid #fbbf24;">
+                <span style="color: #fbbf24;">⏳ Aguardando pagamento...</span>
+                <br>
+                <span style="font-size: 12px; color: #94a3b8;">O pagamento será confirmado automaticamente</span>
+            </div>
+
+            <button onclick="this.closest('.modal-pagamento-overlay').remove();" 
+                    style="width: 100%; padding: 12px; background: #64748b; border: none; border-radius: 12px; color: white; cursor: pointer; font-size: 14px;">
+                Fechar
+            </button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) this.remove();
+    });
+}
+
+// ============================================
+// POLLING PARA VERIFICAR STATUS DO PAGAMENTO
+// ============================================
+function iniciarPollingPagamento(paymentId) {
+    if (window._pollingInterval) {
+        clearInterval(window._pollingInterval);
+    }
+
+    let tentativas = 0;
+    const maxTentativas = 60; // 5 minutos
+
+    window._pollingInterval = setInterval(async () => {
+        tentativas++;
+
+        try {
+            const response = await fetch(`/api/payment/status?paymentId=${paymentId}`);
+            const result = await response.json();
+
+            if (result.status === 'confirmed') {
+                clearInterval(window._pollingInterval);
+                window._pollingInterval = null;
+
+                const statusDiv = document.getElementById('pagamentoStatus');
+                if (statusDiv) {
+                    statusDiv.style.background = 'rgba(34, 197, 94, 0.1)';
+                    statusDiv.style.border = '1px solid #22c55e';
+                    statusDiv.innerHTML = `
+                        <span style="color: #22c55e;">✅ PAGAMENTO CONFIRMADO!</span>
+                        <br>
+                        <span style="font-size: 12px; color: #94a3b8;">${result.payment?.product_type === 'pro' ? 'PRO ativado!' : 'Créditos adicionados!'}</span>
+                    `;
+                }
+
+                // 🔥 RECARREGAR DADOS DO BACKEND
+                try {
+                    const creditsResponse = await fetch('/api/credits?uid=' + window.appState.usuario.uid);
+                    const creditsData = await creditsResponse.json();
+                    
+                    window.updateAppState({
+                        creditos: creditsData.credits || 0,
+                        isPro: creditsData.isPro || false
+                    });
+
+                    if (typeof window.atualizarInterfaceUsuario === 'function') {
+                        window.atualizarInterfaceUsuario();
+                    }
+                } catch (error) {
+                    console.error('❌ Erro ao recarregar créditos:', error);
+                }
+
+                window.mostrarToast('✅ Pagamento confirmado!', 'success');
+
+                setTimeout(() => {
+                    document.querySelector('.modal-pagamento-overlay')?.remove();
+                }, 3000);
+
+            } else if (result.status === 'pending') {
+                const statusDiv = document.getElementById('pagamentoStatus');
+                if (statusDiv) {
+                    statusDiv.innerHTML = `
+                        <span style="color: #fbbf24;">⏳ Aguardando pagamento... (${tentativas}s)</span>
+                        <br>
+                        <span style="font-size: 12px; color: #94a3b8;">O pagamento será confirmado automaticamente</span>
+                    `;
+                }
+            }
+
+            if (tentativas >= maxTentativas) {
+                clearInterval(window._pollingInterval);
+                window._pollingInterval = null;
+                const statusDiv = document.getElementById('pagamentoStatus');
+                if (statusDiv) {
+                    statusDiv.style.background = 'rgba(239, 68, 68, 0.1)';
+                    statusDiv.style.border = '1px solid #ef4444';
+                    statusDiv.innerHTML = `
+                        <span style="color: #ef4444;">⏰ Tempo limite excedido</span>
+                        <br>
+                        <span style="font-size: 12px; color: #94a3b8;">O pagamento será confirmado quando recebido</span>
+                    `;
+                }
+            }
+
+        } catch (error) {
+            console.error('❌ Erro no polling:', error);
+        }
+    }, 5000);
+}
+
 
 // ============================================
 // FUNÇÃO PRINCIPAL: PROCESSAR LOGIN
@@ -228,5 +503,12 @@ window.mostrarModalLogin = mostrarModalLogin;
 window.fecharModalLogin = fecharModalLogin;
 window.abrirModalComprar = abrirModalComprar;
 window.comprarCreditos = comprarCreditos;
+// ============================================
+// EXPORTAÇÕES
+// ============================================
+window.comprarCreditos = comprarCreditos;
+window.comprarPro = comprarPro;
+window.abrirModalPagamento = abrirModalPagamento;
+window.iniciarPollingPagamento = iniciarPollingPagamento;
 
 console.log('✅ AUTH-HANDLER.js atualizado (V2.3 - appState integrado)');
