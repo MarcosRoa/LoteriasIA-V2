@@ -202,7 +202,7 @@ async function processarLogin(user) {
         
         const proMsg = window.appState.isPro ? ' ⭐ PRO' : '';
         if (typeof window.mostrarToast === 'function') {
-            window.mostrarToast(`Bem-vindo ${usuario.nome}! Saldo: R$ ${window.appState.creditos}${proMsg}`, 'success');
+            window.mostrarToast(`Bem-vindo ${usuario.nome}! Saldo: Créditos ${window.appState.creditos}${proMsg}`, 'success');
         }
         
         if (typeof window.renderizarConteudo === 'function') {
