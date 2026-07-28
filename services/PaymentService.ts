@@ -7,7 +7,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { ProService } from './ProService.js';
 import { CreditsService } from './CreditsService.js';
-import { CONSTANTS, PAYMENT_CONFIG } from '../core/config/constants.js';
+import { CONSTANTS } from '../core/config/constants.js';
 
 const supabase = createClient(
     process.env.SUPABASE_URL!,
@@ -43,7 +43,7 @@ export class PaymentService {
             let creditsToAdd: number = 0;
 
             if (data.productType === 'pro') {
-                amount = PAYMENT_CONFIG.PRO_PRICE;
+                amount = CONSTANTS.PRO_PRICE;
                 description = 'Assinatura PRO (15 dias)';
             } else if (data.productType === 'credits') {
                 const packageKey = data.productId || '12';
