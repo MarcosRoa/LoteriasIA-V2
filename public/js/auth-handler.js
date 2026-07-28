@@ -175,6 +175,13 @@ async function processarLogin(user) {
             proDaysLeft: proStatus.daysLeft || 0,
             proExpiresAt: proStatus.proExpiresAt || null
         });
+        // No processarLogin(), após updateAppState
+        document.body.classList.toggle('user-pro', window.appState.isPro);
+        
+        // Também no appStateChanged
+        document.addEventListener('appStateChanged', function() {
+            document.body.classList.toggle('user-pro', window.appState.isPro);
+        });
         
         console.log(`📋 Usuário: ${usuario.nome} | PRO: ${window.appState.isPro} | Créditos: ${window.appState.creditos}`);
         
