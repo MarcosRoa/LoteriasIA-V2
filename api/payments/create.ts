@@ -32,11 +32,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(400).json({ error: 'UID é obrigatório' });
         }
 
-        const { type, amount } = req.body; // type: 'pro' | 'credits'
-        if (!type || !amount) {
-            return res.status(400).json({ error: 'Tipo e valor são obrigatórios' });
-        }
+        // ✅ ADICIONAR productId
+        const { type, productId } = req.body; // type: 'pro' | 'credits', productId: 'PRO' | 'CREDITS_24'
+        
+        if (!type) {
+            return res.status(400).json({ error: 'Tipo é obrigatório' });
 
+        
         // ============================================
         // 2. BUSCAR USUÁRIO
         // ============================================
