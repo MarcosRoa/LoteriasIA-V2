@@ -1,7 +1,7 @@
 // ============================================
 // CAMINHO: core/config/constants.ts
 // ============================================
-// CONSTANTES DE NEGÓCIO - FONTE ÚNICA
+// CONSTANTES DE NEGÓCIO - FONTE ÚNICA 28/07/2026
 // ============================================
 
 export const CONSTANTS = {
