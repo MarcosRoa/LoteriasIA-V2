@@ -503,10 +503,6 @@ window.mostrarModalLogin = mostrarModalLogin;
 window.fecharModalLogin = fecharModalLogin;
 window.abrirModalComprar = abrirModalComprar;
 window.comprarCreditos = comprarCreditos;
-// ============================================
-// EXPORTAÇÕES
-// ============================================
-window.comprarCreditos = comprarCreditos;
 window.comprarPro = comprarPro;
 window.abrirModalPagamento = abrirModalPagamento;
 window.iniciarPollingPagamento = iniciarPollingPagamento;
