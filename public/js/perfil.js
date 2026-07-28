@@ -179,6 +179,9 @@ function criarHTML(user, credits, isPro, expiresAt, historico, transacoes, dias)
                 <div class="header-logo">
                     <img src="/img/BrasãoRoa Imagem.png" alt="Logo" style="width: 200px; height: auto;">
                 </div>
+                <div class="header-actions">
+                    <button class="btn-voltar" onclick="window.location.href='index.html'">← Voltar</button>
+                </di
             </div>
         </div>
 
