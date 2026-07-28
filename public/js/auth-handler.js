@@ -168,6 +168,9 @@ async function processarLogin(user) {
         // ============================================
         // ✅ ÚNICA ATUALIZAÇÃO DE ESTADO
         // ============================================
+        // ============================================
+        // ✅ ÚNICA ATUALIZAÇÃO DE ESTADO
+        // ============================================
         window.updateAppState({
             usuario,
             creditos: credits,
@@ -176,6 +179,47 @@ async function processarLogin(user) {
             proExpiresAt: proStatus.proExpiresAt || null
         });
         
+        console.log(`📋 Usuário: ${usuario.nome} | PRO: ${window.appState.isPro} | Créditos: ${window.appState.creditos}`);
+        
+        // ============================================
+        // ✅ ORDEM CORRETA: Sincronizar → Renderizar → Atualizar Botões
+        // ============================================
+        if (typeof window.sincronizarIASelecionada === 'function') {
+            window.sincronizarIASelecionada();
+        }
+        
+        if (typeof window.atualizarInterfaceUsuario === 'function') {
+            await window.atualizarInterfaceUsuario();
+        }
+        
+        const proMsg = window.appState.isPro ? ' ⭐ PRO' : '';
+        if (typeof window.mostrarToast === 'function') {
+            window.mostrarToast(`Bem-vindo ${usuario.nome}! Saldo: ${window.appState.creditos} Créditos${proMsg}`, 'success');
+        }
+        
+        if (typeof window.renderizarConteudo === 'function') {
+            const loteria = window.loteriaAtual ? window.loteriaAtual() : 'megasena';
+            window.renderizarConteudo(loteria);
+        }
+        
+        // ✅ CHAMAR AQUI, DEPOIS QUE OS BOTÕES FOREM RENDERIZADOS
+        if (typeof window.atualizarBotoesPro === 'function') {
+            // Aguardar um pequeno delay para garantir que o DOM foi atualizado
+            setTimeout(() => {
+                window.atualizarBotoesPro();
+            }, 100);
+        } else {
+            console.warn('⚠️ atualizarBotoesPro não encontrada, tentando fallback...');
+            setTimeout(() => {
+                document.querySelectorAll('.ia-btn.pro-only').forEach(btn => {
+                    btn.classList.remove('pro-only');
+                    btn.style.cursor = 'pointer';
+                    btn.style.opacity = '1';
+                    btn.style.borderStyle = 'solid';
+                    btn.title = btn.title.replace('🔒 ', '');
+                });
+            }, 150);
+        }
         console.log(`📋 Usuário: ${usuario.nome} | PRO: ${window.appState.isPro} | Créditos: ${window.appState.creditos}`);
         
         // ============================================
