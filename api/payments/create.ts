@@ -38,6 +38,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!type) {
             return res.status(400).json({ error: 'Tipo é obrigatório' });
         }
+        
+        const { type, amount } = req.body; // type: 'pro' | 'credits'
+        if (!type || !amount) {
+            return res.status(400).json({ error: 'Tipo e valor são obrigatórios' });
+        }
 
         
         // ============================================
