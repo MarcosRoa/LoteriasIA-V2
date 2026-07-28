@@ -1,7 +1,7 @@
 // ============================================
 // CAMINHO: api/payment/status.ts
 // ============================================
-// CONSULTAR STATUS DO PAGAMENTO
+// CONSULTAR STATUS DO PAGAMENTO  28/07/2026
 // ============================================
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
