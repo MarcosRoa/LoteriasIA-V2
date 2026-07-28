@@ -72,7 +72,7 @@ function atualizarInterfaceUsuario() {
                     <div style="display: flex; align-items: center; gap: 6px; background: var(--bg-card); padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border);">
                         <span style="font-size: 14px;">💰</span>
                         <span style="font-weight: 600; color: #f59e0b; font-size: 14px;">
-                            R$ ${credits}
+                            Creditos ${credits}
                         </span>
                     </div>
                     
