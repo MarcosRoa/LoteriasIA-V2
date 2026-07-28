@@ -41,20 +41,26 @@ export class PaymentService {
             let amount: number;
             let description: string;
             let creditsToAdd: number = 0;
-
+            
             if (data.productType === 'pro') {
                 amount = CONSTANTS.PRO_PRICE;
                 description = 'Assinatura PRO (15 dias)';
             } else if (data.productType === 'credits') {
-                // ✅ APENAS UMA DECLARAÇÃO
-                const packageKey = data.productId?.replace('CREDITS_', '') || '12';
-                const packageValue = CONSTANTS.CREDIT_PACKAGES[packageKey as keyof typeof CONSTANTS.CREDIT_PACKAGES];
+                // ✅ EXTRAIR O NÚMERO DO PACOTE
+                const rawKey = data.productId?.replace('CREDITS_', '') || '12';
+                const packageKey = Number(rawKey);
+                
+                // ✅ VALIDAR SE É UM NÚMERO VÁLIDO
+                if (isNaN(packageKey) || packageKey <= 0) {
+                    return { success: false, error: 'Pacote de créditos inválido' };
+                }
+                
+                // ✅ BUSCAR O VALOR (USANDO ANY PARA CONTORNAR O TIPO)
+                const packageValue = (CONSTANTS.CREDIT_PACKAGES as any)[packageKey];
                 
                 if (!packageValue) {
                     return { success: false, error: 'Pacote de créditos inválido' };
                 }
-                
-                // ✅ REMOVER O SEGUNDO if (!packageValue)
                 
                 amount = packageValue;
                 creditsToAdd = packageValue;
