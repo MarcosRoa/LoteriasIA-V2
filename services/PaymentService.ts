@@ -46,8 +46,12 @@ export class PaymentService {
                 amount = CONSTANTS.PRO_PRICE;
                 description = 'Assinatura PRO (15 dias)';
             } else if (data.productType === 'credits') {
-                const packageKey = data.productId || '12';
+                 // ✅ APENAS UMA DECLARAÇÃO
+                const packageKey = data.productId?.replace('CREDITS_', '') || '12';
                 const packageValue = CONSTANTS.CREDIT_PACKAGES[packageKey as keyof typeof CONSTANTS.CREDIT_PACKAGES];
+                if (!packageValue) {
+                    return { success: false, error: 'Pacote de créditos inválido' };
+                }
                 
                 if (!packageValue) {
                     return { success: false, error: 'Pacote de créditos inválido' };
