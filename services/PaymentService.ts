@@ -130,20 +130,21 @@ export class PaymentService {
                 .from('payments')
                 .insert({
                     user_id: data.userId,
-                    gateway: 'mercadopago',
-                    payment_id: String(paymentData.id),
+                    provider: 'mercadopago',
+                    provider_payment_id: String(paymentData.id),
                     status: 'pending',
                     product_type: data.productType,
                     amount: amount,
                     credits_amount: creditsToAdd,
-                    qr_code: paymentData.point_of_interaction?.transaction_data?.qr_code_base64,
-                    qr_code_text: paymentData.point_of_interaction?.transaction_data?.qr_code,
+                    pix_qr_code: paymentData.point_of_interaction?.transaction_data?.qr_code_base64,
+                    pix_copy_paste: paymentData.point_of_interaction?.transaction_data?.qr_code,
                     external_reference: externalReference,
                     idempotency_key: data.idempotencyKey,
-                    payment_data: paymentData,
-                    expires_at: expiresAt.toISOString()
+                    payload: paymentData,
+                    expires_at: expiresAt.toISOString(),
+                    created_by_source: 'api'
                 });
-
+    
             return {
                 success: true,
                 paymentId: paymentData.id,
@@ -154,7 +155,7 @@ export class PaymentService {
                 amount: amount,
                 creditsToAdd: creditsToAdd
             };
-
+    
         } catch (error: any) {
             console.error('❌ Erro ao criar pagamento:', error);
             return { success: false, error: error.message };
