@@ -159,20 +159,29 @@ function criarHTML(user, credits, isPro, expiresAt, historico, transacoes, dias)
     
     return `
         <!-- HEADER -->
+        <!-- ============================================
+            CABEÇALHO
+            ============================================ -->
         <div class="header">
             <div class="header-content">
                 <div class="header-logo">
-                    <img src="BrasãoRoa Imagem.png" onerror="this.style.display='none'" alt="Logo">
+                    <img src="/img/BrasãoRoa Imagem.png" alt="Logo" style="width: 200px; height: auto;">
                 </div>
                 <div class="header-text">
-                    <h1>🧠 Loterias V.6.1 <span class="version-badge">MEU PERFIL</span></h1>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
+                        <h1 style="margin: 0; background: linear-gradient(135deg, #8b5cf6, #06b6d4, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 22px;">
+                            🧠Sistema Profissional de Loterias com IA Real 🧠
+                        </h1>
+                        <span class="version-badge">V.7.0 PRO</span>
+                    </div>
                     <p class="header-subtitle">10 loterias • IA que Aprende Padrões • Login Social • Sistema de Créditos • PIX</p>
                 </div>
-                <div class="header-actions">
-                    <button class="btn-voltar" onclick="window.location.href='index.html'">← Voltar</button>
+                <div class="header-logo">
+                    <img src="/img/BrasãoRoa Imagem.png" alt="Logo" style="width: 200px; height: auto;">
                 </div>
             </div>
         </div>
+
 
         <!-- CONTEÚDO PRINCIPAL -->
         <div class="container">
