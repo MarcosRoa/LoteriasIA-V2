@@ -58,9 +58,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             userId: uid,
             userEmail: user.email,
             userName: user.nome || 'Usuário',
-            amount: amount,
-            type: type, // 'pro' ou 'credits'
-            description: type === 'pro' ? 'Assinatura PRO' : `Compra de ${amount} créditos`
+            productType: type,      // ← 'pro' ou 'credits'
+            productId: productId,   // ← 'PRO' ou 'CREDITS_24'
+            idempotencyKey: `${uid}-${type}-${Date.now()}`
         });
 
         if (!result.success) {
