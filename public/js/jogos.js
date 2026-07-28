@@ -19,7 +19,7 @@ function validarSaldoEAcesso(qtd, valorTotal) {
     }
     
     if (window.creditosUsuario < valorTotal) {
-        window.mostrarToast(`❌ Saldo insuficiente! Necessário: R$ ${valorTotal} | Disponível: R$ ${window.creditosUsuario}`, 'error');
+        window.mostrarToast(`❌ Saldo insuficiente! Necessário: Crdts ${valorTotal} | Disponível: Crdts ${window.creditosUsuario}`, 'error');
         if (typeof window.abrirModalComprar === 'function') {
             window.abrirModalComprar();
         }
