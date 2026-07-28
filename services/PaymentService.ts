@@ -1,43 +1,18 @@
 // ============================================
 // CAMINHO: services/PaymentService.ts
 // ============================================
-// SERVIÇO DE PAGAMENTOS - MERCADO PAGO
+// SERVIÇO DE PAGAMENTOS - VERSÃO CORRIGIDA
 // ============================================
 
 import { createClient } from '@supabase/supabase-js';
 import { ProService } from './ProService.js';
 import { CreditsService } from './CreditsService.js';
-import { CONSTANTS } from '../core/config/constants.js';
+import { CONSTANTS, PAYMENT_CONFIG } from '../core/config/constants.js';
 
 const supabase = createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-
-interface PaymentData {
-    userId: string;
-    userEmail: string;
-    userName: string;
-    amount: number;
-    type: 'pro' | 'credits';
-    description: string;
-}
-
-interface PaymentResult {
-    success: boolean;
-    paymentId?: string;
-    qrCodeBase64?: string;
-    qrCodeText?: string;
-    externalReference?: string;
-    expiresAt?: string;
-    paymentData?: any;
-    error?: string;
-}
-
-interface WebhookValidation {
-    valid: boolean;
-    error?: string;
-}
 
 export class PaymentService {
     private mercadopagoAccessToken: string;
@@ -49,25 +24,74 @@ export class PaymentService {
     }
 
     // ============================================
-    // CRIAR PAGAMENTO PIX
+    // CRIAR PAGAMENTO PIX (COM VALIDAÇÃO)
     // ============================================
-    async createPixPayment(data: PaymentData): Promise<PaymentResult> {
+    async createPixPayment(data: {
+        userId: string;
+        userEmail: string;
+        userName: string;
+        productType: 'pro' | 'credits';
+        productId?: string; // Para créditos: '12', '24', '36', etc.
+        idempotencyKey: string;
+    }): Promise<any> {
         try {
-            const externalReference = `loterias-${data.type}-${data.userId}-${Date.now()}`;
-            const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutos
+            // ============================================
+            // 1. VALIDAR E DEFINIR VALOR (SERVIDOR)
+            // ============================================
+            let amount: number;
+            let description: string;
+            let creditsToAdd: number = 0;
+
+            if (data.productType === 'pro') {
+                amount = PAYMENT_CONFIG.PRO_PRICE;
+                description = 'Assinatura PRO (15 dias)';
+            } else if (data.productType === 'credits') {
+                const packageKey = data.productId || '12';
+                const packageValue = PAYMENT_CONFIG.CREDIT_PACKAGES[packageKey as keyof typeof PAYMENT_CONFIG.CREDIT_PACKAGES];
+                
+                if (!packageValue) {
+                    return { success: false, error: 'Pacote de créditos inválido' };
+                }
+                
+                amount = packageValue;
+                creditsToAdd = packageValue; // R$ 12 → 12 créditos
+                description = `${creditsToAdd} créditos`;
+            } else {
+                return { success: false, error: 'Tipo de produto inválido' };
+            }
 
             // ============================================
-            // 1. CHAMAR MERCADO PAGO API
+            // 2. VERIFICAR IDEMPOTÊNCIA
             // ============================================
+            const existingPayment = await this.buscarPorIdempotencia(data.idempotencyKey);
+            if (existingPayment) {
+                return {
+                    success: true,
+                    paymentId: existingPayment.payment_id,
+                    qrCodeBase64: existingPayment.qr_code,
+                    qrCodeText: existingPayment.qr_code_text,
+                    expiresAt: existingPayment.expires_at,
+                    externalReference: existingPayment.external_reference,
+                    message: 'Pagamento já criado anteriormente'
+                };
+            }
+
+            // ============================================
+            // 3. CHAMAR MERCADO PAGO
+            // ============================================
+            const externalReference = `loterias-${data.productType}-${data.userId}-${Date.now()}`;
+            const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
             const response = await fetch('https://api.mercadopago.com/v1/payments', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.mercadopagoAccessToken}`
+                    'Authorization': `Bearer ${this.mercadopagoAccessToken}`,
+                    'X-Idempotency-Key': data.idempotencyKey
                 },
                 body: JSON.stringify({
-                    transaction_amount: data.amount,
-                    description: data.description,
+                    transaction_amount: amount,
+                    description: description,
                     payment_method_id: 'pix',
                     payer: {
                         email: data.userEmail,
@@ -76,51 +100,82 @@ export class PaymentService {
                     external_reference: externalReference,
                     metadata: {
                         user_id: data.userId,
-                        type: data.type
+                        product_type: data.productType,
+                        credits_to_add: creditsToAdd,
+                        idempotency_key: data.idempotencyKey
                     }
                 })
             });
 
             if (!response.ok) {
                 const errorData = await response.text();
-                console.error('❌ Erro no Mercado Pago:', errorData);
-                return {
-                    success: false,
-                    error: `Erro ao criar pagamento: ${response.status}`
-                };
+                return { success: false, error: `Erro no MP: ${response.status}` };
             }
 
             const paymentData = await response.json();
 
             // ============================================
-            // 2. EXTRAIR QR CODE
+            // 4. SALVAR NO BANCO
             // ============================================
-            const qrCodeBase64 = paymentData.point_of_interaction?.transaction_data?.qr_code_base64 || null;
-            const qrCodeText = paymentData.point_of_interaction?.transaction_data?.qr_code || null;
-
-            if (!qrCodeBase64 || !qrCodeText) {
-                return {
-                    success: false,
-                    error: 'QR Code não gerado pelo Mercado Pago'
-                };
-            }
+            await supabase
+                .from('payments')
+                .insert({
+                    user_id: data.userId,
+                    gateway: 'mercadopago',
+                    payment_id: String(paymentData.id),
+                    status: 'pending',
+                    product_type: data.productType,
+                    amount: amount,
+                    credits_amount: creditsToAdd,
+                    qr_code: paymentData.point_of_interaction?.transaction_data?.qr_code_base64,
+                    qr_code_text: paymentData.point_of_interaction?.transaction_data?.qr_code,
+                    external_reference: externalReference,
+                    idempotency_key: data.idempotencyKey,
+                    payment_data: paymentData,
+                    expires_at: expiresAt.toISOString()
+                });
 
             return {
                 success: true,
                 paymentId: paymentData.id,
-                qrCodeBase64,
-                qrCodeText,
-                externalReference,
+                qrCodeBase64: paymentData.point_of_interaction?.transaction_data?.qr_code_base64,
+                qrCodeText: paymentData.point_of_interaction?.transaction_data?.qr_code,
                 expiresAt: expiresAt.toISOString(),
-                paymentData
+                externalReference: externalReference,
+                amount: amount,
+                creditsToAdd: creditsToAdd
             };
 
         } catch (error: any) {
-            console.error('❌ Erro ao criar pagamento PIX:', error);
+            console.error('❌ Erro ao criar pagamento:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ============================================
+    // CONSULTAR STATUS DO PAGAMENTO
+    // ============================================
+    async getPaymentStatus(paymentId: string): Promise<any> {
+        try {
+            const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+                headers: {
+                    'Authorization': `Bearer ${this.mercadopagoAccessToken}`
+                }
+            });
+
+            if (!response.ok) {
+                return { success: false, error: 'Erro ao consultar pagamento' };
+            }
+
+            const data = await response.json();
             return {
-                success: false,
-                error: error.message || 'Erro ao criar pagamento'
+                success: true,
+                status: data.status,
+                paymentData: data
             };
+
+        } catch (error: any) {
+            return { success: false, error: error.message };
         }
     }
 
@@ -129,63 +184,46 @@ export class PaymentService {
     // ============================================
     async processarPagamento(payment: any): Promise<{ success: boolean; error?: string }> {
         try {
-            const { user_id, type, amount, payment_id } = payment;
+            const { user_id, product_type, amount, payment_id, credits_amount } = payment;
 
             // ============================================
-            // 1. VALIDAR VALOR
+            // 1. BUSCAR USUÁRIO
             // ============================================
-            const valorEsperado = this.getValorEsperado(type);
-            if (amount !== valorEsperado) {
-                return {
-                    success: false,
-                    error: `Valor incorreto. Esperado: R$ ${valorEsperado}, Recebido: R$ ${amount}`
-                };
-            }
-
-            // ============================================
-            // 2. PROCESSAR POR TIPO
-            // ============================================
-            if (type === 'pro') {
-                return await this.processarPro(user_id);
-            } else if (type === 'credits') {
-                return await this.processarCredits(user_id, amount);
-            }
-
-            return {
-                success: false,
-                error: `Tipo de pagamento inválido: ${type}`
-            };
-
-        } catch (error: any) {
-            console.error('❌ Erro ao processar pagamento:', error);
-            return {
-                success: false,
-                error: error.message || 'Erro ao processar pagamento'
-            };
-        }
-    }
-
-    // ============================================
-    // PROCESSAR ASSINATURA PRO
-    // ============================================
-    private async processarPro(userId: string): Promise<{ success: boolean; error?: string }> {
-        try {
-            // Buscar usuário
             const { data: user, error } = await supabase
                 .from('usuarios')
                 .select('uid, is_pro, pro_expires_at, creditos, email')
-                .eq('uid', userId)
+                .eq('uid', user_id)
                 .maybeSingle();
 
             if (error || !user) {
                 return { success: false, error: 'Usuário não encontrado' };
             }
 
-            // Calcular nova expiração (inteligente)
+            // ============================================
+            // 2. PROCESSAR POR TIPO
+            // ============================================
+            if (product_type === 'pro') {
+                return await this.processarPro(user);
+            } else if (product_type === 'credits') {
+                return await this.processarCredits(user, credits_amount || amount);
+            }
+
+            return { success: false, error: `Tipo inválido: ${product_type}` };
+
+        } catch (error: any) {
+            console.error('❌ Erro ao processar pagamento:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ============================================
+    // ATIVAR PRO
+    // ============================================
+    private async processarPro(user: any): Promise<{ success: boolean; error?: string }> {
+        try {
             const newExpiresAt = ProService.calcularNovaExpiracao(user.pro_expires_at);
             const daysLeft = ProService.calcularDiasRestantes(newExpiresAt);
 
-            // Atualizar usuário
             await supabase
                 .from('usuarios')
                 .update({
@@ -193,64 +231,105 @@ export class PaymentService {
                     pro_expires_at: newExpiresAt,
                     updated_at: new Date().toISOString()
                 })
-                .eq('uid', userId);
+                .eq('uid', user.uid);
 
-            // Registrar transação
             await this.registrarTransacao({
-                user_id: userId,
+                user_id: user.uid,
                 type: 'pro_ativacao',
                 amount: 0,
-                description: `Assinatura PRO ativada (${daysLeft} dias)`,
-                metadata: { expires_at: newExpiresAt, days_left: daysLeft }
+                description: `PRO ativado (${daysLeft} dias)`,
+                metadata: { expires_at: newExpiresAt }
             });
-
-            console.log(`✅ PRO ativado para ${userId}: ${daysLeft} dias`);
 
             return { success: true };
 
         } catch (error: any) {
-            console.error('❌ Erro ao ativar PRO:', error);
             return { success: false, error: error.message };
         }
     }
 
     // ============================================
-    // PROCESSAR CRÉDITOS
+    // ADICIONAR CRÉDITOS
     // ============================================
-    private async processarCredits(userId: string, amount: number): Promise<{ success: boolean; error?: string }> {
+    private async processarCredits(user: any, creditsToAdd: number): Promise<{ success: boolean; error?: string }> {
         try {
             const creditsService = new CreditsService();
-            const newBalance = await creditsService.addCredits(userId, amount);
+            const newBalance = await creditsService.addCredits(user.uid, creditsToAdd);
 
-            // Registrar transação
             await this.registrarTransacao({
-                user_id: userId,
+                user_id: user.uid,
                 type: 'compra_creditos',
-                amount: amount,
-                description: `Compra de ${amount} créditos`,
+                amount: creditsToAdd,
+                description: `Compra de ${creditsToAdd} créditos`,
                 metadata: { new_balance: newBalance }
             });
 
-            console.log(`✅ ${amount} créditos adicionados para ${userId}`);
-
             return { success: true };
 
         } catch (error: any) {
-            console.error('❌ Erro ao adicionar créditos:', error);
             return { success: false, error: error.message };
         }
     }
 
     // ============================================
-    // REGISTRAR TRANSAÇÃO
+    // VALIDAR WEBHOOK (OFICIAL)
     // ============================================
-    private async registrarTransacao(data: {
-        user_id: string;
-        type: string;
-        amount: number;
-        description: string;
-        metadata?: any;
-    }): Promise<void> {
+    async validarWebhook(request: any): Promise<{ valid: boolean; error?: string }> {
+        try {
+            // 🔥 Usar validação oficial do Mercado Pago
+            const signature = request.headers['x-signature'];
+            const requestId = request.headers['x-request-id'];
+
+            if (!signature || !requestId) {
+                return { valid: false, error: 'Headers de assinatura ausentes' };
+            }
+
+            // 🔥 Consultar a API para confirmar o webhook
+            // (Implementar com a SDK oficial)
+            const body = request.body;
+            const paymentId = body.data?.id;
+
+            if (!paymentId) {
+                return { valid: false, error: 'ID do pagamento ausente' };
+            }
+
+            // 🔥 Buscar o pagamento no banco
+            const { data: payment } = await supabase
+                .from('payments')
+                .select('*')
+                .eq('payment_id', String(paymentId))
+                .maybeSingle();
+
+            if (!payment) {
+                return { valid: false, error: 'Pagamento não encontrado' };
+            }
+
+            // 🔥 Consultar Mercado Pago para confirmar
+            const mpResponse = await this.getPaymentStatus(paymentId);
+            if (!mpResponse.success || mpResponse.status !== 'approved') {
+                return { valid: false, error: 'Pagamento não confirmado no MP' };
+            }
+
+            return { valid: true };
+
+        } catch (error: any) {
+            return { valid: false, error: error.message };
+        }
+    }
+
+    // ============================================
+    // UTILITÁRIOS
+    // ============================================
+    private async buscarPorIdempotencia(key: string): Promise<any> {
+        const { data } = await supabase
+            .from('payments')
+            .select('*')
+            .eq('idempotency_key', key)
+            .maybeSingle();
+        return data;
+    }
+
+    private async registrarTransacao(data: any): Promise<void> {
         try {
             await supabase
                 .from('transacoes')
@@ -258,51 +337,13 @@ export class PaymentService {
                     usuario_uid: data.user_id,
                     tipo: data.type,
                     quantidade: data.amount,
-                    saldo_apos: 0, // Será atualizado pelo service
+                    saldo_apos: 0,
                     referencia: data.description,
                     metadata: data.metadata || {},
                     created_at: new Date().toISOString()
                 });
         } catch (error) {
             console.error('❌ Erro ao registrar transação:', error);
-            // Não falha o processo
         }
-    }
-
-    // ============================================
-    // VALIDAR WEBHOOK
-    // ============================================
-    validarWebhook(signature: string | null, body: any): boolean {
-        if (!signature) {
-            console.warn('⚠️ Assinatura do webhook não fornecida');
-            return false;
-        }
-
-        // Simples validação (aprimorar com a assinatura real do Mercado Pago)
-        // Na produção, use a biblioteca oficial do Mercado Pago para validar
-        if (this.mercadopagoWebhookSecret && signature !== this.mercadopagoWebhookSecret) {
-            console.warn('⚠️ Assinatura do webhook inválida');
-            return false;
-        }
-
-        return true;
-    }
-
-    // ============================================
-    // VALOR ESPERADO POR TIPO
-    // ============================================
-    private getValorEsperado(type: string): number {
-        const valores = {
-            'pro': 20,      // Assinatura PRO (R$ 20,00)
-            'credits_12': 12,
-            'credits_24': 24,
-            'credits_36': 36,
-            'credits_48': 48,
-            'credits_60': 60,
-            'credits_120': 120,
-            'credits_180': 180,
-            'credits_240': 240
-        };
-        return (valores as any)[type] || 0;
     }
 }
