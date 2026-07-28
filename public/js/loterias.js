@@ -815,22 +815,56 @@ function atualizarAnimacaoTreinamento(status) {
 // ============================================
 // ATUALIZAR BOTÕES PRO
 // ============================================
+// ============================================
+// ATUALIZAR BOTÕES PRO (CORRIGIDO - FORÇADO)
+// ============================================
 function atualizarBotoesPro() {
     const isProUser = window.appState.isPro || false;
-    document.querySelectorAll('.ia-btn.pro-only').forEach(btn => {
+    
+    console.log('🔄 Atualizando botões PRO. isPro:', isProUser);
+    
+    // ✅ SELECIONAR TODOS OS BOTÕES PRO
+    const botoesPro = document.querySelectorAll('.ia-btn.pro-only');
+    console.log(`📊 ${botoesPro.length} botões PRO encontrados`);
+    
+    botoesPro.forEach(btn => {
         if (isProUser) {
+            // ✅ FORÇAR REMOÇÃO DA CLASSE E ESTILOS
             btn.classList.remove('pro-only');
+            btn.style.cursor = 'pointer';
+            btn.style.opacity = '1';
+            btn.style.borderStyle = 'solid';
+            btn.style.pointerEvents = 'auto';
             btn.title = btn.title.replace('🔒 ', '');
+            console.log('✅ Botão liberado:', btn.dataset.ia);
         } else {
+            // ✅ FORÇAR ADIÇÃO DA CLASSE E ESTILOS
             btn.classList.add('pro-only');
+            btn.style.cursor = 'not-allowed';
+            btn.style.opacity = '0.6';
+            btn.style.borderStyle = 'dashed';
+            btn.style.pointerEvents = 'none';
             if (!btn.title.includes('🔒')) {
                 btn.title = '🔒 ' + btn.title;
             }
+            console.log('🔒 Botão bloqueado:', btn.dataset.ia);
         }
     });
+    
+    // ✅ TAMBÉM VERIFICAR BOTÕES QUE PODEM TER PERDIDO A CLASSE
+    document.querySelectorAll('.ia-btn').forEach(btn => {
+        const isProOnly = btn.dataset.ia === 'probability' || btn.dataset.ia === 'predictive';
+        if (isProOnly && isProUser) {
+            btn.classList.remove('pro-only');
+            btn.style.cursor = 'pointer';
+            btn.style.opacity = '1';
+            btn.style.borderStyle = 'solid';
+            btn.style.pointerEvents = 'auto';
+        }
+    });
+    
     sincronizarIASelecionada();
 }
-
 // ============================================
 // RENDERIZAR CONTEÚDO DA LOTERIA (COMPLETA + BOTÕES IA MODERNOS)
 // ============================================
