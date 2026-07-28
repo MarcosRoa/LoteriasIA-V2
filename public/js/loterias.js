@@ -1034,7 +1034,7 @@ function renderizarConteudo(loteria) {
     }
     
     html += `<button class="btn btn-primary" onclick="window.gerarJogos()" style="margin-top: 20px; width: 100%; max-width: 300px; display: block; margin-left: auto; margin-right: auto;">
-        ${config ? config.icone : '🎲'} GERAR JOGOS (3,00 Creditos/jogo)
+        ${config ? config.icone : '🎲'} GERAR JOGOS (3,00 Créditos/Jogo)
     </button>
     <div id="backtestResultados" style="margin-top:15px;"></div>
     <div id="resultados" style="margin-top:20px;"></div>
