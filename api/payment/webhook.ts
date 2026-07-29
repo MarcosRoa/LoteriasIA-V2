@@ -105,3 +105,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         
         console.log(`✅ Pagamento ${paymentId} processado com sucesso`);
         return res.status(200).json({ success: true });
+    }
+}
