@@ -286,51 +286,55 @@ export class PaymentService {
     // ============================================
     async validarWebhook(request: any): Promise<{ valid: boolean; error?: string }> {
         try {
-            // ============================================
-            // 🔥 LOG 2: VER OS HEADERS RECEBIDOS
-            // ============================================
             console.log('🔍 VALIDANDO WEBHOOK:');
             console.log('  Headers recebidos:', Object.keys(request.headers));
             console.log('  x-signature:', request.headers['x-signature']);
             console.log('  x-request-id:', request.headers['x-request-id']);
             
-            // 🔥 Usar validação oficial do Mercado Pago
             const signature = request.headers['x-signature'];
             const requestId = request.headers['x-request-id'];
-
+    
             if (!signature || !requestId) {
                 return { valid: false, error: 'Headers de assinatura ausentes' };
             }
-
-            // 🔥 Consultar a API para confirmar o webhook
-            // (Implementar com a SDK oficial)
+    
             const body = request.body;
             const paymentId = body.data?.id;
-
+    
             if (!paymentId) {
                 return { valid: false, error: 'ID do pagamento ausente' };
             }
-
-            // 🔥 Buscar o pagamento no banco
-            const { data: payment } = await supabase
+    
+            // 🔥 LOGS DE DIAGNÓSTICO
+            console.log('🔍 BUSCANDO PAGAMENTO:');
+            console.log('  paymentId recebido:', paymentId);
+            console.log('  paymentId type:', typeof paymentId);
+    
+            const { data: payment, error } = await supabase
                 .from('payments')
                 .select('*')
-                .eq('payment_id', String(paymentId))
+                .eq('provider_payment_id', String(paymentId))
                 .maybeSingle();
-
+    
+            console.log('🔍 RESULTADO DA CONSULTA:');
+            console.log('  payment encontrado:', !!payment);
+            console.log('  payment:', payment);
+            console.log('  error:', error);
+    
             if (!payment) {
                 return { valid: false, error: 'Pagamento não encontrado' };
             }
-
+    
             // 🔥 Consultar Mercado Pago para confirmar
             const mpResponse = await this.getPaymentStatus(paymentId);
             if (!mpResponse.success || mpResponse.status !== 'approved') {
                 return { valid: false, error: 'Pagamento não confirmado no MP' };
             }
-
+    
             return { valid: true };
-
+    
         } catch (error: any) {
+            console.error('❌ Erro no validarWebhook:', error);
             return { valid: false, error: error.message };
         }
     }
