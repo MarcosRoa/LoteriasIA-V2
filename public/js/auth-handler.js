@@ -344,7 +344,7 @@ function iniciarPollingPagamento(paymentId) {
             const response = await fetch(`/api/payment/status?paymentId=${paymentId}`);
             const result = await response.json();
 
-            if (result.status === 'confirmed') {
+            if (result.status === 'approved' || result.status === 'confirmed') {
                 clearInterval(window._pollingInterval);
                 window._pollingInterval = null;
 
