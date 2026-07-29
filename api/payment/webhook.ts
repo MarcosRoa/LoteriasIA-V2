@@ -15,9 +15,13 @@ const supabase = createClient(
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     
+    // ============================================
+    // 🔥 LOG 1: VER O QUE CHEGA
+    // ============================================
     console.log('🔍 WEBHOOK RECEBIDO:');
-    console.log('  Headers:', req.headers);
-    console.log('  Body:', req.body);
+    console.log('  Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('  Body:', JSON.stringify(req.body, null, 2));
+    console.log('  Method:', req.method);
     
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') {
@@ -43,9 +47,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!paymentId) {
             return res.status(400).json({ error: 'ID do pagamento ausente' });
         }
-        console.log('🔍 WEBHOOK RECEBIDO:');
-        console.log('  Headers:', req.headers);
-        console.log('  Body:', req.body);
+        // ============================================
+        // 🔥 LOG 3: VER O PAYMENT ID E A BUSCA
+        // ============================================
+        console.log('🔍 BUSCANDO PAGAMENTO:');
+        console.log('  paymentId:', paymentId);
+        console.log('  Tipo:', typeof paymentId);
         // ============================================
         // 3. BUSCAR PAGAMENTO NO BANCO
         // ============================================
