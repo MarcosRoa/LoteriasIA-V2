@@ -100,6 +100,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         } else {
             console.log('✅ PAGAMENTO SALVO COM SUCESSO!', insertedData);
         }
+        // 🔥 VERIFICAÇÃO PÓS-INSERT
+        const { data: verifyData, error: verifyError } = await supabase
+            .from('payments')
+            .select('provider_payment_id, status, uid')
+            .eq('provider_payment_id', String(result.paymentId));
+
+        console.log('🔍 VERIFICAÇÃO PÓS-INSERT:');
+        console.log('  verifyData:', verifyData);
+        console.log('  verifyError:', verifyError);
 
         // ✅ RETORNAR COM amount E creditsToAdd
         return res.status(200).json({
