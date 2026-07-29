@@ -63,6 +63,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(404).json({ error: 'Pagamento não encontrado' });
         }
 
+        console.log('✅ Pagamento encontrado:', {
+            id: payment.id,
+            provider_payment_id: payment.provider_payment_id,
+            status: payment.status
+        });
+
         // ============================================
         // 4. EVITAR DUPLICIDADE
         // ============================================
@@ -71,9 +77,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         // ============================================
-        // 5. ATUALIZAR BANCO (PRIMEIRO)
+        // 5. ATUALIZAR BANCO (COM VERIFICAÇÃO)
         // ============================================
-        await supabase
+        console.log('🔍 ATUALIZANDO PAGAMENTO:');
+        console.log('  payment.id:', payment.id);
+        console.log('  status atual:', payment.status);
+
+        const { data: updatedPayment, error: updateError } = await supabase
             .from('payments')
             .update({
                 status: 'confirmed',
@@ -81,7 +91,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 payload: req.body,
                 webhook_received: true
             })
-            .eq('id', payment.id);
+            .eq('id', payment.id)
+            .select();
+
+        console.log('==============================');
+        console.log('PAYMENT.ID:', payment.id);
+        console.log('UPDATE ERROR:', updateError);
+        console.log('UPDATE DATA:', updatedPayment);
+        console.log('==============================');
+
+        if (updateError) {
+            console.error('❌ ERRO NO UPDATE:', updateError);
+            return res.status(500).json({ error: updateError.message });
+        }
+
+        if (!updatedPayment || updatedPayment.length === 0) {
+            console.error('❌ NENHUMA LINHA FOI ATUALIZADA!');
+            console.error('  payment.id:', payment.id);
+            console.error('  Verifique se o ID existe no banco');
+            
+            // 🔥 VERIFICAR SE O REGISTRO EXISTE
+            const { data: check, error: checkError } = await supabase
+                .from('payments')
+                .select('id, status, approved_at')
+                .eq('id', payment.id)
+                .single();
+            
+            console.log('🔍 VERIFICAÇÃO PÓS-UPDATE:');
+            console.log('  check:', check);
+            console.log('  checkError:', checkError);
+            
+            return res.status(500).json({ 
+                error: 'Registro não encontrado para atualização',
+                paymentId: payment.id
+            });
+        }
 
         console.log(`✅ Status do pagamento ${paymentId} atualizado para confirmed`);
 
@@ -92,7 +136,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         if (!result.success) {
             console.error('❌ Erro ao processar pagamento:', result.error);
-            // Não falha a requisição, apenas log (o status já foi atualizado)
             return res.status(200).json({ 
                 success: true, 
                 warning: 'Status atualizado, mas processamento falhou' 
