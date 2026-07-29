@@ -81,6 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 status: 'pending',
                 product_type: type,
                 amount: result.amount,
+                credits_generated: result.creditsToAdd || 0,  // ← ADICIONADO
                 credits_amount: result.creditsToAdd || 0,
                 pix_qr_code: result.qrCodeBase64,
                 pix_copy_paste: result.qrCodeText,
