@@ -43,7 +43,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!paymentId) {
             return res.status(400).json({ error: 'ID do pagamento ausente' });
         }
-
+        console.log('🔍 WEBHOOK RECEBIDO:');
+        console.log('  Headers:', req.headers);
+        console.log('  Body:', req.body);
         // ============================================
         // 3. BUSCAR PAGAMENTO NO BANCO
         // ============================================
