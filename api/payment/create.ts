@@ -1,7 +1,7 @@
 // ============================================
 // CAMINHO: api/payment/create.ts
 // ============================================
-// CRIA PAGAMENTO PIX - MERCADO PAGO   28/07/2026
+// CRIA PAGAMENTO PIX - MERCADO PAGO
 // ============================================
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
@@ -24,25 +24,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        // ============================================
-        // 1. VALIDAR USUÁRIO
-        // ============================================
         const uid = req.headers['x-user-id'] || req.body?.uid;
         if (!uid) {
             return res.status(400).json({ error: 'UID é obrigatório' });
         }
 
-        // ✅ ADICIONAR productId
-        const { type, productId } = req.body; // type: 'pro' | 'credits', productId: 'PRO' | 'CREDITS_24'
-        
+        const { type, productId } = req.body;
         if (!type) {
             return res.status(400).json({ error: 'Tipo é obrigatório' });
         }
-        
-        
-        // ============================================
-        // 2. BUSCAR USUÁRIO
-        // ============================================
+
         const { data: user, error } = await supabase
             .from('usuarios')
             .select('uid, email, nome')
@@ -53,16 +44,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(404).json({ error: 'Usuário não encontrado' });
         }
 
-        // ============================================
-        // 3. CRIAR PAGAMENTO NO MERCADO PAGO
-        // ============================================
         const paymentService = new PaymentService();
         const result = await paymentService.createPixPayment({
             userId: uid,
             userEmail: user.email,
             userName: user.nome || 'Usuário',
-            productType: type,      // ← 'pro' ou 'credits'
-            productId: productId,   // ← 'PRO' ou 'CREDITS_24'
+            productType: type,
+            productId: productId,
             idempotencyKey: `${uid}-${type}-${Date.now()}`
         });
 
@@ -72,6 +60,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 error: result.error || 'Erro ao criar pagamento'
             });
         }
+
+        // ✅ REMOVIDO: INSERT duplicado (PaymentService já grava)
+
+        // ✅ CORRIGIDO: Retornar amount e creditsToAdd
+        return res.status(200).json({
+            success: true,
+            paymentId: result.paymentId,
+            qrCode: result.qrCodeBase64,
+            qrCodeText: result.qrCodeText,
+            expiresAt: result.expiresAt,
+            externalReference: result.externalReference,
+            amount: result.amount,              // ✅ ADICIONADO
+            creditsToAdd: result.creditsToAdd,   // ✅ ADICIONADO
+            message: 'Pagamento PIX criado. Aguarde a confirmação.'
+        });
+
+    } catch (error: any) {
+        console.error('❌ Erro ao criar pagamento:', error);
+        return res.status(500).json({
+            success: false,
+            error: error.message || 'Erro ao criar pagamento'
+        });
+    }
+}
 
         // ============================================
         // 4. SALVAR NO BANCO (payments)
