@@ -36,7 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const { data: user, error } = await supabase
             .from('usuarios')
-            .select('uid, email, nome')
+            .select('id, email, nome')
             .eq('uid', uid)
             .maybeSingle();
 
@@ -62,9 +62,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         // ✅ GRAVAR NO BANCO
-        const { error: insertError } = await supabase
-            .from('payments')
-            // ✅ GRAVAR NO BANCO
         console.log('📝 DADOS PARA INSERT:', {
             uid: uid,
             provider: 'mercadopago',
@@ -74,8 +71,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             amount: result.amount,
             credits_amount: result.creditsToAdd || 0
         });
-        
-        const { error: insertError } = await supabase
+
+        const { data: insertedData, error: insertError } = await supabase
             .from('payments')
             .insert({
                 uid: uid,
@@ -92,15 +89,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 payload: { ...result },
                 expires_at: result.expiresAt,
                 created_by_source: 'api'
-            });
-        
+            })
+            .select();
+
         if (insertError) {
             console.error('❌ ERRO AO SALVAR:', insertError);
             console.error('  Code:', insertError.code);
             console.error('  Message:', insertError.message);
             console.error('  Details:', insertError.details);
         } else {
-            console.log('✅ PAGAMENTO SALVO COM SUCESSO!');
+            console.log('✅ PAGAMENTO SALVO COM SUCESSO!', insertedData);
         }
 
         // ✅ RETORNAR COM amount E creditsToAdd
