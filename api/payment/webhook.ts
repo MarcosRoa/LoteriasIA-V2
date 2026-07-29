@@ -86,7 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { data: updated, error: updateError } = await supabase
             .from('payments')
             .update({
-                status: 'confirmed',
+                status: 'approved',
                 approved_at: new Date().toISOString(),
                 payload: req.body,
                 webhook_received: true
