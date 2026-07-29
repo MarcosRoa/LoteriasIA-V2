@@ -194,21 +194,39 @@ export class PaymentService {
     // ============================================
     async processarPagamento(payment: any): Promise<{ success: boolean; error?: string }> {
         try {
-            const { user_id, product_type, amount, payment_id, credits_amount } = payment;
-
+            // ✅ CORRIGIDO: Usar nomes corretos da tabela
+            const {
+                uid,
+                product_type,
+                amount,
+                provider_payment_id,
+                credits_amount
+            } = payment;
+    
+            console.log('🔍 DADOS DO PAGAMENTO:', {
+                uid,
+                product_type,
+                amount,
+                credits_amount,
+                status: payment.status
+            });
+    
             // ============================================
             // 1. BUSCAR USUÁRIO
             // ============================================
             const { data: user, error } = await supabase
                 .from('usuarios')
                 .select('uid, is_pro, pro_expires_at, creditos, email')
-                .eq('uid', user_id)
+                .eq('uid', uid)  // ← CORRIGIDO: usar uid
                 .maybeSingle();
-
+    
             if (error || !user) {
+                console.error('❌ Usuário não encontrado:', { uid, error });
                 return { success: false, error: 'Usuário não encontrado' };
             }
-
+    
+            console.log('✅ Usuário encontrado:', user.uid);
+    
             // ============================================
             // 2. PROCESSAR POR TIPO
             // ============================================
@@ -217,9 +235,9 @@ export class PaymentService {
             } else if (product_type === 'credits') {
                 return await this.processarCredits(user, credits_amount || amount);
             }
-
+    
             return { success: false, error: `Tipo inválido: ${product_type}` };
-
+    
         } catch (error: any) {
             console.error('❌ Erro ao processar pagamento:', error);
             return { success: false, error: error.message };
