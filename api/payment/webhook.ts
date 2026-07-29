@@ -75,32 +75,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         // ============================================
-        // 5. PROCESSAR PAGAMENTO
-        // ============================================
-        const result = await paymentService.processarPagamento(payment);
-
-        if (!result.success) {
-            console.error('❌ Erro ao processar pagamento:', result.error);
-            return res.status(500).json({ error: result.error });
-        }
-
-        // ============================================
-        // 6. ATUALIZAR BANCO
+        // 5. ATUALIZAR BANCO (PRIMEIRO)
         // ============================================
         await supabase
             .from('payments')
             .update({
                 status: 'confirmed',
-                confirmed_at: new Date().toISOString(),
-                payment_data: req.body
+                approved_at: new Date().toISOString(),
+                payload: req.body,
+                webhook_received: true
             })
             .eq('id', payment.id);
-
+        
+        console.log(`✅ Status do pagamento ${paymentId} atualizado para confirmed`);
+        
+        // ============================================
+        // 6. PROCESSAR PAGAMENTO (DEPOIS)
+        // ============================================
+        const result = await paymentService.processarPagamento(payment);
+        
+        if (!result.success) {
+            console.error('❌ Erro ao processar pagamento:', result.error);
+            // Não falha a requisição, apenas log (o status já foi atualizado)
+            return res.status(200).json({ 
+                success: true, 
+                warning: 'Status atualizado, mas processamento falhou' 
+            });
+        }
+        
         console.log(`✅ Pagamento ${paymentId} processado com sucesso`);
         return res.status(200).json({ success: true });
-
-    } catch (error: any) {
-        console.error('❌ Erro no webhook:', error);
-        return res.status(500).json({ error: error.message });
-    }
-}
