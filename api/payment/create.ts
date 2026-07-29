@@ -64,7 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // ✅ GRAVAR NO BANCO
         const { error: insertError } = await supabase
             .from('payments')
-            .insert({
+            console.log('📝 DADOS PARA INSERT:',{
                 uid: uid,
                 provider: 'mercadopago',
                 provider_payment_id: String(result.paymentId),
@@ -82,7 +82,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
 
         if (insertError) {
-            console.error('❌ Erro ao salvar pagamento:', insertError);
+            console.error('❌ ERRO AO SALVAR:', insertError);
+            console.error('  Code:', insertError.code);
+            console.error('  Message:', insertError.message);
+            console.error('  Details:', insertError.details);
+        } else {
+            console.log('✅ PAGAMENTO SALVO COM SUCESSO!');
         }
 
         // ✅ RETORNAR COM amount E creditsToAdd
