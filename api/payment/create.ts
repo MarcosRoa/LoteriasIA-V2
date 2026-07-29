@@ -61,60 +61,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
-        // ✅ REMOVIDO: INSERT duplicado (PaymentService já grava)
-
-        // ✅ CORRIGIDO: Retornar amount e creditsToAdd
-        return res.status(200).json({
-            success: true,
-            paymentId: result.paymentId,
-            qrCode: result.qrCodeBase64,
-            qrCodeText: result.qrCodeText,
-            expiresAt: result.expiresAt,
-            externalReference: result.externalReference,
-            amount: result.amount,              // ✅ ADICIONADO
-            creditsToAdd: result.creditsToAdd,   // ✅ ADICIONADO
-            message: 'Pagamento PIX criado. Aguarde a confirmação.'
-        });
-
-    } catch (error: any) {
-        console.error('❌ Erro ao criar pagamento:', error);
-        return res.status(500).json({
-            success: false,
-            error: error.message || 'Erro ao criar pagamento'
-        });
-    }
-}
-
-        // ============================================
-        // 4. SALVAR NO BANCO (payments)
-        // ============================================
-        const { data: payment, error: insertError } = await supabase
+        // ✅ GRAVAR NO BANCO
+        const { error: insertError } = await supabase
             .from('payments')
             .insert({
                 user_id: uid,
-                gateway: 'mercadopago',
-                payment_id: result.paymentId,
+                provider: 'mercadopago',
+                provider_payment_id: String(result.paymentId),
                 status: 'pending',
-                type: type,
-                amount: result.amount || 0,
+                product_type: type,
+                amount: result.amount,
                 credits_amount: result.creditsToAdd || 0,
-                qr_code: result.qrCodeBase64,
-                qr_code_text: result.qrCodeText,
+                pix_qr_code: result.qrCodeBase64,
+                pix_copy_paste: result.qrCodeText,
                 external_reference: result.externalReference,
-                payment_data: result.paymentData,
-                expires_at: result.expiresAt
-            })
-            .select('id')
-            .single();
+                idempotency_key: `${uid}-${type}-${Date.now()}`,
+                payload: { ...result },
+                expires_at: result.expiresAt,
+                created_by_source: 'api'
+            });
 
         if (insertError) {
             console.error('❌ Erro ao salvar pagamento:', insertError);
-            // Não falha a requisição, apenas log
         }
 
-        // ============================================
-        // 5. RETORNAR QR CODE
-        // ============================================
+        // ✅ RETORNAR COM amount E creditsToAdd
         return res.status(200).json({
             success: true,
             paymentId: result.paymentId,
@@ -122,6 +93,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             qrCodeText: result.qrCodeText,
             expiresAt: result.expiresAt,
             externalReference: result.externalReference,
+            amount: result.amount,
+            creditsToAdd: result.creditsToAdd,
             message: 'Pagamento PIX criado. Aguarde a confirmação.'
         });
 
