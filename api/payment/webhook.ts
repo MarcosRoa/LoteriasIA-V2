@@ -99,7 +99,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.log('UPDATE DATA:', updated);
         console.log('PAYMENT.ID:', payment.id);
         console.log('UPDATE ERROR:', updateError);
-        console.log('UPDATE DATA:', updatedPayment);
+        console.log('UPDATE DATA:', updated);
         console.log('==============================');
 
         if (updateError) {
@@ -107,7 +107,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(500).json({ error: updateError.message });
         }
 
-        if (!updatedPayment || updatedPayment.length === 0) {
+        if (!updated || updated.length === 0) {
             console.error('❌ NENHUMA LINHA FOI ATUALIZADA!');
             console.error('  payment.id:', payment.id);
             console.error('  Verifique se o ID existe no banco');
@@ -120,8 +120,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 .single();
             
             console.log('🔍 VERIFICAÇÃO PÓS-UPDATE:');
-            console.log('VERIFY ERROR:', verifyError);
-            console.log('VERIFY DATA:', verify);
+            console.log('VERIFY ERROR:', checkError);
+            console.log('VERIFY DATA:', check);
             console.log('  check:', check);
             console.log('  checkError:', checkError);
             
