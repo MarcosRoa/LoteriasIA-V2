@@ -1,7 +1,7 @@
 // ============================================
 // CAMINHO: api/payment/create.ts
 // ============================================
-// CRIA PAGAMENTO PIX - MERCADO PAGO  28/07/2026
+// CRIA PAGAMENTO PIX - MERCADO PAGO   28/07/2026
 // ============================================
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
