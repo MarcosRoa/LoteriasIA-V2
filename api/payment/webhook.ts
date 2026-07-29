@@ -83,7 +83,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.log('  payment.id:', payment.id);
         console.log('  status atual:', payment.status);
 
-        const { data: updatedPayment, error: updateError } = await supabase
+        const { data: updated, error: updateError } = await supabase
             .from('payments')
             .update({
                 status: 'confirmed',
@@ -95,6 +95,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .select();
 
         console.log('==============================');
+        console.log('UPDATE ERROR:', updateError);
+        console.log('UPDATE DATA:', updated);
         console.log('PAYMENT.ID:', payment.id);
         console.log('UPDATE ERROR:', updateError);
         console.log('UPDATE DATA:', updatedPayment);
@@ -118,6 +120,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 .single();
             
             console.log('🔍 VERIFICAÇÃO PÓS-UPDATE:');
+            console.log('VERIFY ERROR:', verifyError);
+            console.log('VERIFY DATA:', verify);
             console.log('  check:', check);
             console.log('  checkError:', checkError);
             
