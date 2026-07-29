@@ -14,6 +14,11 @@ const supabase = createClient(
 );
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+    
+    console.log('🔍 WEBHOOK RECEBIDO:');
+    console.log('  Headers:', req.headers);
+    console.log('  Body:', req.body);
+    
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
