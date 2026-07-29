@@ -64,7 +64,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // ✅ GRAVAR NO BANCO
         const { error: insertError } = await supabase
             .from('payments')
-            console.log('📝 DADOS PARA INSERT:',{
+            // ✅ GRAVAR NO BANCO
+        console.log('📝 DADOS PARA INSERT:', {
+            uid: uid,
+            provider: 'mercadopago',
+            provider_payment_id: String(result.paymentId),
+            status: 'pending',
+            product_type: type,
+            amount: result.amount,
+            credits_amount: result.creditsToAdd || 0
+        });
+        
+        const { error: insertError } = await supabase
+            .from('payments')
+            .insert({
                 uid: uid,
                 provider: 'mercadopago',
                 provider_payment_id: String(result.paymentId),
@@ -80,7 +93,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 expires_at: result.expiresAt,
                 created_by_source: 'api'
             });
-
+        
         if (insertError) {
             console.error('❌ ERRO AO SALVAR:', insertError);
             console.error('  Code:', insertError.code);
