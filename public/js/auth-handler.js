@@ -149,7 +149,7 @@ async function comprarCreditos(packageValue) {
                 'X-User-Id': uid
             },
             body: JSON.stringify({
-                productType: 'credits',
+                type: 'credits',
                 productId: `CREDITS_${packageValue}`,
                 idempotencyKey: `${uid}-credits-${packageValue}-${Date.now()}`
             })
@@ -204,7 +204,7 @@ async function comprarPro() {
                 'X-User-Id': uid
             },
             body: JSON.stringify({
-                productType: 'pro',
+                type: 'pro',
                 productId: 'PRO',
                 idempotencyKey: `${uid}-pro-${Date.now()}`
             })
