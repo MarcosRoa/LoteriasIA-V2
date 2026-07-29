@@ -2,7 +2,7 @@
 // ============================================
 
 // ============================================
-// FUNÇÃO PARA ABRIR MODAL DE LOGIN
+// FUNÇÃO PARA ABRIR MODAL DE LOGIN 29/07/2026
 // ============================================
 function mostrarModalLogin() {
     if (document.querySelector('.modal-login-overlay')) return;
