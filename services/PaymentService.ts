@@ -1,7 +1,7 @@
 // ============================================
 // CAMINHO: services/PaymentService.ts
 // ============================================
-// SERVIÇO DE PAGAMENTOS - VERSÃO CORRIGIDA 28/07/2026
+// SERVIÇO DE PAGAMENTOS - VERSÃO CORRIGIDA 29/07/2026
 // ============================================
 
 import { createClient } from '@supabase/supabase-js';
