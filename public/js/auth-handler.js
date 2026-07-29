@@ -287,7 +287,7 @@ function abrirModalPagamento(paymentData, type = 'credits') {
             </p>
 
             <div style="background: white; padding: 20px; border-radius: 12px; margin: 15px 0;">
-                <img src="${paymentData.qrCode}" alt="QR Code PIX" style="width: 200px; height: 200px; display: block; margin: 0 auto;">
+                <img src="data:image/png;base64,${paymentData.qrCode}" alt="QR Code PIX" style="width: 200px; height: 200px; display: block; margin: 0 auto;">
             </div>
 
             <div style="background: rgba(56, 189, 248, 0.1); padding: 12px; border-radius: 8px; margin: 10px 0;">
