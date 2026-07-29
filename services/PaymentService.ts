@@ -126,24 +126,24 @@ export class PaymentService {
             // ============================================
             // 4. SALVAR NO BANCO
             // ============================================
-            await supabase
-                .from('payments')
-                .insert({
-                    user_id: data.userId,
-                    provider: 'mercadopago',
-                    provider_payment_id: String(paymentData.id),
-                    status: 'pending',
-                    product_type: data.productType,
-                    amount: amount,
-                    credits_amount: creditsToAdd,
-                    pix_qr_code: paymentData.point_of_interaction?.transaction_data?.qr_code_base64,
-                    pix_copy_paste: paymentData.point_of_interaction?.transaction_data?.qr_code,
-                    external_reference: externalReference,
-                    idempotency_key: data.idempotencyKey,
-                    payload: paymentData,
-                    expires_at: expiresAt.toISOString(),
-                    created_by_source: 'api'
-                });
+            //await supabase
+              //  .from('payments')
+                //.insert({
+                  //  user_id: data.userId,
+                    //provider: 'mercadopago',
+                    //provider_payment_id: String(paymentData.id),
+                  //  status: 'pending',
+               //     product_type: data.productType,
+                 //   amount: amount,
+                   // credits_amount: creditsToAdd,
+                //    pix_qr_code: paymentData.point_of_interaction?.transaction_data?.qr_code_base64,
+               //     pix_copy_paste: paymentData.point_of_interaction?.transaction_data?.qr_code,
+                 //   external_reference: externalReference,
+                   // idempotency_key: data.idempotencyKey,
+                   // payload: paymentData,
+                   // expires_at: expiresAt.toISOString(),
+                   // created_by_source: 'api'
+              //  });
     
             return {
                 success: true,
