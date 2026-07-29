@@ -59,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { data: payment, error } = await supabase
             .from('payments')
             .select('*')
-            .eq('payment_id', String(paymentId))
+            .eq('provider_payment_id', String(paymentId))  // ← COLUNA CORRETA
             .maybeSingle();
 
         if (error || !payment) {
