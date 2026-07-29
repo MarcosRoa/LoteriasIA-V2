@@ -1,7 +1,7 @@
 // ============================================
 // CAMINHO: api/payment/webhook.ts
 // ============================================
-// WEBHOOK GENÉRICO (MERCADO PAGO)  28/07/2026
+// WEBHOOK GENÉRICO (MERCADO PAGO)
 // ============================================
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
@@ -15,9 +15,6 @@ const supabase = createClient(
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     
-    // ============================================
-    // 🔥 LOG 1: VER O QUE CHEGA
-    // ============================================
     console.log('🔍 WEBHOOK RECEBIDO:');
     console.log('  Headers:', JSON.stringify(req.headers, null, 2));
     console.log('  Body:', JSON.stringify(req.body, null, 2));
@@ -47,19 +44,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!paymentId) {
             return res.status(400).json({ error: 'ID do pagamento ausente' });
         }
-        // ============================================
-        // 🔥 LOG 3: VER O PAYMENT ID E A BUSCA
-        // ============================================
+
         console.log('🔍 BUSCANDO PAGAMENTO:');
         console.log('  paymentId:', paymentId);
         console.log('  Tipo:', typeof paymentId);
+
         // ============================================
         // 3. BUSCAR PAGAMENTO NO BANCO
         // ============================================
         const { data: payment, error } = await supabase
             .from('payments')
             .select('*')
-            .eq('provider_payment_id', String(paymentId))  // ← COLUNA CORRETA
+            .eq('provider_payment_id', String(paymentId))
             .maybeSingle();
 
         if (error || !payment) {
@@ -86,14 +82,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 webhook_received: true
             })
             .eq('id', payment.id);
-        
+
         console.log(`✅ Status do pagamento ${paymentId} atualizado para confirmed`);
-        
+
         // ============================================
         // 6. PROCESSAR PAGAMENTO (DEPOIS)
         // ============================================
         const result = await paymentService.processarPagamento(payment);
-        
+
         if (!result.success) {
             console.error('❌ Erro ao processar pagamento:', result.error);
             // Não falha a requisição, apenas log (o status já foi atualizado)
@@ -102,8 +98,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 warning: 'Status atualizado, mas processamento falhou' 
             });
         }
-        
+
         console.log(`✅ Pagamento ${paymentId} processado com sucesso`);
         return res.status(200).json({ success: true });
+
+    } catch (error: any) {
+        console.error('❌ Erro no webhook:', error);
+        return res.status(500).json({ error: error.message });
     }
 }
