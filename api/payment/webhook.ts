@@ -1,7 +1,7 @@
 // ============================================
 // CAMINHO: api/payment/webhook.ts
 // ============================================
-// WEBHOOK GENÉRICO (MERCADO PAGO)
+// WEBHOOK GENÉRICO (MERCADO PAGO) 
 // ============================================
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
