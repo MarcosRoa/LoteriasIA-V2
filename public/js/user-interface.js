@@ -1,7 +1,7 @@
 // ============================================
 // CAMINHO: public/js/user-interface.js
 // ============================================
-// VERSÃO 2.1 - CORRIGIDO (MOSTRAR NOME)
+// VERSÃO 2.2 - CORRIGIDO (BOTÃO ASSINAR PRO ADICIONADO)
 // ============================================
 
 // ============================================
@@ -72,7 +72,7 @@ function atualizarInterfaceUsuario() {
                     <div style="display: flex; align-items: center; gap: 6px; background: var(--bg-card); padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border);">
                         <span style="font-size: 14px;">💰</span>
                         <span style="font-weight: 600; color: #f59e0b; font-size: 14px;">
-                            Creditos ${credits}
+                            Créditos ${credits}
                         </span>
                     </div>
                     
@@ -86,6 +86,11 @@ function atualizarInterfaceUsuario() {
                     <button onclick="window.abrirModalComprar()" 
                             style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; padding: 6px 16px; border-radius: 20px; color: #1e293b; font-weight: 600; font-size: 12px; cursor: pointer;">
                         💳 Comprar
+                    </button>
+                    <!-- ✅ NOVO BOTÃO ASSINAR PRO -->
+                    <button onclick="window.comprarPro()" 
+                            style="background: linear-gradient(135deg, #8b5cf6, #06b6d4); border: none; padding: 6px 16px; border-radius: 20px; color: white; font-weight: 600; font-size: 12px; cursor: pointer;">
+                        ⭐ Assinar PRO
                     </button>
                     <a href="/perfil.html" style="background: linear-gradient(135deg, #8b5cf6, #06b6d4); border: none; padding: 6px 16px; border-radius: 20px; color: white; font-weight: 600; font-size: 12px; text-decoration: none; cursor: pointer; display: inline-block;">
                         👤 Meu Perfil
@@ -166,6 +171,7 @@ async function carregarDadosUsuario() {
         console.error('❌ Erro ao carregar dados do usuário:', error);
     }
 }
+
 // ============================================
 // ATUALIZAR VISUALIZAÇÃO DAS CONFIGURAÇÕES
 // ============================================
@@ -177,7 +183,6 @@ function atualizarVisualizacaoConfiguracoes() {
     }
     
     try {
-        // Usar a função getFiltrosAtivos do loterias.js
         if (typeof window.getFiltrosAtivos !== 'function') {
             configTags.innerHTML = '<span class="filtro-item">⚙️ Aguardando configurações...</span>';
             return;
@@ -190,12 +195,10 @@ function atualizarVisualizacaoConfiguracoes() {
             return;
         }
         
-        // Renderizar os filtros
         configTags.innerHTML = filtros.map(f => 
             `<span class="filtro-item">${f.label}: <strong>${f.valor}</strong></span>`
         ).join('');
         
-        // Mostrar o container de visualização
         const configVisualizacao = document.getElementById('configVisualizacao');
         if (configVisualizacao) {
             configVisualizacao.style.display = 'block';
@@ -208,8 +211,6 @@ function atualizarVisualizacaoConfiguracoes() {
         configTags.innerHTML = '<span class="filtro-item">⚠️ Erro ao carregar configurações</span>';
     }
 }
-
-
 
 // ============================================
 // 🔥 DESLOGAR
@@ -232,7 +233,6 @@ function deslogar() {
 // ============================================
 // EXPORTAÇÃO PARA O WINDOW
 // ============================================
-
 window.atualizarInterfaceUsuario = atualizarInterfaceUsuario;
 window.buscarCreditosAPI = buscarCreditosAPI;
 window.atualizarInterfaceJogo = atualizarInterfaceJogo;
@@ -240,4 +240,4 @@ window.carregarDadosUsuario = carregarDadosUsuario;
 window.atualizarVisualizacaoConfiguracoes = atualizarVisualizacaoConfiguracoes;
 window.deslogar = deslogar;
 
-console.log('✅ USER-INTERFACE.js carregado (V2.1 - Nome corrigido)');
+console.log('✅ USER-INTERFACE.js carregado (V2.2 - Botão Assinar PRO)');
