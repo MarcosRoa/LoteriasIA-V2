@@ -65,7 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { error: insertError } = await supabase
             .from('payments')
             .insert({
-                user_id: uid,
+                uid: uid,
                 provider: 'mercadopago',
                 provider_payment_id: String(result.paymentId),
                 status: 'pending',
