@@ -331,7 +331,7 @@ function abrirModalPagamento(paymentData, type = 'credits') {
 // ============================================
 function iniciarPollingPagamento(paymentId) {
     if (window._pollingInterval) {
-        clearInterval(window._pollingInterval);
+        clearInterval(window._pollingInterval); 
     }
 
     let tentativas = 0;
