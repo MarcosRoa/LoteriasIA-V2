@@ -286,9 +286,13 @@ export class PaymentService {
     // ============================================
     async validarWebhook(request: any): Promise<{ valid: boolean; error?: string }> {
         try {
-            console.log('🔍 WEBHOOK RECEBIDO:');
-            console.log('  Headers:', req.headers);
-            console.log('  Body:', req.body);
+            // ============================================
+            // 🔥 LOG 2: VER OS HEADERS RECEBIDOS
+            // ============================================
+            console.log('🔍 VALIDANDO WEBHOOK:');
+            console.log('  Headers recebidos:', Object.keys(request.headers));
+            console.log('  x-signature:', request.headers['x-signature']);
+            console.log('  x-request-id:', request.headers['x-request-id']);
             
             // 🔥 Usar validação oficial do Mercado Pago
             const signature = request.headers['x-signature'];
