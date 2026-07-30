@@ -46,19 +46,8 @@ export class RailwayClient {
                 signal: controller.signal
 ////////////////////////////////////////////////////////
         console.log("📤 Payload Railway:");
-        console.log(JSON.stringify(payload, null, 2));
-        
-        const response = await fetch(`${this.url}/api/generate`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-api-key": this.apiKey
-                /////////////////////////////////
-            },
-            body: JSON.stringify(payload),
-            signal: controller.signal
-                
-     });
+        console.log(JSON.stringify(payload, null, 2));               
+    });
 
             clearTimeout(timeoutId);
 
