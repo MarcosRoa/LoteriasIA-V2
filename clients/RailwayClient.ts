@@ -38,17 +38,11 @@ export class RailwayClient {
                     lotteryType: params.lotteryType,
                     count: params.count,
                     method: params.method,
-                    ///////////////////////////////////
-                    isPro: params.isPro,
                     extraNumbers: params.extraNumbers,
                     filters: params.filters || {}
                 }),
-                
-////////////////////////////////////////////////////////
-            console.log("📤 Payload Railway:");
-            console.log(JSON.stringify(payload, null, 2));
-                    signal: controller.signal
-    });
+                signal: controller.signal
+            });
 
             clearTimeout(timeoutId);
 
