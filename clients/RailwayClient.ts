@@ -38,6 +38,7 @@ export class RailwayClient {
                     lotteryType: params.lotteryType,
                     count: params.count,
                     method: params.method,
+                    isPro: params.isPro,
                     extraNumbers: params.extraNumbers,
                     filters: params.filters || {}
                 }),
