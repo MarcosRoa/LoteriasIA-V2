@@ -54,11 +54,11 @@ export class RailwayClient {
                 "Content-Type": "application/json",
                 "x-api-key": this.apiKey
                 /////////////////////////////////
-    },
-    body: JSON.stringify(payload),
-    signal: controller.signal
+            },
+            body: JSON.stringify(payload),
+            signal: controller.signal
                 
-            });
+         });
 
             clearTimeout(timeoutId);
 
