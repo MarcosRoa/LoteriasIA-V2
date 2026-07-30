@@ -57,25 +57,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .select('*')
             .eq('provider_payment_id', String(paymentId))
             .maybeSingle();
-
+        
         if (error || !payment) {
             console.warn(`⚠️ Pagamento não encontrado: ${paymentId}`);
-            return res.status(404).json({ error: 'Pagamento não encontrado' });
+            // ✅ MUDAR PARA 200 (evita reenvio do Mercado Pago)
+            return res.status(200).json({ 
+                success: false, 
+                message: 'Pagamento não encontrado (já processado ou teste)',
+                paymentId: paymentId
+            });
         }
-
+        
         console.log('✅ Pagamento encontrado:', {
             id: payment.id,
             provider_payment_id: payment.provider_payment_id,
             status: payment.status
         });
-
+        
         // ============================================
         // 4. EVITAR DUPLICIDADE
         // ============================================
-        if (payment.status === 'confirmed') {
+        if (payment.status === 'approved' || payment.status === 'confirmed') {
             return res.status(200).json({ message: 'Pagamento já processado' });
         }
-
         // ============================================
         // 5. ATUALIZAR BANCO (COM VERIFICAÇÃO)
         // ============================================
