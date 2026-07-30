@@ -57,6 +57,13 @@ export class GenerateService {
         // 2. BUSCAR SALDO
         // ============================================
         const { credits, isPro } = await this.creditsService.getBalance(uid);
+        
+        console.log("========== USER ==========");
+        console.log("UID:", uid);
+        console.log("Credits:", credits);
+        console.log("isPro:", isPro);
+        console.log("==========================");
+                
         const numerosPorJogo = extraNumbers || config.numerosPorJogo;
         const custoPorJogo = isPro ? env.proCostPerGame : env.costPerGame;
         const custoTotal = quantity * custoPorJogo;
