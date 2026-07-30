@@ -38,10 +38,26 @@ export class RailwayClient {
                     lotteryType: params.lotteryType,
                     count: params.count,
                     method: params.method,
+                    ///////////////////////////////////
+                    isPro: params.isPro,
                     extraNumbers: params.extraNumbers,
                     filters: params.filters || {}
                 }),
                 signal: controller.signal
+////////////////////////////////////////////////////////
+        console.log("📤 Payload Railway:");
+        console.log(JSON.stringify(payload, null, 2));
+        
+        const response = await fetch(`${this.url}/api/generate`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-api-key": this.apiKey
+                /////////////////////////////////
+    },
+    body: JSON.stringify(payload),
+    signal: controller.signal
+                
             });
 
             clearTimeout(timeoutId);
