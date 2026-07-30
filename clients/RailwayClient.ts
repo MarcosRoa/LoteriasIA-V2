@@ -43,10 +43,11 @@ export class RailwayClient {
                     extraNumbers: params.extraNumbers,
                     filters: params.filters || {}
                 }),
-                signal: controller.signal
+                
 ////////////////////////////////////////////////////////
             console.log("📤 Payload Railway:");
-            console.log(JSON.stringify(payload, null, 2));               
+            console.log(JSON.stringify(payload, null, 2));
+                    signal: controller.signal
     });
 
             clearTimeout(timeoutId);
