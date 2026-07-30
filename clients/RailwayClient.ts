@@ -58,7 +58,7 @@ export class RailwayClient {
             body: JSON.stringify(payload),
             signal: controller.signal
                 
-         });
+     });
 
             clearTimeout(timeoutId);
 
