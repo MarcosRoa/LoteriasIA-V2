@@ -1,4 +1,4 @@
-// api/payment/products.ts
+// api/payment/products.ts 09/08/2026
 import { CONSTANTS } from '../../core/config/constants.js';
 
 export default async function handler(req, res) {
