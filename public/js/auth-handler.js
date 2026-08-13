@@ -2,11 +2,11 @@
 // ============================================
 
 // ============================================
-// FUNÇÃO PARA ABRIR MODAL DE LOGIN 29/07/2026
+// FUNÇÃO PARA ABRIR MODAL DE LOGIN 13/08/2026
 // ============================================
 function mostrarModalLogin() {
     if (document.querySelector('.modal-login-overlay')) return;
-    
+
     const modal = document.createElement('div');
     modal.className = 'modal-login-overlay';
     modal.style.cssText = `
@@ -22,51 +22,198 @@ function mostrarModalLogin() {
         z-index: 9999;
         animation: fadeIn 0.3s ease;
     `;
-    
+
     modal.innerHTML = `
-        <div style="
-            background: var(--bg-card, #1e293b);
-            border-radius: 16px;
-            padding: 30px;
-            max-width: 400px;
-            width: 90%;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-            border: 1px solid var(--border, #334155);
-        ">
-            <h2 style="color: var(--text-primary, #fff); margin-bottom: 10px;">🔐 Faça Login</h2>
-            <p style="color: var(--text-secondary, #94a3b8); margin-bottom: 20px; font-size: 14px;">
-                Entre com sua conta para acessar todos os recursos
-            </p>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <button onclick="window.loginGoogle(); this.closest('.modal-login-overlay').remove();" 
-                        style="padding: 12px 20px; background: #db4437; color: white; border: none; border-radius: 30px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.2s;"
-                        onmouseover="this.style.transform='scale(1.02)'"
-                        onmouseout="this.style.transform='scale(1)'">
-                    🔐 Entrar com Google
-                </button>
-                <button onclick="window.loginFacebook(); this.closest('.modal-login-overlay').remove();" 
-                        style="padding: 12px 20px; background: #4267B2; color: white; border: none; border-radius: 30px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.2s;"
-                        onmouseover="this.style.transform='scale(1.02)'"
-                        onmouseout="this.style.transform='scale(1)'">
-                    🔐 Entrar com Facebook
-                </button>
-                <button onclick="this.closest('.modal-login-overlay').remove();" 
-                        style="padding: 10px; background: transparent; color: var(--text-secondary, #94a3b8); border: 1px solid var(--border, #334155); border-radius: 30px; font-size: 14px; cursor: pointer; transition: transform 0.2s;"
-                        onmouseover="this.style.transform='scale(1.02)'"
-                        onmouseout="this.style.transform='scale(1)'">
-                    ❌ Fechar
-                </button>
-            </div>
+        <div style="background: var(--bg-card, #1e293b); border-radius: 16px; padding: 30px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid var(--border, #334155);">
+            <div id="loginModalBody"></div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
+    const body = modal.querySelector('#loginModalBody');
+
+    function mostrarOpcoesLogin() {
+        body.innerHTML = `
+            <h2 style="color: var(--text-primary, #fff); margin-bottom: 10px;">🔐 Faça Login</h2>
+            <p style="color: var(--text-secondary, #94a3b8); margin-bottom: 20px; font-size: 14px;">Entre com sua conta para acessar todos os recursos</p>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <button onclick="window.loginGoogle();" style="padding:12px 20px; background:#db4437; color:white; border:none; border-radius:30px; font-size:16px; font-weight:600; cursor:pointer;">🔐 Entrar com Google</button>
+                <button id="btnLoginEmail" style="padding:12px 20px; background:#334155; color:white; border:none; border-radius:30px; font-size:16px; font-weight:600; cursor:pointer;">✉️ Entrar com e-mail</button>
+
+                <!--
+                FACEBOOK — MANTIDO E DESATIVADO.
+                Não apagar a implementação existente.
+                <button onclick="window.loginFacebook();">🔐 Entrar com Facebook</button>
+                -->
+
+                <button onclick="this.closest('.modal-login-overlay').remove();" style="padding:10px; background:transparent; color:var(--text-secondary,#94a3b8); border:1px solid var(--border,#334155); border-radius:30px; font-size:14px; cursor:pointer;">❌ Fechar</button>
+            </div>
+        `;
+        body.querySelector('#btnLoginEmail').addEventListener('click', mostrarLoginEmail);
+    }
+
+    function mostrarLoginEmail(mensagem = '') {
+        body.innerHTML = `
+            <h2 style="color:var(--text-primary,#fff); margin-bottom:10px;">✉️ Entrar com e-mail</h2>
+            <p style="color:var(--text-secondary,#94a3b8); margin-bottom:18px; font-size:14px;">Informe seu e-mail e senha para continuar.</p>
+            <form id="emailLoginForm" style="display:flex;flex-direction:column;gap:12px;text-align:left;">
+                <label style="color:var(--text-secondary,#94a3b8);font-size:13px;">E-mail
+                    <input id="loginEmailInput" type="email" autocomplete="email" required style="width:100%;box-sizing:border-box;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--border,#334155);background:#0f172a;color:white;">
+                </label>
+                <label style="color:var(--text-secondary,#94a3b8);font-size:13px;">Senha
+                    <input id="loginPasswordInput" type="password" autocomplete="current-password" required style="width:100%;box-sizing:border-box;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--border,#334155);background:#0f172a;color:white;">
+                </label>
+                <div id="loginEmailMessage" style="font-size:13px;color:#fbbf24;text-align:center;min-height:18px;">${mensagem}</div>
+                <button type="submit" style="padding:12px 20px;background:#2563eb;color:white;border:none;border-radius:30px;font-size:16px;font-weight:600;cursor:pointer;">Entrar</button>
+                <button type="button" id="btnForgotPassword" style="background:transparent;border:none;color:#38bdf8;cursor:pointer;font-size:13px;">Esqueci minha senha</button>
+                <button type="button" id="btnCreateAccount" style="background:transparent;border:none;color:#10b981;cursor:pointer;font-size:14px;font-weight:600;">Não tenho conta — Criar uma conta</button>
+                <button type="button" id="btnBackLogin" style="padding:10px;background:transparent;color:var(--text-secondary,#94a3b8);border:1px solid var(--border,#334155);border-radius:30px;cursor:pointer;">← Voltar</button>
+            </form>
+        `;
+
+        body.querySelector('#emailLoginForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const email = body.querySelector('#loginEmailInput').value.trim();
+            const password = body.querySelector('#loginPasswordInput').value;
+            const messageEl = body.querySelector('#loginEmailMessage');
+            const button = event.submitter;
+            button.disabled = true;
+            button.textContent = 'Entrando...';
+            messageEl.textContent = '';
+
+            const result = await window.loginEmail(email, password);
+            if (result.success) return;
+
+            button.disabled = false;
+            button.textContent = 'Entrar';
+            messageEl.textContent = result.message || 'Não foi possível entrar.';
+            if (result.unverified) mostrarVerificacaoEmail(email, password);
+        });
+
+        body.querySelector('#btnForgotPassword').addEventListener('click', () => {
+            mostrarRecuperacaoSenha(body.querySelector('#loginEmailInput').value.trim());
+        });
+        body.querySelector('#btnCreateAccount').addEventListener('click', mostrarCadastro);
+        body.querySelector('#btnBackLogin').addEventListener('click', mostrarOpcoesLogin);
+    }
+
+    function mostrarCadastro() {
+        body.innerHTML = `
+            <h2 style="color:var(--text-primary,#fff); margin-bottom:10px;">📝 Criar conta</h2>
+            <p style="color:var(--text-secondary,#94a3b8); margin-bottom:18px; font-size:14px;">Crie sua conta para acessar todos os recursos.</p>
+            <form id="registerForm" style="display:flex;flex-direction:column;gap:12px;text-align:left;">
+                <label style="color:var(--text-secondary,#94a3b8);font-size:13px;">Nome
+                    <input id="registerNameInput" type="text" autocomplete="name" required style="width:100%;box-sizing:border-box;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--border,#334155);background:#0f172a;color:white;">
+                </label>
+                <label style="color:var(--text-secondary,#94a3b8);font-size:13px;">E-mail
+                    <input id="registerEmailInput" type="email" autocomplete="email" required style="width:100%;box-sizing:border-box;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--border,#334155);background:#0f172a;color:white;">
+                </label>
+                <label style="color:var(--text-secondary,#94a3b8);font-size:13px;">Senha
+                    <input id="registerPasswordInput" type="password" autocomplete="new-password" minlength="6" required style="width:100%;box-sizing:border-box;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--border,#334155);background:#0f172a;color:white;">
+                </label>
+                <label style="color:var(--text-secondary,#94a3b8);font-size:13px;">Confirmar senha
+                    <input id="registerPasswordConfirmInput" type="password" autocomplete="new-password" minlength="6" required style="width:100%;box-sizing:border-box;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--border,#334155);background:#0f172a;color:white;">
+                </label>
+                <div id="registerMessage" style="font-size:13px;color:#fbbf24;text-align:center;min-height:18px;"></div>
+                <button type="submit" style="padding:12px 20px;background:#10b981;color:white;border:none;border-radius:30px;font-size:16px;font-weight:600;cursor:pointer;">Criar conta</button>
+                <button type="button" id="btnBackRegister" style="padding:10px;background:transparent;color:var(--text-secondary,#94a3b8);border:1px solid var(--border,#334155);border-radius:30px;cursor:pointer;">← Voltar</button>
+            </form>
+        `;
+
+        body.querySelector('#registerForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const name = body.querySelector('#registerNameInput').value.trim();
+            const email = body.querySelector('#registerEmailInput').value.trim();
+            const password = body.querySelector('#registerPasswordInput').value;
+            const confirm = body.querySelector('#registerPasswordConfirmInput').value;
+            const messageEl = body.querySelector('#registerMessage');
+            const button = event.submitter;
+
+            if (password !== confirm) {
+                messageEl.textContent = 'As senhas não coincidem.';
+                return;
+            }
+
+            button.disabled = true;
+            button.textContent = 'Criando...';
+            const result = await window.registerEmail(email, password, name);
+
+            if (result.success) {
+                mostrarVerificacaoEmail(email, password, true);
+                return;
+            }
+
+            button.disabled = false;
+            button.textContent = 'Criar conta';
+            messageEl.textContent = result.message || 'Não foi possível criar a conta.';
+        });
+
+        body.querySelector('#btnBackRegister').addEventListener('click', mostrarLoginEmail);
+    }
+
+    function mostrarVerificacaoEmail(email, password, recemCriada = false) {
+        body.innerHTML = `
+            <h2 style="color:#10b981;margin-bottom:10px;">📧 Verifique seu e-mail</h2>
+            <p style="color:var(--text-secondary,#94a3b8);font-size:14px;line-height:1.5;">${recemCriada ? 'Sua conta foi criada. Enviamos um e-mail de confirmação para:' : 'Seu e-mail ainda não foi confirmado.'}</p>
+            <p style="color:#38bdf8;font-weight:600;word-break:break-word;">${email}</p>
+            <p style="color:var(--text-secondary,#94a3b8);font-size:13px;">Confirme o endereço pelo e-mail e depois volte aqui para fazer o login.</p>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:18px;">
+                <button id="btnResendVerification" style="padding:12px;background:#2563eb;color:white;border:none;border-radius:30px;font-weight:600;cursor:pointer;">Reenviar e-mail</button>
+                <button id="btnVerificationLogin" style="padding:12px;background:#10b981;color:white;border:none;border-radius:30px;font-weight:600;cursor:pointer;">Já confirmei meu e-mail</button>
+                <button id="btnCloseVerification" style="padding:10px;background:transparent;color:var(--text-secondary,#94a3b8);border:1px solid var(--border,#334155);border-radius:30px;cursor:pointer;">❌ Fechar</button>
+            </div>
+            <div id="verificationMessage" style="margin-top:12px;font-size:13px;color:#fbbf24;min-height:18px;"></div>
+        `;
+
+        body.querySelector('#btnResendVerification').addEventListener('click', async () => {
+            const button = body.querySelector('#btnResendVerification');
+            const messageEl = body.querySelector('#verificationMessage');
+            button.disabled = true;
+            button.textContent = 'Enviando...';
+            const result = await window.resendVerificationEmail(email, password);
+            button.disabled = false;
+            button.textContent = 'Reenviar e-mail';
+            messageEl.textContent = result.message;
+            if (result.verified) setTimeout(() => mostrarLoginEmail(), 1000);
+        });
+
+        body.querySelector('#btnVerificationLogin').addEventListener('click', () => mostrarLoginEmail());
+        body.querySelector('#btnCloseVerification').addEventListener('click', () => modal.remove());
+    }
+
+    function mostrarRecuperacaoSenha(emailInicial = '') {
+        body.innerHTML = `
+            <h2 style="color:var(--text-primary,#fff);margin-bottom:10px;">🔑 Recuperar senha</h2>
+            <p style="color:var(--text-secondary,#94a3b8);font-size:14px;margin-bottom:18px;">Informe seu e-mail para receber o link de recuperação.</p>
+            <form id="resetForm" style="display:flex;flex-direction:column;gap:12px;">
+                <input id="resetEmailInput" type="email" autocomplete="email" required value="${emailInicial.replace(/"/g, '&quot;')}" placeholder="Seu e-mail" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid var(--border,#334155);background:#0f172a;color:white;">
+                <div id="resetMessage" style="font-size:13px;color:#fbbf24;min-height:18px;"></div>
+                <button type="submit" style="padding:12px;background:#2563eb;color:white;border:none;border-radius:30px;font-weight:600;cursor:pointer;">Enviar recuperação</button>
+                <button type="button" id="btnBackReset" style="padding:10px;background:transparent;color:var(--text-secondary,#94a3b8);border:1px solid var(--border,#334155);border-radius:30px;cursor:pointer;">← Voltar</button>
+            </form>
+        `;
+
+        body.querySelector('#resetForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const button = event.submitter;
+            const email = body.querySelector('#resetEmailInput').value.trim();
+            const messageEl = body.querySelector('#resetMessage');
+            button.disabled = true;
+            button.textContent = 'Enviando...';
+            const result = await window.resetPassword(email);
+            button.disabled = false;
+            button.textContent = 'Enviar recuperação';
+            messageEl.textContent = result.message;
+        });
+        body.querySelector('#btnBackReset').addEventListener('click', mostrarLoginEmail);
+    }
+
+    mostrarOpcoesLogin();
+
     modal.addEventListener('click', function(e) {
         if (e.target === this) this.remove();
     });
 }
-
 function fecharModalLogin() {
     document.querySelector('.modal-login-overlay')?.remove();
 }
