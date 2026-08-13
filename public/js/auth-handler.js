@@ -4,7 +4,7 @@
 // ============================================
 // FUNÇÃO PARA ABRIR MODAL DE LOGIN 13/08/2026
 // ============================================
-function mostrarModalLogin() {
+function mostrarModalLogin(modo = 'opcoes') {
     if (document.querySelector('.modal-login-overlay')) return;
 
     const modal = document.createElement('div');
@@ -208,7 +208,11 @@ function mostrarModalLogin() {
         body.querySelector('#btnBackReset').addEventListener('click', mostrarLoginEmail);
     }
 
-    mostrarOpcoesLogin();
+    if (modo === 'email') {
+        mostrarLoginEmail();
+    } else {
+        mostrarOpcoesLogin();
+    }
 
     modal.addEventListener('click', function(e) {
         if (e.target === this) this.remove();
