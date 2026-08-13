@@ -1425,4 +1425,25 @@ body.light-mode {
         flex-direction: column;
         align-items: flex-start;
     }
+    /* ============================================
+       LOGIN POR E-MAIL - PAINEL PRINCIPAL
+       Mantém o Facebook preservado no código,
+       mas desativado visualmente no painel.
+       ============================================ */
+    .btn-email {
+        background: #334155;
+        color: white;
+        padding: 8px 18px;
+        border-radius: 30px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+    }
+    
+    .btn-email:hover {
+        filter: brightness(1.08);
+        transform: translateY(-1px);
+    }
+    
 }
