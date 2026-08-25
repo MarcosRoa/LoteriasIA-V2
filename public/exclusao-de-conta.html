@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exclusão de Conta - Loterias IA</title>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--title:#f59e0b;--danger:#f87171}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif;line-height:1.6}
+.header{padding:32px 20px 18px;text-align:center;border-bottom:1px solid var(--border)}
+.header h1{margin:0 0 8px;color:#fff;font-size:28px}.header p{margin:0;color:var(--muted)}
+.container{width:min(700px,calc(100% - 32px));margin:28px auto 50px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px}
+.notice{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.45);border-radius:12px;padding:14px;margin-bottom:18px}
+.notice strong{color:#fff}
+label{display:block;color:#fff;font-weight:600;margin:16px 0 7px}
+input,textarea{width:100%;border:1px solid var(--border);background:#0f172a;color:#fff;border-radius:10px;padding:12px;font:inherit}
+input:focus,textarea:focus{outline:none;border-color:#8b5cf6}
+input[readonly]{color:#cbd5e1;background:#111827}
+textarea{min-height:130px;resize:vertical}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
+.actions{display:flex;gap:10px;justify-content:center;margin-top:22px;flex-wrap:wrap}
+button{border:0;border-radius:24px;padding:12px 20px;font-weight:700;cursor:pointer}
+.primary{background:#8b5cf6;color:#fff}.secondary{background:#334155;color:#fff}
+.footer{color:var(--muted);font-size:12px;text-align:center;margin-top:20px}
+</style>
+</head>
+<body>
+<header class="header"><h1>🗑 Exclusão de Conta</h1><p>Loterias IA</p></header>
+<main class="container">
+<section class="card">
+<div class="notice"><strong>Importante:</strong> a exclusão da conta é uma ação definitiva. Quando o pedido for processado e a conta for excluída, o usuário perderá o acesso à conta, aos créditos não utilizados e aos benefícios PRO associados a ela.</div>
+<p>Use este formulário para solicitar a exclusão da sua conta do Loterias IA. O pedido será recebido por nossa equipe e processado em até <strong>7 dias corridos</strong>.</p>
+<form id="deleteForm">
+<label for="email">E-mail da conta</label>
+<input id="email" name="email" type="email" placeholder="seu@email.com" required readonly>
+<div class="hint">Quando o pedido for iniciado pelo aplicativo, o e-mail da conta poderá ser preenchido automaticamente.</div>
+<label for="reason">Motivo da exclusão</label>
+<textarea id="reason" name="reason" placeholder="Informe, se desejar, o motivo da exclusão." required></textarea>
+<div class="actions">
+<button type="submit" class="primary">Solicitar exclusão</button>
+<button type="button" class="secondary" onclick="history.back()">Voltar</button>
+</div>
+</form>
+<div class="footer">Para dúvidas sobre a solicitação de exclusão, utilize: <strong>geradorloterico@gmail.com</strong></div>
+</section>
+</main>
+<script>
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const email = params.get('email') || '';
+  const emailInput = document.getElementById('email');
+  if (email) emailInput.value = email;
+  else emailInput.removeAttribute('readonly');
+
+  document.getElementById('deleteForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    const userEmail = emailInput.value.trim();
+    const reason = document.getElementById('reason').value.trim();
+    if (!userEmail || !reason) {
+      alert('Preencha o e-mail e o motivo da exclusão.');
+      return;
+    }
+    const subject = encodeURIComponent('Solicitação de exclusão de conta - Loterias IA');
+    const body = encodeURIComponent(
+      'Solicitação de exclusão de conta\n\n' +
+      'E-mail da conta: ' + userEmail + '\n\n' +
+      'Motivo da exclusão:\n' + reason + '\n\n' +
+      'Solicito a exclusão da minha conta do Loterias IA.\n'
+    );
+    window.location.href = 'mailto:geradorloterico@gmail.com?subject=' + subject + '&body=' + body;
+  });
+})();
+</script>
+</body>
+</html>
