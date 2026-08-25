@@ -1447,3 +1447,18 @@ body.light-mode {
         filter: brightness(1.08);
         transform: translateY(-1px);
     }
+    .privacy-footer {
+        text-align: center;
+        padding: 18px 20px 28px;
+    }
+    
+    .privacy-footer a {
+        color: var(--text-secondary);
+        font-size: 12px;
+        text-decoration: none;
+    }
+    
+    .privacy-footer a:hover {
+        color: #38bdf8;
+        text-decoration: underline;
+    }
