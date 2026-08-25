@@ -1462,3 +1462,7 @@ body.light-mode {
         color: #38bdf8;
         text-decoration: underline;
     }
+    .privacy-separator {
+        color: var(--text-secondary);
+        margin: 0 8px;
+    }
