@@ -1,32 +1,118 @@
 // middleware/auth.ts
 // ============================================
-// AUTENTICAÇÃO SIMPLES (SEM FIREBASE ADMIN)
+// AUTENTICAÇÃO REAL - FIREBASE ADMIN
 // ============================================
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
-export function authenticate(
+// ============================================
+// INICIALIZAR FIREBASE ADMIN
+// ============================================
+
+if (getApps().length === 0) {
+    const projectId = process.env.FIREBASE_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+    if (!projectId || !clientEmail || !privateKey) {
+        throw new Error(
+            'Credenciais do Firebase Admin não configuradas corretamente'
+        );
+    }
+
+    initializeApp({
+        credential: cert({
+            projectId,
+            clientEmail,
+            privateKey: privateKey.replace(/\\n/g, '\n'),
+        }),
+    });
+}
+
+// ============================================
+// AUTENTICAR USUÁRIO
+// ============================================
+
+export async function authenticate(
     req: VercelRequest,
     res: VercelResponse
-): { uid: string } | null {
-    
-    // ============================================
-    // 1. TENTAR X-User-Id (header)
-    // ============================================
-    const uid = (req.headers['x-user-id'] || req.body?.uid || req.query?.uid) as string;
-    
-    if (!uid) {
+): Promise<{ uid: string } | null> {
+
+    try {
+        // ============================================
+        // 1. LER HEADER AUTHORIZATION
+        // ============================================
+
+        const authorization = req.headers.authorization;
+
+        if (!authorization) {
+            res.status(401).json({
+                success: false,
+                error: 'Token de autenticação não informado'
+            });
+
+            return null;
+        }
+
+        // ============================================
+        // 2. VALIDAR FORMATO BEARER
+        // ============================================
+
+        if (!authorization.startsWith('Bearer ')) {
+            res.status(401).json({
+                success: false,
+                error: 'Formato de autenticação inválido'
+            });
+
+            return null;
+        }
+
+        const token = authorization.substring(7).trim();
+
+        if (!token) {
+            res.status(401).json({
+                success: false,
+                error: 'Token de autenticação vazio'
+            });
+
+            return null;
+        }
+
+        // ============================================
+        // 3. VALIDAR TOKEN FIREBASE
+        // ============================================
+
+        const decodedToken = await getAuth().verifyIdToken(token);
+
+        // ============================================
+        // 4. UID REAL VEM DO TOKEN VALIDADO
+        // ============================================
+
+        const uid = decodedToken.uid;
+
+        if (!uid) {
+            res.status(401).json({
+                success: false,
+                error: 'UID não encontrado no token'
+            });
+
+            return null;
+        }
+
+        console.log(`🔐 Firebase autenticado: ${uid}`);
+
+        return { uid };
+
+    } catch (error: any) {
+        console.error('❌ Falha na autenticação Firebase:', error);
+
         res.status(401).json({
             success: false,
-            error: 'Usuário não autenticado. Envie X-User-Id no header.'
+            error: 'Usuário não autenticado'
         });
+
         return null;
     }
-    
-    // ============================================
-    // 2. RETORNAR UID
-    // ============================================
-    console.log(`🔐 Usuário autenticado: ${uid}`);
-    
-    return { uid };
 }
