@@ -103,12 +103,12 @@ function getCurrentUser() {
 // ============================================
 async function carregarDadosUsuario(uid) {
     try {
-        const creditsResponse = await fetch(`/api/credits?uid=${uid}`);
+        const creditsResponse = await fetchAutenticado(`/api/credits?uid=${uid}`);
         const creditsData = await creditsResponse.json();
         creditos = creditsData.credits || 0;
         isUserPro = creditsData.isPro || false;
         
-        const proResponse = await fetch(`/api/pro/status?uid=${uid}`);
+        const proResponse = await fetchAutenticado(`/api/pro/status?uid=${uid}`);
         const proData = await proResponse.json();
         proExpiresAt = proData.proExpiresAt || null;
         isUserPro = proData.isPro || isUserPro;
@@ -126,11 +126,13 @@ async function renderizarPerfil() {
     const dias = isUserPro ? CONFIG.DIAS_PRO : CONFIG.DIAS_FREE;
     
     try {
-        const historicoResponse = await fetch(`/api/user/history?uid=${usuario.uid}&limit=50`);
-        const historico = await historicoResponse.json();
+        const historicoResponse = await fetchAutenticado(
+            `/api/user/history?uid=${usuario.uid}&limit=50`
+        );
         
-        const transacoesResponse = await fetch(`/api/user/transactions?uid=${usuario.uid}&dias=${dias}`);
-        const transacoes = await transacoesResponse.json();
+        const transacoesResponse = await fetchAutenticado(
+            `/api/user/transactions?uid=${usuario.uid}&dias=${dias}`
+        );
         
         const app = document.getElementById('app');
         app.innerHTML = criarHTML(usuario, creditos, isUserPro, proExpiresAt, historico.history || [], transacoes.transactions || [], dias);
