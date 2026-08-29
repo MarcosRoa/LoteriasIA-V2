@@ -38,7 +38,11 @@ if (getApps().length === 0) {
 export async function authenticate(
     req: VercelRequest,
     res: VercelResponse
-): Promise<{ uid: string } | null> {
+): Promise<{
+    uid: string;
+    email: string | null;
+    name: string | null;
+} | null> {
 
     try {
         // ============================================
@@ -103,7 +107,11 @@ export async function authenticate(
 
         console.log(`🔐 Firebase autenticado: ${uid}`);
 
-        return { uid };
+        return {
+            uid,
+            email: decodedToken.email || null,
+            name: decodedToken.name || null,
+        };
 
     } catch (error: any) {
         console.error('❌ Falha na autenticação Firebase:', error);
