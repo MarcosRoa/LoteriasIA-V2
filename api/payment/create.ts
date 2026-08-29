@@ -7,6 +7,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { PaymentService } from '../../services/PaymentService.js';
+import { authenticate } from '../../middleware/auth.js';
 
 const supabase = createClient(
     process.env.SUPABASE_URL!,
@@ -24,10 +25,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        const uid = req.headers['x-user-id'] || req.body?.uid;
-        if (!uid) {
-            return res.status(400).json({ error: 'UID é obrigatório' });
-        }
+        const auth = await authenticate(req, res);
+        if (!auth) return;
+        
+        const { uid } = auth;
 
         const { type, productId } = req.body;
         if (!type) {
