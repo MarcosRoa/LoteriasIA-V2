@@ -1,6 +1,6 @@
 // middleware/auth.ts
 // ============================================
-// AUTENTICAÇÃO REAL - FIREBASE ADMIN
+// AUTENTICAÇÃO REAL - FIREBASE ADMIN  29/08/2026
 // ============================================
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
