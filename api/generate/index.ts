@@ -1,6 +1,6 @@
 // api/generate/index.ts
 // ============================================
-// ORQUESTRADOR DE GERAÇÃO (Vercel)
+// ORQUESTRADOR DE GERAÇÃO (Vercel)  29/08/2026
 // VERSÃO 3.3 - CORRIGIDA (SEM FIREBASE ADMIN)
 // ============================================
 
