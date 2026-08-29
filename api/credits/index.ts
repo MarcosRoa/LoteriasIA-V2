@@ -27,9 +27,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
     
-    const uid = (req.query.uid || req.headers['x-user-id']) as string;
-    const email = (req.headers['x-user-email'] as string);
-    const nome = (req.headers['x-user-name'] as string);
+    const auth = await authenticate(req, res);
+    if (!auth) return;
+    
+    const { uid, email, name } = auth;
     
     if (!uid) return res.status(400).json({ error: 'UID é obrigatório' });
     
@@ -52,7 +53,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 .from('usuarios')
                 .insert({
                     uid,
-                    nome: nome || email?.split('@')[0] || 'Usuário',
+                    nome: name || email?.split('@')[0] || 'Usuário',
                     email: email || `${uid}@temp.com`,
                     creditos: trialData.creditos,
                     is_pro: trialData.is_pro,
