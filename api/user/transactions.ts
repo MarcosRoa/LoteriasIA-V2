@@ -1,6 +1,7 @@
 // api/user/transactions.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { authenticate } from '../../middleware/auth.js';
 
 const supabase = createClient(
     process.env.SUPABASE_URL!,
@@ -13,12 +14,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
     
-    const uid = req.query.uid as string;
-    const dias = parseInt(req.query.dias as string) || 30;
+    const auth = await authenticate(req, res);
+    if (!auth) return;
     
-    if (!uid) {
-        return res.status(400).json({ error: 'UID é obrigatório' });
-    }
+    const { uid } = auth;
+    
+    const dias = parseInt(req.query.dias as string) || 30;
     
     try {
         // Calcular data limite
