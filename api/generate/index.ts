@@ -30,7 +30,7 @@ export default async function handler(req, res) {
         // ============================================
         // 2. AUTENTICAÇÃO (SIMPLES)
         // ============================================
-        const auth = authenticate(req, res);
+        const auth = await authenticate(req, res);
         if (!auth) return; // Já enviou 401
         
         const uid = auth.uid;
