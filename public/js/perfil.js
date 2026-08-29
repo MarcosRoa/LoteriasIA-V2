@@ -1,5 +1,5 @@
 // ============================================
-// perfil.js - PÁGINA DE PERFIL (VERSÃO COMPLETA)
+// perfil.js - PÁGINA DE PERFIL (VERSÃO COMPLETA)  29/08/2026
 // ============================================
 
 // ============================================
@@ -49,6 +49,28 @@ function mostrarToast(mensagem, tipo = 'success') {
     toast.textContent = mensagem;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 4000);
+}
+
+// ============================================
+// AUTENTICAÇÃO DAS REQUISIÇÕES À API
+// ============================================
+async function fetchAutenticado(url, options = {}) {
+    const user = firebase.auth().currentUser;
+
+    if (!user) {
+        throw new Error('Usuário não autenticado');
+    }
+
+    const token = await user.getIdToken();
+
+    return fetch(url, {
+        ...options,
+        headers: {
+            ...(options.headers || {}),
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        }
+    });
 }
 
 // ============================================
@@ -124,27 +146,37 @@ async function carregarDadosUsuario(uid) {
 // ============================================
 async function renderizarPerfil() {
     const dias = isUserPro ? CONFIG.DIAS_PRO : CONFIG.DIAS_FREE;
-    
+
     try {
         const historicoResponse = await fetchAutenticado(
             `/api/user/history?uid=${usuario.uid}&limit=50`
         );
-        
+        const historico = await historicoResponse.json();
+
         const transacoesResponse = await fetchAutenticado(
             `/api/user/transactions?uid=${usuario.uid}&dias=${dias}`
         );
-        
+        const transacoes = await transacoesResponse.json();
+
         const app = document.getElementById('app');
-        app.innerHTML = criarHTML(usuario, creditos, isUserPro, proExpiresAt, historico.history || [], transacoes.transactions || [], dias);
-        
+
+        app.innerHTML = criarHTML(
+            usuario,
+            creditos,
+            isUserPro,
+            proExpiresAt,
+            historico.history || [],
+            transacoes.transactions || [],
+            dias
+        );
+
         atualizarEventos();
-        
+
     } catch (error) {
         console.error('❌ Erro ao buscar dados:', error);
         renderizarErro('Erro ao carregar histórico');
     }
 }
-
 // ============================================
 // 8. CRIAR HTML DO PERFIL
 // ============================================
