@@ -2,6 +2,7 @@
 // api/user/history.ts  13/08/2026
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { authenticate } from '../../middleware/auth.js';
 
 const supabase = createClient(
     process.env.SUPABASE_URL!,
@@ -59,14 +60,12 @@ export default async function handler(
         });
     }
 
-    const uid = req.query.uid as string;
+    const auth = await authenticate(req, res);
+    if (!auth) return;
+    
+    const { uid } = auth;
+    
     const limit = parseInt(req.query.limit as string) || 50;
-
-    if (!uid) {
-        return res.status(400).json({
-            error: 'UID é obrigatório'
-        });
-    }
 
     try {
         const { data: history, error } = await supabase
