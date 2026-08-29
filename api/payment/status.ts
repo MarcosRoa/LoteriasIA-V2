@@ -6,6 +6,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { authenticate } from '../../middleware/auth.js';
 
 const supabase = createClient(
     process.env.SUPABASE_URL!,
@@ -21,16 +22,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
+        const auth = await authenticate(req, res);
+        if (!auth) return;
+        
+        const { uid } = auth;
+        
         const paymentId = req.query.paymentId as string;
         if (!paymentId) {
             return res.status(400).json({ error: 'paymentId é obrigatório' });
         }
-
+        
         // ✅ Usar provider_payment_id (padronizado)
         const { data: payment, error } = await supabase
             .from('payments')
             .select('*')
             .eq('provider_payment_id', paymentId)
+            .eq('uid', uid)
             .maybeSingle();
 
         if (error || !payment) {
