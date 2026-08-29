@@ -1,5 +1,5 @@
 // ============================================
-// CAMINHO: api/pro/status.ts
+// CAMINHO: api/pro/status.ts  29/08/2026
 // ============================================
 // STATUS PRO - USANDO ProService.sync()
 // ============================================
@@ -7,6 +7,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { ProService } from '../../services/ProService.js';
+import { authenticate } from '../../middleware/auth.js';
 
 const supabase = createClient(
     process.env.SUPABASE_URL!,
@@ -26,7 +27,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
     
-    const uid = (req.query.uid || req.headers['x-user-id']) as string;
+    const auth = await authenticate(req, res);
+    if (!auth) return;
+    
+    const { uid } = auth;
     if (!uid) return res.status(400).json({ error: 'UID é obrigatório' });
     
     try {
