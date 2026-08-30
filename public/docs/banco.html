@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banco de Dados - Loterias IA v7.0</title>
+    <title>Banco de Dados - Loterias IA v7.1</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
     <style>
@@ -11,101 +11,258 @@
         .docs-card { background: var(--bg-card); border-radius: 20px; padding: 30px; border: 2px solid var(--border); margin-bottom: 30px; }
         .docs-card h1 { background: linear-gradient(135deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .docs-card h2 { color: #f59e0b; margin: 25px 0 15px 0; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        .docs-card h3 { color: #38bdf8; margin-top: 20px; }
         .db-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-        .db-table th, .db-table td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border); }
+        .db-table th, .db-table td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
         .db-table th { background: rgba(56, 189, 248, 0.2); color: #38bdf8; }
         .btn-voltar { background: #64748b; color: white; border: none; padding: 10px 25px; border-radius: 30px; cursor: pointer; font-weight: 600; margin-top: 20px; }
         .col-name { font-family: monospace; color: #38bdf8; }
-        .rpc-box { background: var(--bg-primary); border-radius: 12px; padding: 15px; margin: 15px 0; font-family: monospace; font-size: 12px; overflow-x: auto; }
+        .rpc-box { background: var(--bg-primary); border-radius: 12px; padding: 15px; margin: 15px 0; font-family: monospace; font-size: 12px; overflow-x: auto; white-space: pre-wrap; }
         .header-logo img { width: 60px; height: auto; }
+        .status-ok { color: #10b981; font-weight: 600; }
+        .status-warn { color: #f59e0b; font-weight: 600; }
+        .status-lock { color: #ef4444; font-weight: 600; }
+        .flow { background: var(--bg-primary); border-left: 4px solid #38bdf8; border-radius: 12px; padding: 18px; margin: 15px 0; line-height: 1.8; }
+        .note { background: rgba(245, 158, 11, 0.10); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 12px; padding: 15px; margin: 15px 0; }
+        .security { background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 15px; margin: 15px 0; }
+        .pending { background: rgba(139, 92, 246, 0.10); border: 1px solid rgba(139, 92, 246, 0.30); border-radius: 12px; padding: 15px; margin: 15px 0; }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="header-content">
-            <div class="header-logo">
-                <img src="/img/brasao.png" onerror="this.style.display='none'" alt="Logo" style="width: 60px; height: auto;">
-            </div>
+            <div class="header-logo"><img src="/img/brasao.png" onerror="this.style.display='none'" alt="Logo"></div>
             <div class="header-text">
-                <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
-                    <h1 style="margin: 0; background: linear-gradient(135deg, #8b5cf6, #06b6d4, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 22px;">
-                        🧠 Sistema Profissional de Loterias com IA Real
-                    </h1>
-                    <span class="version-badge">V.7.0 PRO</span>
+                <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;">
+                    <h1 style="margin:0;background:linear-gradient(135deg,#8b5cf6,#06b6d4,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:22px;">🧠 Sistema Profissional de Loterias com IA Real</h1>
+                    <span class="version-badge">V.7.1 PRO</span>
                 </div>
-                <p class="header-subtitle">10 loterias • IA que Aprende Padrões • Login Social • Sistema de Créditos • PIX</p>
+                <p class="header-subtitle">10 loterias • Firebase Auth • Vercel API • Supabase • Sistema de Créditos • PIX</p>
             </div>
-            <div class="header-logo">
-                <img src="/img/brasao.png" onerror="this.style.display='none'" alt="Logo" style="width: 60px; height: auto;">
-            </div>
+            <div class="header-logo"><img src="/img/brasao.png" onerror="this.style.display='none'" alt="Logo"></div>
         </div>
     </div>
 
     <div class="docs-container">
         <div class="docs-card">
-            <h1>💾 Banco de Dados (Supabase)</h1>
-            <p>PostgreSQL com autenticação via Firebase</p>
+            <h1>💾 Banco de Dados e Fluxo de Segurança</h1>
+            <p>Arquitetura atual confirmada do Loterias IA: autenticação no Firebase, API na Vercel e persistência no PostgreSQL/Supabase.</p>
 
-            <h2>📊 Tabela: usuarios</h2>
-            <table class="db-table">
-                <thead><tr><th>Coluna</th><th>Tipo</th><th>Descrição</th></tr></thead>
-                <tbody>
-                    <tr><td class="col-name">id</td><td>UUID</td><td>Identificador único (PK)</td></tr>
-                    <tr><td class="col-name">uid</td><td>TEXT</td><td>UID do Firebase Auth</td></tr>
-                    <tr><td class="col-name">nome</td><td>TEXT</td><td>Nome do usuário</td></tr>
-                    <tr><td class="col-name">email</td><td>TEXT</td><td>E-mail (único)</td></tr>
-                    <tr><td class="col-name">foto_url</td><td>TEXT</td><td>URL da foto do perfil</td></tr>
-                    <tr><td class="col-name">creditos</td><td>INTEGER</td><td>Saldo em reais (R$)</td></tr>
-                    <tr><td class="col-name">is_pro</td><td>BOOLEAN</td><td>Se é usuário PRO</td></tr>
-                    <tr><td class="col-name">pro_expires_at</td><td>TIMESTAMP</td><td>Expiração do PRO</td></tr>
-                    <tr><td class="col-name">created_at</td><td>TIMESTAMP</td><td>Data de criação</td></tr>
-                    <tr><td class="col-name">updated_at</td><td>TIMESTAMP</td><td>Última atualização</td></tr>
-                </tbody>
-            </table>
-
-            <h2>📊 Tabela: historico_palpites</h2>
-            <table class="db-table">
-                <thead><tr><th>Coluna</th><th>Tipo</th><th>Descrição</th></tr></thead>
-                <tbody>
-                    <tr><td class="col-name">id</td><td>UUID</td><td>Identificador único (PK)</td></tr>
-                    <tr><td class="col-name">usuario_uid</td><td>TEXT</td><td>UID do usuário (FK)</td></tr>
-                    <tr><td class="col-name">loteria</td><td>TEXT</td><td>Nome da loteria</td></tr>
-                    <tr><td class="col-name">jogos</td><td>JSONB</td><td>Array de números sorteados</td></tr>
-                    <tr><td class="col-name">filtros</td><td>TEXT</td><td>Configurações usadas</td></tr>
-                    <tr><td class="col-name">extras</td><td>TEXT</td><td>Informações extras</td></tr>
-                    <tr><td class="col-name">meses</td><td>JSONB</td><td>Meses da sorte (Dia de Sorte)</td></tr>
-                    <tr><td class="col-name">quantidade_numeros</td><td>INTEGER</td><td>Números por jogo (bolão)</td></tr>
-                    <tr><td class="col-name">times</td><td>JSONB</td><td>Times da Timemania</td></tr>
-                    <tr><td class="col-name">data</td><td>TIMESTAMP</td><td>Data de criação</td></tr>
-                </tbody>
-            </table>
-
-            <h2>📊 Tabela: transacoes</h2>
-            <table class="db-table">
-                <thead><tr><th>Coluna</th><th>Tipo</th><th>Descrição</th></tr></thead>
-                <tbody>
-                    <tr><td class="col-name">id</td><td>UUID</td><td>Identificador único (PK)</td></tr>
-                    <tr><td class="col-name">usuario_uid</td><td>TEXT</td><td>UID do usuário (FK)</td></tr>
-                    <tr><td class="col-name">tipo</td><td>TEXT</td><td>compra / uso / pro_ativacao</td></tr>
-                    <tr><td class="col-name">quantidade</td><td>INTEGER</td><td>Valor da transação</td></tr>
-                    <tr><td class="col-name">saldo_apos</td><td>INTEGER</td><td>Saldo após transação</td></tr>
-                    <tr><td class="col-name">reference_id</td><td>TEXT</td><td>ID do pagamento (PIX)</td></tr>
-                    <tr><td class="col-name">idempotency_key</td><td>TEXT</td><td>Chave para evitar duplicação</td></tr>
-                    <tr><td class="col-name">metadata</td><td>JSONB</td><td>Dados adicionais</td></tr>
-                    <tr><td class="col-name">data</td><td>TIMESTAMP</td><td>Data da transação</td></tr>
-                </tbody>
-            </table>
-
-            <h2>⚡ Funções RPC</h2>
-            <div class="rpc-box">
-                CREATE OR REPLACE FUNCTION generate_game(p_user_uid TEXT, p_lottery TEXT, p_games JSONB, p_cost INTEGER, p_mode TEXT, p_extra_numbers INTEGER DEFAULT NULL, p_idempotency_key TEXT DEFAULT NULL) RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER;
+            <h2>🔐 Fluxo oficial de autenticação</h2>
+            <div class="flow">
+                <strong>Web / Mobile</strong><br>↓<br>
+                <strong>Firebase Authentication</strong><br>↓ ID Token<br>
+                <strong>Vercel — middleware/auth.ts</strong><br>↓ <code>verifyIdToken()</code><br>
+                <strong>UID real do Firebase</strong><br>↓<br>
+                <strong>APIs / Services da Vercel</strong><br>↓<br>
+                <strong>Supabase usando SUPABASE_SERVICE_ROLE_KEY</strong>
             </div>
-            <div class="rpc-box">
-                CREATE OR REPLACE FUNCTION add_credits(p_user_uid TEXT, p_amount INTEGER, p_payment_id TEXT, p_idempotency_key TEXT DEFAULT NULL) RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER;
-            </div>
+            <div class="security"><strong>Regra de identidade:</strong> o UID usado pelo backend vem do Firebase ID Token validado. Os endpoints protegidos não usam <code>X-User-Id</code>, <code>req.body.uid</code> ou <code>req.query.uid</code> como fonte de autenticação.</div>
+
+            <h2>🛡️ Camada de acesso ao Supabase</h2>
+            <table class="db-table"><thead><tr><th>Camada</th><th>Responsabilidade</th><th>Estado</th></tr></thead><tbody>
+                <tr><td>Firebase Auth</td><td>Identidade e autenticação do usuário</td><td class="status-ok">ATIVO</td></tr>
+                <tr><td>Vercel / middleware/auth.ts</td><td>Validação do Firebase ID Token</td><td class="status-ok">ATIVO</td></tr>
+                <tr><td>API / Services</td><td>Regras de negócio e autorização pelo UID validado</td><td class="status-ok">ATIVO</td></tr>
+                <tr><td>Supabase Service Role</td><td>Acesso administrativo do backend às tabelas</td><td class="status-ok">ATIVO</td></tr>
+                <tr><td>RLS</td><td>Bloqueio de acesso direto de clientes às tabelas</td><td class="status-ok">ATIVO EM TODAS AS TABELAS PUBLIC</td></tr>
+            </tbody></table>
+
+            <h2>📋 Estado atual do RLS</h2>
+            <p>Todas as 16 tabelas atualmente presentes no schema <code>public</code> estão com RLS habilitado.</p>
+            <table class="db-table"><thead><tr><th>Tabela</th><th>RLS</th><th>Acesso direto anon/authenticated</th></tr></thead><tbody>
+                <tr><td class="col-name">audit_logs</td><td class="status-ok">true</td><td class="status-lock">Bloqueado</td></tr>
+                <tr><td class="col-name">configuracoes</td><td class="status-ok">true</td><td class="status-ok">SELECT</td></tr>
+                <tr><td class="col-name">credit_transactions</td><td class="status-ok">true</td><td class="status-lock">Bloqueado</td></tr>
+                <tr><td class="col-name">financial_logs</td><td class="status-ok">true</td><td class="status-lock">Bloqueado</td></tr>
+                <tr><td class="col-name">generated_games</td><td class="status-ok">true</td><td class="status-lock">Bloqueado</td></tr>
+                <tr><td class="col-name">historico_palpites</td><td class="status-ok">true</td><td class="status-lock">Bloqueado</td></tr>
+                <tr><td class="col-name">historico_pro</td><td class="status-ok">true</td><td class="status-lock">Bloqueado</td></tr>
+                <tr><td class="col-name">logs_auditoria</td><td class="status-ok">true</td><td class="status-lock">Bloqueado</td></tr>
+                <tr><td class="col-name">payments</td><td class="status-ok">true</td><td class="status-lock">Bloqueado</td></tr>
+                <tr><td class="col-name">rate_limit_log</td><td class="status-ok">true</td><td class="status-lock">Bloqueado</td></tr>
+                <tr><td class="col-name">subscriptions</td><td class="status-ok">true</td><td class="status-lock">Bloqueado</td></tr>
+                <tr><td class="col-name">transacoes</td><td class="status-ok">true</td><td class="status-lock">Bloqueado</td></tr>
+                <tr><td class="col-name">user_balances</td><td class="status-ok">true</td><td class="status-lock">Bloqueado</td></tr>
+                <tr><td class="col-name">users</td><td class="status-ok">true</td><td class="status-lock">Bloqueado</td></tr>
+                <tr><td class="col-name">usuarios</td><td class="status-ok">true</td><td class="status-lock">Bloqueado</td></tr>
+                <tr><td class="col-name">webhook_events</td><td class="status-ok">true</td><td class="status-lock">Bloqueado</td></tr>
+            </tbody></table>
+            <div class="note"><strong>Exceção intencional:</strong> <code>configuracoes</code> mantém somente <code>SELECT</code> para <code>anon</code> e <code>authenticated</code>, através da policy <code>configuracoes_select_all</code>. As demais tabelas não possuem privilégios diretos para esses papéis.</div>
         </div>
 
-        <div style="text-align: center;">
+        <div class="docs-card">
+            <h1>👤 Tabela: usuarios</h1>
+            <p>Tabela principal da conta da aplicação. A estrutura existente foi preservada e <code>uid</code> é a chave de ligação com o Firebase.</p>
+            <table class="db-table"><thead><tr><th>Coluna</th><th>Tipo</th><th>Descrição</th><th>Restrição/Estado</th></tr></thead><tbody>
+                <tr><td class="col-name">id</td><td>UUID</td><td>Identificador interno</td><td>PK</td></tr>
+                <tr><td class="col-name">uid</td><td>TEXT</td><td>UID do Firebase Auth</td><td>NOT NULL + UNIQUE</td></tr>
+                <tr><td class="col-name">nome</td><td>TEXT</td><td>Nome do usuário</td><td>Opcional</td></tr>
+                <tr><td class="col-name">email</td><td>TEXT</td><td>E-mail do usuário</td><td>Opcional</td></tr>
+                <tr><td class="col-name">foto_url</td><td>TEXT</td><td>URL da foto do perfil</td><td>Opcional</td></tr>
+                <tr><td class="col-name">creditos</td><td>INTEGER</td><td>Quantidade de créditos disponíveis</td><td>Default atual: 5</td></tr>
+                <tr><td class="col-name">created_at</td><td>TIMESTAMP</td><td>Data de criação da conta</td><td>Default atual: now()</td></tr>
+                <tr><td class="col-name">updated_at</td><td>TIMESTAMP</td><td>Última atualização da conta</td><td>Default atual: now()</td></tr>
+                <tr><td class="col-name">is_pro</td><td>BOOLEAN</td><td>Status PRO</td><td>Default atual: false</td></tr>
+                <tr><td class="col-name">pro_expires_at</td><td>TIMESTAMP</td><td>Expiração do PRO</td><td>Opcional</td></tr>
+                <tr><td class="col-name">pro_ativado_em</td><td>TIMESTAMP</td><td>Data de ativação do PRO</td><td>Opcional</td></tr>
+            </tbody></table>
+            <div class="security"><strong>Proteção atual:</strong> RLS habilitado, policies antigas baseadas em <code>auth.uid()</code> removidas e privilégios diretos de <code>anon</code> e <code>authenticated</code> removidos. O backend continua acessando a tabela via Service Role.</div>
+        </div>
+
+        <div class="docs-card">
+            <h1>📚 Histórico e Transações</h1>
+            <h2>📊 Tabela: historico_palpites</h2>
+            <table class="db-table"><thead><tr><th>Coluna</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody>
+                <tr><td class="col-name">id</td><td>UUID</td><td>Identificador do registro</td></tr>
+                <tr><td class="col-name">usuario_uid</td><td>TEXT</td><td>UID do usuário</td></tr>
+                <tr><td class="col-name">loteria</td><td>TEXT</td><td>Nome da loteria</td></tr>
+                <tr><td class="col-name">jogos</td><td>JSONB</td><td>Jogos gerados</td></tr>
+                <tr><td class="col-name">filtros</td><td>TEXT</td><td>Configurações utilizadas</td></tr>
+                <tr><td class="col-name">extras</td><td>TEXT</td><td>Informações extras</td></tr>
+                <tr><td class="col-name">meses</td><td>JSONB</td><td>Meses da sorte, quando aplicável</td></tr>
+                <tr><td class="col-name">quantidade_numeros</td><td>INTEGER</td><td>Quantidade de números</td></tr>
+                <tr><td class="col-name">times</td><td>JSONB</td><td>Times da Timemania</td></tr>
+                <tr><td class="col-name">data</td><td>TIMESTAMP</td><td>Data de criação do histórico</td></tr>
+            </tbody></table>
+
+            <h2>📊 Tabela: transacoes</h2>
+            <table class="db-table"><thead><tr><th>Coluna</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody>
+                <tr><td class="col-name">id</td><td>UUID</td><td>Identificador da transação</td></tr>
+                <tr><td class="col-name">usuario_uid</td><td>TEXT</td><td>UID do usuário</td></tr>
+                <tr><td class="col-name">tipo</td><td>TEXT</td><td>Compra, uso, reserva e outros tipos existentes</td></tr>
+                <tr><td class="col-name">quantidade</td><td>INTEGER</td><td>Quantidade movimentada</td></tr>
+                <tr><td class="col-name">saldo_apos</td><td>INTEGER</td><td>Saldo após a operação</td></tr>
+                <tr><td class="col-name">reference_id</td><td>TEXT</td><td>Referência da operação</td></tr>
+                <tr><td class="col-name">idempotency_key</td><td>TEXT</td><td>Controle de duplicidade</td></tr>
+                <tr><td class="col-name">metadata</td><td>JSONB</td><td>Dados complementares</td></tr>
+                <tr><td class="col-name">data</td><td>TIMESTAMP</td><td>Data histórica</td></tr>
+                <tr><td class="col-name">created_at</td><td>TIMESTAMP</td><td>Data de criação do registro</td></tr>
+                <tr><td class="col-name">updated_at</td><td>TIMESTAMP</td><td>Última atualização</td></tr>
+            </tbody></table>
+
+            <h2>📈 Tabelas de controle de créditos</h2>
+            <table class="db-table"><thead><tr><th>Tabela</th><th>Função no fluxo</th><th>Proteção</th></tr></thead><tbody>
+                <tr><td class="col-name">user_balances</td><td>Saldo operacional de créditos</td><td class="status-ok">RLS + acesso administrativo</td></tr>
+                <tr><td class="col-name">credit_transactions</td><td>Movimentações do saldo operacional</td><td class="status-ok">RLS + acesso administrativo</td></tr>
+                <tr><td class="col-name">financial_logs</td><td>Registro financeiro associado às movimentações</td><td class="status-ok">RLS + acesso administrativo</td></tr>
+                <tr><td class="col-name">payments</td><td>Pagamentos e confirmação das compras</td><td class="status-ok">RLS + acesso administrativo</td></tr>
+                <tr><td class="col-name">subscriptions</td><td>Assinaturas/status relacionado</td><td class="status-ok">RLS + acesso administrativo</td></tr>
+            </tbody></table>
+        </div>
+
+        <div class="docs-card">
+            <h1>⚡ RPCs e Funções PostgreSQL</h1>
+            <p>As funções de negócio e manutenção não ficam mais expostas diretamente a <code>PUBLIC</code>, <code>anon</code> ou <code>authenticated</code>.</p>
+            <h2>💳 Créditos e geração</h2>
+            <div class="rpc-box">add_credits(p_user_uid text, p_amount integer, p_payment_id text, p_idempotency_key text)
+→ SECURITY DEFINER
+→ EXECUTE: postgres / service_role</div>
+            <div class="rpc-box">generate_game(p_user_uid text, p_lottery text, p_games jsonb, p_cost integer, p_mode text, p_extra_numbers integer, p_idempotency_key text)
+→ SECURITY DEFINER
+→ EXECUTE: postgres / service_role</div>
+            <div class="rpc-box">debitar_creditos(p_uid text, p_valor integer)
+→ SECURITY INVOKER
+→ EXECUTE: postgres / service_role</div>
+            <div class="rpc-box">apply_credit_transaction(p_user_id uuid, p_amount integer, p_transaction_type transaction_type, p_reference_id text, p_description text, p_idempotency_key text, p_source source_type)
+→ SECURITY DEFINER
+→ EXECUTE: postgres / service_role</div>
+            <div class="rpc-box">get_user_balance(p_user_id uuid)
+→ SECURITY DEFINER
+→ EXECUTE: postgres / service_role</div>
+
+            <h2>⭐ PRO e assinatura</h2>
+            <div class="rpc-box">ativar_pro(user_uid text, valor_pagamento real, dias_validade integer)
+→ SECURITY INVOKER
+→ EXECUTE: postgres / service_role</div>
+            <div class="rpc-box">dias_pro_restantes(user_uid text)
+→ SECURITY INVOKER
+→ EXECUTE: postgres / service_role</div>
+            <div class="rpc-box">get_pro_status(user_uid text)
+→ SECURITY INVOKER
+→ EXECUTE: postgres / service_role</div>
+            <div class="rpc-box">is_user_pro(user_uid text)
+→ SECURITY DEFINER
+→ EXECUTE: postgres / service_role</div>
+            <div class="rpc-box">is_subscription_active(p_user_id uuid)
+→ SECURITY DEFINER
+→ EXECUTE: postgres / service_role</div>
+
+            <h2>💰 Webhook</h2>
+            <div class="rpc-box">process_payment_webhook(p_provider text, p_event_id text, p_payment_id text, p_amount numeric, p_credits integer, p_payload jsonb, p_idempotency_key text)
+→ SECURITY DEFINER
+→ EXECUTE: postgres / service_role</div>
+
+            <h2>🧹 Limpeza administrativa</h2>
+            <div class="rpc-box">limpar_dados_antigos()
+→ SECURITY DEFINER
+→ EXECUTE: postgres / service_role
+→ padrão de retenção: 45 dias</div>
+            <div class="security">A rotina única de limpeza remove somente registros antigos de <code>generated_games</code>, <code>historico_palpites</code> e <code>transacoes</code>. A tabela <code>usuarios</code> não é apagada nem alterada por essa rotina.</div>
+
+            <h2>🔧 Funções técnicas</h2>
+            <div class="rpc-box">set_app_user_id(user_id text)
+→ SECURITY DEFINER
+→ EXECUTE: postgres / service_role</div>
+            <div class="note"><strong>Exceção preservada:</strong> <code>update_updated_at_column()</code> continua com EXECUTE público porque é uma função de trigger. Ela é usada pelo trigger <code>trg_users_updated_at</code> da tabela <code>public.users</code>. Não é uma RPC de negócio.</div>
+        </div>
+
+        <div class="docs-card">
+            <h1>🧹 Política de retenção de dados</h1>
+            <h2>Regra atual</h2>
+            <div class="flow"><strong>45 dias</strong><br>↓<br>
+                <code>generated_games.created_at</code> → limpar registros antigos<br>
+                <code>historico_palpites.data</code> → limpar registros antigos<br>
+                <code>transacoes.created_at</code> → limpar registros antigos</div>
+            <p>A limpeza é global e baseada na idade do registro, não na data de login do usuário.</p>
+            <h2>Conta do usuário</h2>
+            <div class="security"><strong>Preservar:</strong> <code>limpar_dados_antigos()</code> não executa <code>DELETE</code> em <code>usuarios</code>. Créditos, status PRO, e-mail, UID e cadastro permanecem.</div>
+            <h2>Rotinas antigas removidas</h2>
+            <div class="rpc-box">limpar_dados_antigos(user_uid text) → removida
+limpar_historico_antigo() → removida
+limpar_historico_usuario(user_uid text) → removida
+
+Rotina oficial:
+limpar_dados_antigos() → 45 dias</div>
+            <div class="pending"><strong>Automação:</strong> a rotina oficial de 45 dias está criada e protegida, mas a execução automática semanal aos domingos ainda é uma pendência.</div>
+        </div>
+
+        <div class="docs-card">
+            <h1>💳 Fluxo de pagamento</h1>
+            <div class="flow">
+                <strong>Usuário</strong><br>↓<br>
+                <strong>Firebase Authentication</strong><br>↓<br>
+                <strong>Vercel / API</strong><br>↓<br>
+                <strong>Mercado Pago / PIX</strong><br>↓<br>
+                <strong>Webhook Vercel</strong><br>↓<br>
+                <strong>process_payment_webhook()</strong><br>↓<br>
+                <strong>apply_credit_transaction()</strong><br>↓<br>
+                <strong>credit_transactions / user_balances / financial_logs</strong>
+            </div>
+            <div class="security">Os testes realizados após as alterações de RLS confirmaram que compra de créditos, geração de jogos, atualização do PRO e gravação de histórico continuaram funcionando.</div>
+            <div class="pending"><strong>Pendência 1 — atualização imediata após pagamento:</strong><br>o banco é atualizado, mas a interface não reflete imediatamente os novos créditos/PRO. Atualmente, sair e entrar novamente atualiza os dados. O problema identificado é de refresh/sincronização do estado da aplicação, não do RLS.</div>
+        </div>
+
+        <div class="docs-card">
+            <h1>✅ Estado de Segurança Atual</h1>
+            <table class="db-table"><thead><tr><th>Item</th><th>Estado</th></tr></thead><tbody>
+                <tr><td>Firebase ID Token validado na Vercel</td><td class="status-ok">CONCLUÍDO</td></tr>
+                <tr><td>UID derivado do token validado</td><td class="status-ok">CONCLUÍDO</td></tr>
+                <tr><td>RLS nas 16 tabelas public</td><td class="status-ok">CONCLUÍDO</td></tr>
+                <tr><td>Acesso direto anon/authenticated às tabelas sensíveis</td><td class="status-ok">BLOQUEADO</td></tr>
+                <tr><td>configuracoes somente leitura para clientes</td><td class="status-ok">MANTIDO</td></tr>
+                <tr><td>RPCs financeiras/PRO/Webhook sensíveis</td><td class="status-ok">PROTEGIDAS</td></tr>
+                <tr><td>Rotinas antigas de limpeza 10/30 dias</td><td class="status-ok">REMOVIDAS</td></tr>
+                <tr><td>Rotina oficial de limpeza 45 dias</td><td class="status-ok">CRIADA E TESTADA</td></tr>
+                <tr><td>Estrutura atual do banco</td><td class="status-ok">PRESERVADA</td></tr>
+                <tr><td>Exclusão da conta do usuário pela rotina de 45 dias</td><td class="status-ok">NÃO OCORRE</td></tr>
+                <tr><td>Limpeza automática semanal aos domingos</td><td class="status-warn">PENDENTE 2</td></tr>
+                <tr><td>Refresh imediato após pagamento</td><td class="status-warn">PENDENTE 1</td></tr>
+            </tbody></table>
+            <div class="note"><strong>Princípio de manutenção:</strong> a revisão de segurança alterou apenas RLS, policies e permissões. A única exclusão de dados executada foi a limpeza autorizada de registros com mais de 45 dias.</div>
+        </div>
+
+        <div style="text-align:center;">
             <button class="btn-voltar" onclick="window.location.href='index.html'">← Voltar à Documentação</button>
             <button class="btn-voltar" onclick="window.location.href='/'">← Voltar ao Sistema</button>
         </div>
