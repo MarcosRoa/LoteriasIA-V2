@@ -550,7 +550,7 @@ function iniciarPollingPagamento(paymentId) {
                         creditos: credits,
                         isPro: proStatus.isPro,
                         proDaysLeft: proStatus.daysLeft || 0,
-                        proExpiresAt: proStatus.proExpiresAt || null
+                        //proExpiresAt: proStatus.proExpiresAt || null
                     });
 
                     if (typeof window.atualizarInterfaceUsuario === 'function') {
