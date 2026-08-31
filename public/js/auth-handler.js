@@ -1,9 +1,11 @@
+// ============================================
 // js/auth-handler.js - Processamento de login (V2.3 - appState integrado)
 // ============================================
 
 // ============================================
-// FUNÇÃO PARA ABRIR MODAL DE LOGIN 13/08/2026
+// FUNÇÃO PARA ABRIR MODAL DE LOGIN 31/08/2026
 // ============================================
+
 function mostrarModalLogin(modo = 'opcoes') {
     if (document.querySelector('.modal-login-overlay')) return;
 
@@ -492,8 +494,33 @@ function iniciarPollingPagamento(paymentId) {
         tentativas++;
 
         try {
-            const response = await fetch(`/api/payment/status?paymentId=${paymentId}`);
+            // ============================================
+            // ✅ SUBSTITUÍDO: Chamada com autenticação
+            // ============================================
+            const token = await window.apiClient.getFirebaseToken();
+
+            if (!token) {
+                throw new Error('Usuário não autenticado para consultar o pagamento');
+            }
+
+            const response = await fetch(
+                `/api/payment/status?paymentId=${encodeURIComponent(paymentId)}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+
             const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    result.error || `Erro ao consultar status do pagamento: ${response.status}`
+                );
+            }
 
             if (result.status === 'approved' || result.status === 'confirmed') {
                 clearInterval(window._pollingInterval);
@@ -510,21 +537,36 @@ function iniciarPollingPagamento(paymentId) {
                     `;
                 }
 
-                // 🔥 RECARREGAR DADOS DO BACKEND
+                // ============================================
+                // ✅ SUBSTITUÍDO: Recarregar dados com autenticação
+                // ============================================
                 try {
-                    const creditsResponse = await fetch('/api/credits?uid=' + window.appState.usuario.uid);
-                    const creditsData = await creditsResponse.json();
-                    
+                    const [credits, proStatus] = await Promise.all([
+                        window.apiClient.getCredits(),
+                        window.apiClient.getProStatus()
+                    ]);
+
                     window.updateAppState({
-                        creditos: creditsData.credits || 0,
-                        isPro: creditsData.isPro || false
+                        creditos: credits,
+                        isPro: proStatus.isPro,
+                        proDaysLeft: proStatus.daysLeft || 0,
+                        proExpiresAt: proStatus.proExpiresAt || null
                     });
 
                     if (typeof window.atualizarInterfaceUsuario === 'function') {
-                        window.atualizarInterfaceUsuario();
+                        await window.atualizarInterfaceUsuario();
                     }
+
+                    if (typeof window.atualizarBotoesPro === 'function') {
+                        window.atualizarBotoesPro();
+                    }
+
+                    console.log(
+                        `✅ Estado atualizado após pagamento | Créditos: ${credits} | PRO: ${proStatus.isPro} | Dias: ${proStatus.daysLeft || 0}`
+                    );
+
                 } catch (error) {
-                    console.error('❌ Erro ao recarregar créditos:', error);
+                    console.error('❌ Erro ao recarregar créditos/PRO:', error);
                 }
 
                 window.mostrarToast('✅ Pagamento confirmado!', 'success');
