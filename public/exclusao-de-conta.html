@@ -47,12 +47,17 @@ button{border:0;border-radius:24px;padding:12px 20px;font-weight:700;cursor:poin
 </section>
 </main>
 <script>
+<script>
 (function(){
   const params = new URLSearchParams(window.location.search);
   const email = params.get('email') || '';
   const emailInput = document.getElementById('email');
-  if (email) emailInput.value = email;
-  else emailInput.removeAttribute('readonly');
+
+  if (email) {
+    emailInput.value = email;
+  } else {
+    emailInput.removeAttribute('readonly');
+  }
 
   document.getElementById('deleteForm').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -65,54 +70,54 @@ button{border:0;border-radius:24px;padding:12px 20px;font-weight:700;cursor:poin
     const reason = reasonInput.value.trim();
 
     if (!userEmail || !reason) {
-        alert('Preencha o e-mail e o motivo da exclusão.');
-        return;
+      alert('Preencha o e-mail e o motivo da exclusão.');
+      return;
     }
 
     button.disabled = true;
     button.textContent = 'Enviando...';
 
     try {
-        const response = await fetch(
-            'https://loterias-ia-core-production.up.railway.app/api/account/delete-request',
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    email: userEmail,
-                    reason: reason
-                })
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-            throw new Error(
-                data.error || 'Não foi possível enviar a solicitação'
-            );
+      const response = await fetch(
+        'https://loterias-ia-core-production.up.railway.app/api/account/delete-request',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: userEmail,
+            reason: reason
+          })
         }
+      );
 
-        alert(
-            '✅ Solicitação enviada com sucesso!\n\n' +
-            'Nossa equipe administrativa recebeu o pedido.'
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.error || 'Não foi possível enviar a solicitação'
         );
+      }
 
-        reasonInput.value = '';
+      alert(
+        '✅ Solicitação enviada com sucesso!\n\n' +
+        'Nossa equipe administrativa recebeu o pedido.'
+      );
+
+      reasonInput.value = '';
 
     } catch (error) {
-        console.error('❌ Erro ao solicitar exclusão:', error);
+      console.error('❌ Erro ao solicitar exclusão:', error);
 
-        alert(
-            '❌ Não foi possível enviar sua solicitação.\n\n' +
-            'Tente novamente mais tarde.'
-        );
+      alert(
+        '❌ Não foi possível enviar sua solicitação.\n\n' +
+        'Tente novamente mais tarde.'
+      );
     } finally {
-        button.disabled = false;
-        button.textContent = 'Solicitar exclusão';
-    );
+      button.disabled = false;
+      button.textContent = 'Solicitar exclusão';
+    }
   });
 })();
 </script>
